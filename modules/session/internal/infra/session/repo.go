@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/lynx-go/lynx-mods/modules/session/domain/session"
-	"github.com/lynx-go/lynx-start/contrib/bunx"
-	"github.com/lynx-go/lynx-start/contrib/bunx/buntx"
-	"github.com/lynx-go/lynx-start/occ"
+	"github.com/lynxland/appkit/contrib/bunx"
+	"github.com/lynxland/appkit/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/occ"
 	"github.com/uptrace/bun"
 )
 

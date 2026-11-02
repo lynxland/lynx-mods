@@ -18,7 +18,7 @@ import (
 	// lynx-mods:module-import（lynx-mods add 注入锚点，勿删）
 )
 
-var Installed = []kernel.InstalledModule{
+var Installed = []appkit.InstalledModule{
 	{
 		Module:   demo.Module(),
 		Assemble: demo.Assemble,
@@ -100,7 +100,7 @@ session:
 }
 
 func TestRegisteredModuleNames(t *testing.T) {
-	src := `var Installed = []kernel.InstalledModule{
+	src := `var Installed = []appkit.InstalledModule{
 	{
 		Module:   demo.Module(),
 		Assemble: demo.Assemble,

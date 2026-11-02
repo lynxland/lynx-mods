@@ -12,18 +12,18 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynx-go/grpcapi/authn"
 	"github.com/lynx-go/grpcapi/server"
-	"github.com/lynx-go/lynx-start"
-	"github.com/lynx-go/lynx-start/clock"
-	"github.com/lynx-go/lynx-start/configkit"
-	"github.com/lynx-go/lynx-start/contrib/bunx"
-	"github.com/lynx-go/lynx-start/jwt"
+	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/configkit"
+	"github.com/lynxland/appkit/contrib/bunx"
+	"github.com/lynxland/appkit/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // Module 返回静态装配描述（策略描述符来自本地 buf 生成物）。
-func Module() kernel.Module {
-	return kernel.Module{
+func Module() appkit.Module {
+	return appkit.Module{
 		Name:        "identity",
 		Description: "身份模块：注册/登录（Argon2id + HS256 JWT）/自助改密，贡献 Bearer 认证器",
 		Policies:    []protoreflect.FileDescriptor{identityv1.File_identity_v1_identity_proto},
@@ -32,7 +32,7 @@ func Module() kernel.Module {
 			identity.EventUserCreated,
 			identity.EventUserPasswordChanged,
 		},
-		Config: kernel.ConfigSpec{
+		Config: appkit.ConfigSpec{
 			Defaults: map[string]any{
 				"secret":    appidentity.DefaultDevSecret,
 				"token_ttl": "30m",
@@ -45,13 +45,13 @@ func Module() kernel.Module {
 // Assemble 构造动态装配产物：配置段 → 令牌签发/验证 → 仓储 → 用例 →
 // 处理器 + Bearer 认证器。源码归应用所有：按需修改（例如换密钥来源、
 // 追加事件订阅）。
-func Assemble(deps kernel.Deps) (kernel.Assembly, error) {
+func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
 	var cfg appidentity.Config
 	if err := configkit.LoadSection(deps.Config, "identity", cfg.ApplyDefaults, &cfg); err != nil {
-		return kernel.Assembly{}, err
+		return appkit.Assembly{}, err
 	}
 	if err := cfg.Validate(); err != nil {
-		return kernel.Assembly{}, err
+		return appkit.Assembly{}, err
 	}
 	if cfg.Secret == appidentity.DefaultDevSecret && deps.Logger != nil {
 		deps.Logger.Warn("identity: 正在使用开发默认密钥（identity.secret），生产环境必须更换")
@@ -63,7 +63,7 @@ func Assemble(deps kernel.Deps) (kernel.Assembly, error) {
 
 	repo := infraindentity.NewRepository(bunx.MustDB(deps))
 	uc := appidentity.New(repo, deps.Tx, deps.Events, signer, verifier, clock.System{})
-	return kernel.Assembly{
+	return appkit.Assembly{
 		Registrations:  []server.Registration{newRegistration(NewService(uc))},
 		Authenticators: []authn.Authenticator{NewBearerAuthenticator(uc, verifier, clock.System{})},
 	}, nil

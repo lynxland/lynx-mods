@@ -11,8 +11,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynx-go/grpcapi/server"
-	"github.com/lynx-go/lynx-start"
-	"github.com/lynx-go/lynx-start/contrib/bunx"
+	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/contrib/bunx"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -20,8 +20,8 @@ import (
 // Module 返回静态装配描述。DependsOn: organization——任务必属一个组织，
 // 成员资格经其 domain 端口校验（安装器校验依赖已装）。第一个组织挂靠
 // 业务资源（ADR-0008）。v0.1 无配置段、不消费事件。
-func Module() kernel.Module {
-	return kernel.Module{
+func Module() appkit.Module {
+	return appkit.Module{
 		Name:        "task",
 		Description: "任务模块：组织内任务（创建/查询/完成/删除，完成与删除限创建者），依赖 organization",
 		DependsOn:   []string{"organization"},
@@ -36,13 +36,13 @@ func Module() kernel.Module {
 
 // Assemble 构造动态装配产物：仓储（本模块 + organization domain 只读
 // 适配器）→ 用例 → 处理器 → 注册。源码归应用所有：按需修改。
-func Assemble(deps kernel.Deps) (kernel.Assembly, error) {
+func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
 	uc := apptask.New(
 		infratask.NewRepository(bunx.MustDB(deps)),
 		infratask.NewOrganizationReader(bunx.MustDB(deps)), // DependsOn: organization domain 只读消费
 		deps.Tx, deps.Events,
 	)
-	return kernel.Assembly{
+	return appkit.Assembly{
 		Registrations: []server.Registration{newRegistration(NewService(uc))},
 	}, nil
 }

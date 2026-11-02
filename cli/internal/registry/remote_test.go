@@ -44,12 +44,12 @@ func mkGitRepo(t *testing.T) string {
 
 func TestIsRemote(t *testing.T) {
 	for raw, want := range map[string]bool{
-		"https://github.com/lynx-go/lynx-start": true,
-		"git@github.com:lynx-go/lynx-start.git": true,
-		"ssh://git@host/repo":                   true,
-		"/local/path":                           false,
-		"../relative":                           false,
-		"":                                      false,
+		"https://github.com/lynxland/appkit": true,
+		"git@github.com:lynxland/appkit.git": true,
+		"ssh://git@host/repo":                true,
+		"/local/path":                        false,
+		"../relative":                        false,
+		"":                                   false,
 	} {
 		if got := IsRemote(raw); got != want {
 			t.Errorf("IsRemote(%q) = %v, want %v", raw, got, want)

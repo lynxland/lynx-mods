@@ -10,10 +10,10 @@ import (
 
 	"github.com/lynx-go/lynx-mods/modules/session/domain/session"
 	appsession "github.com/lynx-go/lynx-mods/modules/session/internal/app/session"
-	"github.com/lynx-go/lynx-start/clock"
-	"github.com/lynx-go/lynx-start/events"
-	"github.com/lynx-go/lynx-start/jwt"
 	"github.com/lynx-go/lynx/eventbus"
+	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/events"
+	"github.com/lynxland/appkit/jwt"
 )
 
 // TestPasswordChangedWatcher 跨模块联动集成：identity 的改密事件（经

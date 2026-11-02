@@ -13,14 +13,14 @@ import (
 
 	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
 	"github.com/lynx-go/lynx-mods/modules/session/domain/session"
-	"github.com/lynx-go/lynx-start/clock"
-	"github.com/lynx-go/lynx-start/events"
-	"github.com/lynx-go/lynx-start/idgen"
-	"github.com/lynx-go/lynx-start/jwt"
-	"github.com/lynx-go/lynx-start/uow"
+	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/events"
+	"github.com/lynxland/appkit/idgen"
+	"github.com/lynxland/appkit/jwt"
+	"github.com/lynxland/appkit/uow"
 )
 
-// 令牌派生用途（kernel/secretkey purpose 域隔离）：访问/刷新两类令牌
+// 令牌派生用途（appkit/secretkey purpose 域隔离）：访问/刷新两类令牌
 // 互不通用，也与 identity 的令牌互不通用（签发密钥不同即签名不匹配，
 // 认证器按链式语义交给下一个）。
 const (

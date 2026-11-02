@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lynx-go/lynx-start/errcode"
+	"github.com/lynxland/appkit/errcode"
 )
 
 // space 是本模块的错误码区段（契约⑤）。凭证类错误沿用 identity 区段
@@ -51,7 +51,7 @@ const (
 )
 
 // 消费的跨模块事件目录（契约②：字符串引用 identity 的目录，不 import
-// 其代码；Module().ConsumedEvents 声明后由 kernel 启动期校验确有发布者）。
+// 其代码；Module().ConsumedEvents 声明后由 appkit 启动期校验确有发布者）。
 const IdentityUserPasswordChanged = "identity.user.password-changed"
 
 // Session 是一次可吊销的登录会话。访问令牌短时效无状态（不查库），

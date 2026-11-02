@@ -8,8 +8,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
 	github.com/lynx-go/grpcapi v0.4.0
 	github.com/lynx-go/grpcapi/genproto v0.3.0
-	github.com/lynx-go/lynx-start v0.5.10
-	github.com/lynx-go/lynx-start/contrib/bunx v0.1.2
+	github.com/lynxland/appkit v0.7.0
+	github.com/lynxland/appkit/contrib/bunx v0.4.0
 	github.com/uptrace/bun v1.3.0
 	github.com/uptrace/bun/driver/pgdriver v1.3.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20261005182115-fad411399dd8
@@ -55,7 +55,6 @@ require (
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/log v1.47.0 // indirect
 	go.opentelemetry.io/otel/metric v1.47.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.47.0 // indirect
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect

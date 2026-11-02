@@ -10,9 +10,9 @@ import (
 	appidentity "github.com/lynx-go/lynx-mods/modules/identity/internal/app/identity"
 
 	"github.com/lynx-go/grpcapi/authn"
-	"github.com/lynx-go/lynx-start/clock"
-	"github.com/lynx-go/lynx-start/events"
-	"github.com/lynx-go/lynx-start/jwt"
+	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/events"
+	"github.com/lynxland/appkit/jwt"
 )
 
 // miniRepo 是认证器测试的最小仓储桩。

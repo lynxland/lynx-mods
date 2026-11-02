@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lynx-go/lynx-start/errcode"
+	"github.com/lynxland/appkit/errcode"
 )
 
 // space 是本模块的错误码区段（契约⑤）。

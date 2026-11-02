@@ -3,13 +3,13 @@
 package modules
 
 import (
-	"github.com/lynx-go/lynx-start"
+	"github.com/lynxland/appkit"
 	// lynx-mods:module-import（lynx-mods add 注入锚点，勿删）
 )
 
 // Installed 返回全部已装模块（静态描述 + 动态装配）。
-func Installed() []kernel.InstalledModule {
-	return []kernel.InstalledModule{
+func Installed() []appkit.InstalledModule {
+	return []appkit.InstalledModule{
 		// lynx-mods:module-entry（lynx-mods add 注入锚点，勿删）
 	}
 }

@@ -14,19 +14,19 @@ import (
 	"github.com/lynx-go/grpcapi/authn"
 	"github.com/lynx-go/grpcapi/server"
 	"github.com/lynx-go/lynx"
-	"github.com/lynx-go/lynx-start"
-	"github.com/lynx-go/lynx-start/clock"
-	"github.com/lynx-go/lynx-start/configkit"
-	"github.com/lynx-go/lynx-start/contrib/bunx"
-	"github.com/lynx-go/lynx-start/jwt"
+	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/configkit"
+	"github.com/lynxland/appkit/contrib/bunx"
+	"github.com/lynxland/appkit/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // Module 返回静态装配描述。DependsOn: identity——principal 来源与
 // 改密事件目录都是 identity（安装器校验依赖已装）。
-func Module() kernel.Module {
-	return kernel.Module{
+func Module() appkit.Module {
+	return appkit.Module{
 		Name:        "session",
 		Description: "会话模块：可吊销登录会话（刷新令牌轮换 + 改密全局吊销），依赖 identity",
 		DependsOn:   []string{"identity"},
@@ -38,7 +38,7 @@ func Module() kernel.Module {
 			session.EventSessionRevoked,
 		},
 		ConsumedEvents: []string{session.IdentityUserPasswordChanged},
-		Config: kernel.ConfigSpec{
+		Config: appkit.ConfigSpec{
 			Defaults: map[string]any{
 				"secret":      appsession.DefaultDevSecret,
 				"access_ttl":  "15m",
@@ -52,19 +52,19 @@ func Module() kernel.Module {
 // Assemble 构造动态装配产物：配置段 → 令牌四件套 → 仓储（本模块 +
 // identity domain 只读适配器）→ 用例 → 处理器 + Bearer 认证器 + 改密
 // 联动订阅器。源码归应用所有：按需修改。
-func Assemble(deps kernel.Deps) (kernel.Assembly, error) {
+func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
 	var cfg appsession.Config
 	if err := configkit.LoadSection(deps.Config, "session", cfg.ApplyDefaults, &cfg); err != nil {
-		return kernel.Assembly{}, err
+		return appkit.Assembly{}, err
 	}
 	if err := cfg.Validate(); err != nil {
-		return kernel.Assembly{}, err
+		return appkit.Assembly{}, err
 	}
 	if cfg.Secret == appsession.DefaultDevSecret && deps.Logger != nil {
 		deps.Logger.Warn("session: 正在使用开发默认密钥（session.secret），生产环境必须更换")
 	}
 	if deps.Bus == nil {
-		return kernel.Assembly{}, fmt.Errorf("session: 需要事件总线（kernel.Deps.Bus）——请更新 scaffold bootstrap.NewDeps")
+		return appkit.Assembly{}, fmt.Errorf("session: 需要事件总线（appkit.Deps.Bus）——请更新 scaffold bootstrap.NewDeps")
 	}
 
 	tokens := appsession.Tokens{
@@ -81,7 +81,7 @@ func Assemble(deps kernel.Deps) (kernel.Assembly, error) {
 		deps.Tx, deps.Events, tokens, clock.System{},
 	)
 
-	return kernel.Assembly{
+	return appkit.Assembly{
 		Registrations:  []server.Registration{newRegistration(NewService(uc))},
 		Authenticators: []authn.Authenticator{NewBearerAuthenticator(uc, tokens.AccessVerify, clock.System{})},
 		Services: []lynx.Service{

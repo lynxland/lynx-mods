@@ -1,4 +1,4 @@
-// Package bootstrap 构造应用基础层：数据库连接、共享依赖（kernel.Deps）与
+// Package bootstrap 构造应用基础层：数据库连接、共享依赖（appkit.Deps）与
 // 托管 grpcapi Server 的 lynx.Service。模块经 Deps 消费这一切。
 package bootstrap
 
@@ -12,9 +12,9 @@ import (
 
 	grpcapiserver "github.com/lynx-go/grpcapi/server"
 	"github.com/lynx-go/lynx"
-	"github.com/lynx-go/lynx-start"
-	"github.com/lynx-go/lynx-start/contrib/bunx/buntx"
-	"github.com/lynx-go/lynx-start/events"
+	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/events"
 	"{{.ModulePath}}/internal/config"
 
 	"github.com/uptrace/bun"
@@ -24,7 +24,7 @@ import (
 
 // NewDeps 打开数据库并构造模块共享依赖；返回的 cleanup 关闭连接池
 // （main.go 挂 OnPostStop）。
-func NewDeps(app lynx.App, cfg *config.Config, logger *slog.Logger) (kernel.Deps, func(), error) {
+func NewDeps(app lynx.App, cfg *config.Config, logger *slog.Logger) (appkit.Deps, func(), error) {
 	sqldb := sql.OpenDB(pgdriver.NewConnector(
 		pgdriver.WithDSN(cfg.Data.Database.Source),
 	))
@@ -34,13 +34,13 @@ func NewDeps(app lynx.App, cfg *config.Config, logger *slog.Logger) (kernel.Deps
 	if err := sqldb.Ping(); err != nil {
 		_ = sqldb.Close()
 		if hint := HintDB(err); hint != "" {
-			return kernel.Deps{}, nil, fmt.Errorf("ping database: %w\n%s", err, hint)
+			return appkit.Deps{}, nil, fmt.Errorf("ping database: %w\n%s", err, hint)
 		}
-		return kernel.Deps{}, nil, fmt.Errorf("ping database: %w", err)
+		return appkit.Deps{}, nil, fmt.Errorf("ping database: %w", err)
 	}
 	db := bun.NewDB(sqldb, pgdialect.New())
 
-	deps := kernel.Deps{
+	deps := appkit.Deps{
 		DB:     db,
 		Tx:     buntx.New(db),
 		Events: events.NewBusPublisher(app.Bus()),

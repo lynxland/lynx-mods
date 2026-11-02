@@ -8,15 +8,15 @@ import (
 	"errors"
 
 	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
-	"github.com/lynx-go/lynx-start/clock"
-	"github.com/lynx-go/lynx-start/events"
-	"github.com/lynx-go/lynx-start/idgen"
-	"github.com/lynx-go/lynx-start/jwt"
-	"github.com/lynx-go/lynx-start/password"
-	"github.com/lynx-go/lynx-start/uow"
+	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/events"
+	"github.com/lynxland/appkit/idgen"
+	"github.com/lynxland/appkit/jwt"
+	"github.com/lynxland/appkit/password"
+	"github.com/lynxland/appkit/uow"
 )
 
-// PurposeAccessToken 是访问令牌的密钥派生用途标签（kernel/secretkey 的
+// PurposeAccessToken 是访问令牌的密钥派生用途标签（appkit/secretkey 的
 // purpose 域隔离）：其他用途派生的令牌在本模块不可通过验证。
 const PurposeAccessToken = "identity-access-token"
 
@@ -78,8 +78,8 @@ func (u *UseCase) Login(ctx context.Context, email, plainPassword string) (*iden
 	user, err := u.repo.GetByEmail(ctx, identity.NormalizeEmail(email))
 	if err != nil {
 		if errors.Is(err, identity.ErrUserNotFound) {
-			// 时序对齐：邮箱不存在也跑一次等价 Argon2id（哑靶来自 kernel，
-			// 与其参数恒同参——参数升级经 kernel 修复直达，不会失配）。
+			// 时序对齐：邮箱不存在也跑一次等价 Argon2id（哑靶来自 appkit，
+			// 与其参数恒同参——参数升级经 appkit 修复直达，不会失配）。
 			if dummy, derr := password.DummyHash(); derr == nil {
 				_, _ = password.Verify(plainPassword, dummy)
 			}

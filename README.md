@@ -9,16 +9,17 @@ lynx 的 Go 后端应用提供按需安装的业务域源码——安装后代�
 installer CLI, and business modules you install as source code you own.
 
 > 范式基座（装配契约 Module/Assembly/Deps、事务/分页/错误码等电池）在姊妹项目
-> **[lynx-go/lynx-start](https://github.com/lynx-go/lynx-start)**——本仓的模块
-> 编译期实现它的契约（semver）。本仓由 lynx-start 拆分而来（2026-10-31，
-> 见 [ADR-0006](docs/adr/0006-lynx-mods-split-from-lynx-start.md)）。
+> **[lynxland/appkit](https://github.com/lynxland/appkit)**（2026-11-02 前名
+> lynx-start）——本仓的模块编译期实现它的契约（semver）。本仓由 lynx-start
+> 拆分而来（2026-10-31，见
+> [ADR-0006](docs/adr/0006-lynx-mods-split-from-lynx-start.md)）。
 
 ## 定位：三层供给（承 ADR-0003）
 
 | 层 | 形态 | 稳定性承诺 |
 |---|---|---|
 | 框架层 | lynx / grpcapi / bun / goose（本来就是库） | 随上游 |
-| 契约层 | **lynx-start**（装配协议、电池、contrib/bunx 适配） | **semver** |
+| 契约层 | **appkit**（装配协议、电池、contrib/bunx 适配） | **semver** |
 | **源码模块**（`modules/`，registry items） | 一个业务域的四层实现（domain/app/api/infra + proto + 迁移 + 配置段） | 无承诺——源码即你的 |
 
 「稳定」由契约层承担（编译期类型契约），「可扩展」由源码模块承担（改的是自己的
@@ -59,14 +60,14 @@ lynx-mods remove audit --registry <本仓库目录>  # DAG 反向校验；迁移
 # 跑起来（顺序重要：genproto 未生成时 go mod tidy 必失败；mise 钉版 go/buf）
 mise install && mise trust
 lynx-mods generate       # buf dep update + lint + generate → genproto/
-go mod tidy              # 契约库（lynx-start semver）与模块依赖在此拉取
+go mod tidy              # 契约库（appkit semver）与模块依赖在此拉取
 mise run db:up && mise run db:migrate
 mise run dev             # gRPC :9060 / HTTP :8080
 ```
 
 从 lynx-start 时代的应用升级（旧 `lynx-start` CLI / `lynx-start.json` /
-`.lynx-start/`）：见 lynx-start 仓
-[UPGRADING.md](https://github.com/lynx-go/lynx-start/blob/main/UPGRADING.md)。
+`.lynx-start/`）：见 appkit 仓
+[UPGRADING.md](https://github.com/lynxland/appkit/blob/main/UPGRADING.md)。
 
 ## 开放性
 
@@ -80,7 +81,7 @@ mise run dev             # gRPC :9060 / HTTP :8080
 
 ## 非目标（Non-goals）
 
-- 单进程 modular monolith（无跨进程事件/outbox——路线图见 lynx-start）。
+- 单进程 modular monolith（无跨进程事件/outbox——路线图见 appkit）。
 - Postgres + bun only（契约层已 ORM 无关，模块生态默认 bun）。
 - 不抄 shadcn HTTP registry 协议（git tag 对私有部署更友好）。
 

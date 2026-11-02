@@ -16,8 +16,8 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/lynx-go/lynx-start/errcode"
-	"github.com/lynx-go/lynx-start/errstatus"
+	"github.com/lynxland/appkit/errcode"
+	"github.com/lynxland/appkit/errstatus"
 )
 
 // Service 实现 IdentityService（薄转发：业务在用例层）。

@@ -13,8 +13,8 @@ require (
 	github.com/lynx-go/grpcapi v0.4.0
 	github.com/lynx-go/grpcapi/genproto v0.3.0
 	github.com/lynx-go/lynx-mods/modules/organization v0.0.0-00010101000000-000000000000
-	github.com/lynx-go/lynx-start v0.5.0
-	github.com/lynx-go/lynx-start/contrib/bunx v0.1.0
+	github.com/lynxland/appkit v0.7.0
+	github.com/lynxland/appkit/contrib/bunx v0.4.0
 	github.com/uptrace/bun v1.3.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20261019180522-ce908d29299b
 	google.golang.org/grpc v1.84.0

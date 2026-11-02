@@ -12,17 +12,17 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynx-go/grpcapi/authn"
 	"github.com/lynx-go/grpcapi/server"
-	"github.com/lynx-go/lynx-start"
-	"github.com/lynx-go/lynx-start/configkit"
-	"github.com/lynx-go/lynx-start/contrib/bunx"
+	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/configkit"
+	"github.com/lynxland/appkit/contrib/bunx"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // Module 返回静态装配描述。DependsOn: identity——分配目标是 identity
 // 用户，bootstrap 管理员经其 domain 端口解析。
-func Module() kernel.Module {
-	return kernel.Module{
+func Module() appkit.Module {
+	return appkit.Module{
 		Name:        "access",
 		Description: "授权模块：RBAC（配置角色目录 + DB 分配），认证后注入 roles/permissions claims",
 		DependsOn:   []string{"identity"},
@@ -32,7 +32,7 @@ func Module() kernel.Module {
 			access.EventAssignmentGranted,
 			access.EventAssignmentRevoked,
 		},
-		Config: kernel.ConfigSpec{
+		Config: appkit.ConfigSpec{
 			Defaults: map[string]any{
 				"roles":            map[string]any{"admin": []any{"access.assignment.write"}},
 				"bootstrap_admins": []any{},
@@ -44,13 +44,13 @@ func Module() kernel.Module {
 // Assemble 构造动态装配产物：配置段（角色目录）→ 仓储（分配 + identity
 // 只读适配器）→ 用例 → bootstrap 管理员收敛 → 处理器 + Principal
 // 增强器。源码归应用所有：按需修改（例如给 Enricher 加缓存）。
-func Assemble(deps kernel.Deps) (kernel.Assembly, error) {
+func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
 	var cfg appaccess.Config
 	if err := configkit.LoadSection(deps.Config, "access", cfg.ApplyDefaults, &cfg); err != nil {
-		return kernel.Assembly{}, err
+		return appkit.Assembly{}, err
 	}
 	if err := cfg.Validate(); err != nil {
-		return kernel.Assembly{}, err
+		return appkit.Assembly{}, err
 	}
 
 	uc := appaccess.New(
@@ -68,11 +68,11 @@ func Assemble(deps kernel.Deps) (kernel.Assembly, error) {
 			}
 		}
 		if err := uc.BootstrapAdmins(context.Background(), cfg.BootstrapAdmins, onSkip); err != nil {
-			return kernel.Assembly{}, err
+			return appkit.Assembly{}, err
 		}
 	}
 
-	return kernel.Assembly{
+	return appkit.Assembly{
 		Registrations: []server.Registration{newRegistration(NewService(uc))},
 		Enrichers:     []authn.Enricher{NewPrincipalEnricher(uc)},
 	}, nil

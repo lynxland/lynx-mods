@@ -16,7 +16,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/lynx-go/lynx-start/errcode"
+	"github.com/lynxland/appkit/errcode"
 )
 
 // space 是本模块的错误码区段（契约⑤）。
@@ -100,7 +100,7 @@ func NewMember(organizationID, userID string, isOwner bool, now time.Time) (*Mem
 	return &Member{OrganizationID: organizationID, UserID: userID, IsOwner: isOwner, JoinedAt: now}, nil
 }
 
-// MemberQuery 是成员列表查询参数（分页方言见 kernel/crud）。
+// MemberQuery 是成员列表查询参数（分页方言见 appkit/crud）。
 type MemberQuery struct {
 	PageSize int32
 	Offset   int

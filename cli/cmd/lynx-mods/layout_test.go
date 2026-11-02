@@ -135,8 +135,8 @@ func TestBridgeModule(t *testing.T) {
 	for _, want := range []string{
 		"package identity",
 		`api "example.com/app/modules/identity/internal/api"`,
-		"func Module() kernel.Module { return api.Module() }",
-		"func Assemble(deps kernel.Deps) (kernel.Assembly, error) { return api.Assemble(deps) }",
+		"func Module() appkit.Module { return api.Module() }",
+		"func Assemble(deps appkit.Deps) (appkit.Assembly, error) { return api.Assemble(deps) }",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("bridge missing %q:\n%s", want, got)

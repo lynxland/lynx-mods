@@ -38,8 +38,8 @@ type Item struct {
 	//   ["identity"]                —— 无版本约束（旧形态）
 	//   [{"identity": ">=0.1.1"}]   —— 最低版本约束（安装期校验已装版本）
 	ModuleDependencies Dependencies `json:"moduleDependencies"`
-	// KernelConstraint 声明模块需要的 kernel 最低版本（如 ">=0.3.0"）；
-	// add 时校验应用 go.mod 的 kernel require，doctor 复核。
+	// KernelConstraint 声明模块需要的 appkit 最低版本（如 ">=0.3.0"）；
+	// add 时校验应用 go.mod 的 appkit require，doctor 复核。
 	KernelConstraint string   `json:"kernelConstraint"`
 	GoDependencies   []string `json:"goDependencies"`
 	ConfigFragment   string   `json:"configFragment"`

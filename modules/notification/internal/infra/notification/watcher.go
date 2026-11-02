@@ -9,8 +9,8 @@ import (
 	"github.com/lynx-go/lynx"
 	"github.com/lynx-go/lynx-mods/modules/notification/domain/notification"
 	appnotification "github.com/lynx-go/lynx-mods/modules/notification/internal/app/notification"
-	"github.com/lynx-go/lynx-start/events"
 	"github.com/lynx-go/lynx/eventbus"
+	"github.com/lynxland/appkit/events"
 )
 
 // Watcher 订阅 identity 与 organization 的事件目录（契约②：字符串目录

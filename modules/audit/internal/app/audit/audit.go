@@ -7,11 +7,11 @@ import (
 	"fmt"
 
 	domainaudit "github.com/lynx-go/lynx-mods/modules/audit/domain/audit"
-	"github.com/lynx-go/lynx-start/clock"
-	"github.com/lynx-go/lynx-start/crud"
-	"github.com/lynx-go/lynx-start/events"
-	"github.com/lynx-go/lynx-start/idgen"
-	"github.com/lynx-go/lynx-start/uow"
+	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/crud"
+	"github.com/lynxland/appkit/events"
+	"github.com/lynxland/appkit/idgen"
+	"github.com/lynxland/appkit/uow"
 )
 
 // UseCase 是审计模块的用例集。

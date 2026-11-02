@@ -8,8 +8,8 @@ import (
 	"github.com/lynx-go/lynx"
 	domainsession "github.com/lynx-go/lynx-mods/modules/session/domain/session"
 	appsession "github.com/lynx-go/lynx-mods/modules/session/internal/app/session"
-	"github.com/lynx-go/lynx-start/events"
 	"github.com/lynx-go/lynx/eventbus"
+	"github.com/lynxland/appkit/events"
 )
 
 // PasswordChangedWatcher 订阅 identity 的事件目录（topic=module.identity，

@@ -3,12 +3,12 @@ package audit
 import (
 	"context"
 
-	"github.com/lynx-go/lynx-start/crud"
+	"github.com/lynxland/appkit/crud"
 )
 
 // Repository 是审计存储端口。append-only：端口形状即约束（没有 Update/
 // Delete 可言）；List 语义为 occurred_at 降序 + 结构化过滤 + 分页
-// （token 由 kernel crud 签发校验）。
+// （token 由 appkit crud 签发校验）。
 type Repository interface {
 	// Append 写入记录（加入调用方事务语境）。
 	Append(ctx context.Context, rec *Record) error

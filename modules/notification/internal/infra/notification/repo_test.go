@@ -8,7 +8,7 @@ import (
 
 	"github.com/lynx-go/lynx-mods/modules/notification/domain/notification"
 	"github.com/lynx-go/lynx-mods/modules/notification/internal/infra/notification/migrations"
-	"github.com/lynx-go/lynx-start/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/contrib/bunx/testutil"
 )
 
 func TestRepo(t *testing.T) {

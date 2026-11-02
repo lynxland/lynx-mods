@@ -28,7 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // AuditService 是审计模块的 API 面：显式记录 + 查询。RPC 自动审计由
-// 拦截器承担（Order=50，kernel 预留槽位），不经此 service。
+// 拦截器承担（Order=50，appkit 预留槽位），不经此 service。
 type AuditServiceClient interface {
 	// Record 显式记录一条审计（与调用方业务同事务）；任何已认证主体可记录
 	// 自己的动作——actor 取自认证主体，不可伪造他人。
@@ -71,7 +71,7 @@ func (c *auditServiceClient) ListAuditRecords(ctx context.Context, in *ListAudit
 // for forward compatibility.
 //
 // AuditService 是审计模块的 API 面：显式记录 + 查询。RPC 自动审计由
-// 拦截器承担（Order=50，kernel 预留槽位），不经此 service。
+// 拦截器承担（Order=50，appkit 预留槽位），不经此 service。
 type AuditServiceServer interface {
 	// Record 显式记录一条审计（与调用方业务同事务）；任何已认证主体可记录
 	// 自己的动作——actor 取自认证主体，不可伪造他人。

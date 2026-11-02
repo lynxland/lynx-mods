@@ -25,7 +25,7 @@ done
 '''
 
 [tasks.test]
-description = "全部模块测试（设 LYNXSTART_TEST_PG_DSN 才会真跑 DB 门控测试——env 名属 lynx-start/contrib/bunx/testutil，不改名）"
+description = "全部模块测试（设 APPKIT_TEST_PG_DSN 才会真跑 DB 门控测试——env 名属 appkit/contrib/bunx/testutil，ADR-0010）"
 run = '''
 for d in cli modules/*; do
   [ -f "$d/go.mod" ] || continue

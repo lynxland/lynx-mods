@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lynx-go/lynx-start/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/contrib/bunx/testutil"
 )
 
 // TestDomainPurity 契约②护栏：domain 层不得 import 本应用的 app/infra/api 层
@@ -42,7 +42,7 @@ func TestDomainPurity(t *testing.T) {
 	}
 }
 
-// TestDepsAtAPILayer ADR-0005 护栏：kernel 根包（Deps/Assembly 所在）只允许
+// TestDepsAtAPILayer ADR-0005 护栏：appkit 根包（Deps/Assembly 所在）只允许
 // api 装配层 import——domain/app/infra 一律经子包端口（uow/events/crud/…）消费。
 func TestDepsAtAPILayer(t *testing.T) {
 	testutil.AssertDepsAtAPILayer(t, ".", "../../internal/app", "../../internal/infra")

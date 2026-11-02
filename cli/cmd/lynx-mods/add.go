@@ -93,12 +93,12 @@ func cmdAdd(args []string) error {
 		if err != nil {
 			return fmt.Errorf("%s item.json kernelConstraint: %w", name, err)
 		}
-		have, err := appKernelVersion(appDir)
+		have, err := appkitVersion(appDir)
 		if err != nil {
 			return err
 		}
 		if registry.CompareVersions(have, min) < 0 {
-			return fmt.Errorf("module %s requires kernel >=%s (app go.mod has %s): run go get github.com/lynx-go/lynx-start@v%s", name, min, have, min)
+			return fmt.Errorf("module %s requires appkit >=%s (app go.mod has %s): run go get github.com/lynxland/appkit@v%s", name, min, have, min)
 		}
 	}
 	already := m.Has(name)
@@ -421,18 +421,21 @@ func registryLoad(dir string) (*registry.Index, string, error) {
 	return idx, resolved, err
 }
 
-// appKernelVersion 读应用 go.mod 里 lynx-start 根 module 的 require 版本
-// （缺失返回 "0.0.0"——约束校验会给出可行动报错）。
-func appKernelVersion(appDir string) (string, error) {
+// appkitVersion 读应用 go.mod 里 appkit 根 module 的 require 版本（缺失
+// 返回 "0.0.0"——约束校验会给出可行动报错）。兼容读取 lynx-start 时代
+// 旧应用的 require 行（读取兼容，非生成兼容；appkit v0.7.0 起，ADR-0010）。
+func appkitVersion(appDir string) (string, error) {
 	raw, err := os.ReadFile(filepath.Join(appDir, "go.mod"))
 	if err != nil {
 		return "", fmt.Errorf("read app go.mod: %w", err)
 	}
 	for _, line := range strings.Split(string(raw), "\n") {
 		line = strings.TrimSpace(line)
-		if rest, ok := strings.CutPrefix(line, "github.com/lynx-go/lynx-start "); ok {
-			v := strings.TrimSpace(strings.Split(rest, " ")[0])
-			return strings.TrimPrefix(v, "v"), nil
+		for _, prefix := range []string{"github.com/lynxland/appkit ", "github.com/lynx-go/lynx-start "} {
+			if rest, ok := strings.CutPrefix(line, prefix); ok {
+				v := strings.TrimSpace(strings.Split(rest, " ")[0])
+				return strings.TrimPrefix(v, "v"), nil
+			}
 		}
 	}
 	return "0.0.0", nil

@@ -5,7 +5,7 @@ package demo
 import (
 	"time"
 
-	"github.com/lynx-go/lynx-start/errcode"
+	"github.com/lynxland/appkit/errcode"
 )
 
 // space 是本模块的错误码区段（契约⑤）。
@@ -51,7 +51,7 @@ func (i *Item) Rename(title string, now time.Time) error {
 	return nil
 }
 
-// ListQuery 是列表查询参数（分页方言见 kernel/crud）。
+// ListQuery 是列表查询参数（分页方言见 appkit/crud）。
 type ListQuery struct {
 	PageSize int32
 	Offset   int

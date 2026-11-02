@@ -13,7 +13,7 @@ type Query struct {
 }
 
 // Repository 是 Notification 聚合的持久化端口（infra 实现，经 Assemble
-// 注入）。方法一律接收 ctx：适配器从 ctx 取事务连接（kernel/uow/buntx），
+// 注入）。方法一律接收 ctx：适配器从 ctx 取事务连接（appkit/uow/buntx），
 // 端口签名不得出现驱动类型。
 type Repository interface {
 	// Create 插入通知（append 事实，无更新路径——已读走 MarkRead）。

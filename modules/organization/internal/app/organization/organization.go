@@ -11,10 +11,10 @@ import (
 
 	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
 	"github.com/lynx-go/lynx-mods/modules/organization/domain/organization"
-	"github.com/lynx-go/lynx-start/crud"
-	"github.com/lynx-go/lynx-start/events"
-	"github.com/lynx-go/lynx-start/idgen"
-	"github.com/lynx-go/lynx-start/uow"
+	"github.com/lynxland/appkit/crud"
+	"github.com/lynxland/appkit/events"
+	"github.com/lynxland/appkit/idgen"
+	"github.com/lynxland/appkit/uow"
 )
 
 // UseCase 是组织模块的用例集。

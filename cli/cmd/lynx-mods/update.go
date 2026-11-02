@@ -257,7 +257,7 @@ func cmdUpdate(args []string) error {
 		fmt.Println("  resolve conflicts (search for <<<<<<<), then build: go build ./...")
 	} else {
 		fmt.Println(`Next steps (order matters):
-  go mod tidy            # kernel/module deps may have moved
+  go mod tidy            # appkit/module deps may have moved
   mise run generate      # if .proto files changed
   go build ./... && go test ./...`)
 	}

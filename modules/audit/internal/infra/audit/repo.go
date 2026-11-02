@@ -8,8 +8,8 @@ import (
 	"time"
 
 	domainaudit "github.com/lynx-go/lynx-mods/modules/audit/domain/audit"
-	"github.com/lynx-go/lynx-start/contrib/bunx/buntx"
-	"github.com/lynx-go/lynx-start/crud"
+	"github.com/lynxland/appkit/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/crud"
 	"github.com/uptrace/bun"
 )
 

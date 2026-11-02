@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lynx-go/lynx-start/secretkey"
+	"github.com/lynxland/appkit/secretkey"
 )
 
 // DefaultDevSecret 是安装器写入 config.yaml 的开发占位密钥。
@@ -13,7 +13,7 @@ const DefaultDevSecret = "dev-only-session-secret-change-me"
 
 // Config 是 session 模块的配置段（契约③：自有段 session）。
 type Config struct {
-	// Secret 是令牌主密钥（kernel/secretkey 按 purpose 派生；与
+	// Secret 是令牌主密钥（appkit/secretkey 按 purpose 派生；与
 	// identity.secret 独立——两模块令牌天然互不通用）。
 	Secret string `mapstructure:"secret"`
 	// AccessTTL 是访问令牌有效期（无状态，吊销生效粒度）。

@@ -4,7 +4,7 @@ import "context"
 
 // Repository 是 Organization 聚合与成员事实的持久化端口（infra 实现，经
 // Assemble 注入）。方法一律接收 ctx：适配器从 ctx 取事务连接
-// （kernel/uow/buntx），端口签名不得出现驱动类型。
+// （appkit/uow/buntx），端口签名不得出现驱动类型。
 type Repository interface {
 	// Create 插入组织；slug 唯一冲突映射 ErrSlugTaken。
 	Create(ctx context.Context, o *Organization) error

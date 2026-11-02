@@ -165,10 +165,10 @@ import (
 )
 
 // Module 转发模块静态装配描述。
-func Module() kernel.Module { return api.Module() }
+func Module() appkit.Module { return api.Module() }
 
 // Assemble 转发模块动态装配。
-func Assemble(deps kernel.Deps) (kernel.Assembly, error) { return api.Assemble(deps) }
+func Assemble(deps appkit.Deps) (appkit.Assembly, error) { return api.Assemble(deps) }
 `, name, appModulePath, name)
 	return []byte(b.String())
 }

@@ -106,7 +106,7 @@ func cmdDoctor(args []string) error {
 		}
 		if item.KernelConstraint != "" {
 			if min, err := registry.ParseConstraint(item.KernelConstraint); err == nil {
-				have, err := appKernelVersion(appDir)
+				have, err := appkitVersion(appDir)
 				check(err == nil && registry.CompareVersions(have, min) >= 0,
 					"%s kernelConstraint >=%s satisfied (go.mod has %s)", mod.Name, min, have)
 			} else {

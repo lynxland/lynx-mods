@@ -21,9 +21,9 @@ import (
 	grpcapipolicy "github.com/lynx-go/grpcapi/policy"
 	grpcapiprotopolicy "github.com/lynx-go/grpcapi/policy/protopolicy"
 	grpcapiserver "github.com/lynx-go/grpcapi/server"
-	"github.com/lynx-go/lynx-start"
-	"github.com/lynx-go/lynx-start/chain"
-	"github.com/lynx-go/lynx-start/compose"
+	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/chain"
+	"github.com/lynxland/appkit/compose"
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -74,7 +74,7 @@ func setup(app lynx.App) error {
 	authnOpts := grpcapiauthn.Options{Enrichers: agg.Enrichers}
 
 	// 模块贡献拦截器 Stage（audit=50 等）时接管链构建——复刻 server 默认链
-	// 的知识在 chain.DefaultChain（I-08：修复经 kernel semver 推送，
+	// 的知识在 chain.DefaultChain（I-08：修复经 appkit semver 推送，
 	// scaffold 生成物不再持有这段易错逻辑）。
 	chain, err := chain.DefaultChain(logger, set, agg, authnOpts)
 	if err != nil {
@@ -112,7 +112,7 @@ func setup(app lynx.App) error {
 	return nil
 }
 
-func buildPolicies(ctx context.Context, installed []kernel.InstalledModule) (*grpcapipolicy.Set, error) {
+func buildPolicies(ctx context.Context, installed []appkit.InstalledModule) (*grpcapipolicy.Set, error) {
 	files := compose.PolicyFiles(compose.Descriptors(installed))
 	if len(files) == 0 {
 		return grpcapipolicy.NewSet()
@@ -126,7 +126,7 @@ func buildPolicies(ctx context.Context, installed []kernel.InstalledModule) (*gr
 // printRouteTable 启动期打印 HTTP 路由表（proto 的 google.api.http 注解驱动），
 // 免去翻 proto 找路径：方法、路径、RPC 全名与认证要求一屏可见。手写的
 // ExtraRoutes 与 gRPC 面（:9060）不在此列。
-func printRouteTable(installed []kernel.InstalledModule, set *grpcapipolicy.Set) {
+func printRouteTable(installed []appkit.InstalledModule, set *grpcapipolicy.Set) {
 	type routeRow struct{ method, path, rpc, auth string }
 	var rows []routeRow
 	for _, fd := range compose.PolicyFiles(compose.Descriptors(installed)) {

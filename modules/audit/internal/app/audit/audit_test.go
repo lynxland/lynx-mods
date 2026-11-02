@@ -9,10 +9,10 @@ import (
 	"time"
 
 	domainaudit "github.com/lynx-go/lynx-mods/modules/audit/domain/audit"
-	"github.com/lynx-go/lynx-start/clock"
-	"github.com/lynx-go/lynx-start/contrib/bunx/testutil"
-	"github.com/lynx-go/lynx-start/crud"
-	"github.com/lynx-go/lynx-start/events"
+	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/crud"
+	"github.com/lynxland/appkit/events"
 )
 
 // fakeRepo 记录调用供断言（List 固定返回一页）。

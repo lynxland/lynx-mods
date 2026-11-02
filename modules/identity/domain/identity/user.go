@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lynx-go/lynx-start/errcode"
+	"github.com/lynxland/appkit/errcode"
 )
 
 // space 是本模块的错误码区段（契约⑤）。
@@ -50,7 +50,7 @@ const (
 var emailRe = regexp.MustCompile(`^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$`)
 
 // User 是身份聚合（不变量：email 规范形态、状态合法）。
-// PasswordHash 是 kernel/password 的 Argon2id PHC 串；领域只见散列，
+// PasswordHash 是 appkit/password 的 Argon2id PHC 串；领域只见散列，
 // 明文口令不越过用例层。
 type User struct {
 	ID           string
@@ -83,7 +83,7 @@ func ValidatePassword(pw string) error {
 	return nil
 }
 
-// NewUser 构造新聚合（passwordHash 由用例层经 kernel/password 产生）。
+// NewUser 构造新聚合（passwordHash 由用例层经 appkit/password 产生）。
 // displayName 缺省取邮箱 local 部分。
 func NewUser(id, email, displayName, passwordHash string, now time.Time) (*User, error) {
 	email = NormalizeEmail(email)

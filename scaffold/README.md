@@ -1,6 +1,6 @@
 # {{.AppName}}
 
-基于 [lynx-mods](https://github.com/lynx-go/lynx-start) 模块基建的 Go 应用：
+基于 [lynx-mods](https://github.com/lynxland/lynx-mods) 模块基建的 Go 应用：
 lynx 运行时 + grpcapi 双面（gRPC + HTTP gateway）+ bun/Postgres + goose 迁移。
 English version below.
 
@@ -33,8 +33,8 @@ lynx-mods add <module>
 
 已装模块是源码，可直接改；要新增业务域，照 `demo` 模块的四层结构手写并登记到
 `modules/modules.go`。完整步骤见
-[module-authoring 指南](https://github.com/lynx-go/lynx-start/blob/main/docs/module-authoring.md)
-（[English](https://github.com/lynx-go/lynx-start/blob/main/docs/module-authoring.en.md)）。
+[module-authoring 指南](https://github.com/lynxland/lynx-mods/blob/main/docs/module-authoring.md)
+（[English](https://github.com/lynxland/lynx-mods/blob/main/docs/module-authoring.en.md)）。
 
 ## 配置
 
@@ -53,7 +53,7 @@ go run ./cmd/migrate -dsn <dsn> -down 1 -module demo
 
 # {{.AppName}} (English)
 
-A Go application built on the [lynx-mods](https://github.com/lynx-go/lynx-start)
+A Go application built on the [lynx-mods](https://github.com/lynxland/lynx-mods)
 module infrastructure: lynx runtime + grpcapi dual surface (gRPC + HTTP
 gateway) + bun/Postgres + goose migrations.
 
@@ -90,8 +90,8 @@ lynx-mods add <module>
 Installed modules are source code — edit them freely. To add a new business
 domain, follow the `demo` module's four-layer structure and register it in
 `modules/modules.go`. Full walkthrough:
-[module authoring guide](https://github.com/lynx-go/lynx-start/blob/main/docs/module-authoring.en.md)
-([中文](https://github.com/lynx-go/lynx-start/blob/main/docs/module-authoring.md)).
+[module authoring guide](https://github.com/lynxland/lynx-mods/blob/main/docs/module-authoring.en.md)
+([中文](https://github.com/lynxland/lynx-mods/blob/main/docs/module-authoring.md)).
 
 ## Configuration
 

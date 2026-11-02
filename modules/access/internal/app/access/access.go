@@ -13,9 +13,9 @@ import (
 
 	"github.com/lynx-go/lynx-mods/modules/access/domain/access"
 	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
-	"github.com/lynx-go/lynx-start/events"
-	"github.com/lynx-go/lynx-start/idgen"
-	"github.com/lynx-go/lynx-start/uow"
+	"github.com/lynxland/appkit/events"
+	"github.com/lynxland/appkit/idgen"
+	"github.com/lynxland/appkit/uow"
 )
 
 // UseCase 是授权模块的用例集。

@@ -11,7 +11,7 @@ import (
 	"github.com/lynx-go/lynx-mods/modules/access/domain/access"
 	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
 
-	"github.com/lynx-go/lynx-start/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/contrib/bunx/buntx"
 	"github.com/uptrace/bun"
 )
 

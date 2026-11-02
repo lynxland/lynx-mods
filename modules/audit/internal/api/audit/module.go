@@ -15,16 +15,16 @@ import (
 	"github.com/lynx-go/grpcapi/interceptor"
 	"github.com/lynx-go/grpcapi/server"
 	"github.com/lynx-go/lynx"
-	"github.com/lynx-go/lynx-start"
-	"github.com/lynx-go/lynx-start/contrib/bunx"
+	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/contrib/bunx"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// Module 返回静态装配描述。零 DependsOn：审计只依赖 kernel 契约
+// Module 返回静态装配描述。零 DependsOn：审计只依赖 appkit 契约
 // （Principal 语境/事件信封），主体与权限来自任何已装认证/授权模块。
-func Module() kernel.Module {
-	return kernel.Module{
+func Module() appkit.Module {
+	return appkit.Module{
 		Name:        "audit",
 		Description: "审计模块：RPC 拦截器自动记录 + 显式记录（同事务）+ 分页查询（append-only）",
 		Policies:    []protoreflect.FileDescriptor{auditv1.File_audit_v1_audit_proto},
@@ -36,12 +36,12 @@ func Module() kernel.Module {
 }
 
 // Assemble 构造动态装配产物：仓储 → 用例 → 处理器 + 异步写入器（拦截器
-// 路径的落库 Service）+ RPC 审计拦截器（Order=OrderAudit，kernel 预留槽位）。
-func Assemble(deps kernel.Deps) (kernel.Assembly, error) {
+// 路径的落库 Service）+ RPC 审计拦截器（Order=OrderAudit，appkit 预留槽位）。
+func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
 	repo := infraaudit.NewRepository(bunx.MustDB(deps))
 	uc := appaudit.New(repo, deps.Tx, deps.Events, nil)
 	writer := infraaudit.NewWriter(repo, deps.Logger)
-	return kernel.Assembly{
+	return appkit.Assembly{
 		Registrations: []server.Registration{newRegistration(NewService(uc))},
 		Services:      []lynx.Service{writer},
 		Stages:        []interceptor.Stage{NewRPCStage(writer, deps.Logger)},

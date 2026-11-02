@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lynx-go/lynx-start/errcode"
+	"github.com/lynxland/appkit/errcode"
 )
 
 // 事件目录（契约②）：与 Module().PublishedEvents、item.json 三方一致。
@@ -81,7 +81,7 @@ func NewRecord(id, actorID, actorEmail, action, resourceType, resourceID string,
 	}, nil
 }
 
-// Filter 是结构化查询过滤（列表端口的动态查询语义归模块，不进 kernel）。
+// Filter 是结构化查询过滤（列表端口的动态查询语义归模块，不进 appkit）。
 type Filter struct {
 	ActorID      string
 	Action       string

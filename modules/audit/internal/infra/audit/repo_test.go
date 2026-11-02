@@ -8,8 +8,8 @@ import (
 
 	domainaudit "github.com/lynx-go/lynx-mods/modules/audit/domain/audit"
 	"github.com/lynx-go/lynx-mods/modules/audit/internal/infra/audit/migrations"
-	"github.com/lynx-go/lynx-start/contrib/bunx/testutil"
-	"github.com/lynx-go/lynx-start/crud"
+	"github.com/lynxland/appkit/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/crud"
 )
 
 func newRec(t *testing.T, id, actorID, action string, at time.Time) *domainaudit.Record {

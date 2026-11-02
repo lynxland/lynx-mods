@@ -1,6 +1,6 @@
 # CI 门禁：本地与云上跑同一套命令（全部经 mise 任务，工具链钉版一致）。
 #   lint        golangci-lint + gofmt 漂移
-#   test        全模块单测 + 真实 Postgres 门控测试（LYNXSTART_TEST_PG_DSN）
+#   test        全模块单测 + 真实 Postgres 门控测试（APPKIT_TEST_PG_DSN）
 #   proto-drift genproto 与 proto 必须同步入库（buf 重新生成后 diff 为空）
 #   e2e         安装管线端到端：init → add demo+identity → buf → build/vet/test
 name: CI
@@ -52,7 +52,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      LYNXSTART_TEST_PG_DSN: postgres://ci:ci@127.0.0.1:5432/ci?sslmode=disable
+      APPKIT_TEST_PG_DSN: postgres://ci:ci@127.0.0.1:5432/ci?sslmode=disable
     steps:
       - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
