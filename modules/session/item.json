@@ -1,17 +1,17 @@
 {
   "name": "session",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "会话模块：可吊销登录会话（刷新令牌轮换 + 改密全局吊销），依赖 identity",
-  "modulePath": "github.com/lynx-go/lynx-mods/modules/session",
+  "modulePath": "github.com/lynxland/lynx-mods/modules/session",
   "moduleDependencies": [
     {
       "identity": ">=0.1.1"
     }
   ],
   "goDependencies": [
-    "github.com/lynx-go/lynx-start@v0.5.3",
-    "github.com/lynx-go/lynx-start/contrib/bunx@v0.1.3",
-    "github.com/lynx-go/grpcapi@v0.4.0"
+    "github.com/lynxland/appkit@v0.8.0",
+    "github.com/lynxland/appkit/contrib/bunx@v0.5.0",
+    "github.com/lynxland/grpcapi@v0.5.0"
   ],
   "configFragment": "session:\n  secret: \"dev-only-session-secret-change-me\"  # 令牌主密钥（与 identity 独立），生产必须更换\n  access_ttl: 15m   # 访问令牌（无状态，吊销生效粒度的上界）\n  refresh_ttl: 720h # 会话绝对时长（轮换不续期）\n  issuer: lynx-mods",
   "publishedEvents": [

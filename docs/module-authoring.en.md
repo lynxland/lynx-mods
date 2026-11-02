@@ -175,9 +175,9 @@ service TodoService {
 ```
 
 Policy annotation cheat sheet (`grpcapi/v1/policy.proto` resolves from the
-BSR via the `buf.build/lynx-go/grpcapi` dependency in `buf.yaml`; source of
+BSR via the `buf.build/lynxland/grpcapi` dependency in `buf.yaml`; source of
 truth is `proto/grpcapi/v1/policy.proto` in the grpcapi repo — neither
-modules nor apps vendor it, and Go types come from `github.com/lynx-go/grpcapi`):
+modules nor apps vendor it, and Go types come from `github.com/lynxland/grpcapi`):
 
 - `anonymous: true` — the method is public;
 - `permissions: [...]` (MATCH_ALL) / `roles: [...]` (MATCH_ANY) — take effect
@@ -294,8 +294,8 @@ explicit; there is no generated DI.
 Put the module into `modules/<name>/` of this repo as a **real Go module**:
 
 1. Ship its own `go.mod` (module path like
-   `github.com/lynx-go/lynx-mods/modules/<name>`), `buf.yaml`/`buf.gen.yaml`
-   (deps declare `buf.build/lynx-go/grpcapi`: policy.proto resolves from the
+   `github.com/lynxland/lynx-mods/modules/<name>`), `buf.yaml`/`buf.gen.yaml`
+   (deps declare `buf.build/lynxland/grpcapi`: policy.proto resolves from the
    BSR and is never vendored into the module), and committed genproto —
    compiled and tested inside this repo, so kernel breaking changes surface in
    this repo's CI instead of blowing up in some app at install time;
@@ -306,7 +306,7 @@ Put the module into `modules/<name>/` of this repo as a **real Go module**:
      "name": "todo",
      "version": "0.1.0",
      "description": "todo tasks",
-     "modulePath": "github.com/lynx-go/lynx-mods/modules/todo",
+     "modulePath": "github.com/lynxland/lynx-mods/modules/todo",
      "moduleDependencies": [],
      "goDependencies": [],
      "configFragment": "todo:\n  default_page_size: 50\n",

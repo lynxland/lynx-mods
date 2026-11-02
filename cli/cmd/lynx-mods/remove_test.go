@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lynx-go/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-mods/cli/internal/manifest"
 )
 
 func TestRevertModulesEntryRoundtrip(t *testing.T) {

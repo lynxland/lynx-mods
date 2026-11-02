@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	grpcapipolicy "github.com/lynx-go/grpcapi/policy"
-	grpcapiprotopolicy "github.com/lynx-go/grpcapi/policy/protopolicy"
+	grpcapipolicy "github.com/lynxland/grpcapi/policy"
+	grpcapiprotopolicy "github.com/lynxland/grpcapi/policy/protopolicy"
 )
 
 // TestPolicyBuildable 契约护栏：策略可构建 + 匿名面收敛（全部要求认证；

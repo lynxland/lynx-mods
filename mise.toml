@@ -115,14 +115,14 @@ WORK3="$(mktemp -d)"
   || { echo "update merge check failed"; exit 1; }
 (cd "$WORK3/updapp" \
   && "$WORK/lynx-mods" generate \
-  && go get github.com/lynx-go/lynx-start@v0.5.3 >/dev/null \
-  && go get github.com/lynx-go/lynx-start/contrib/bunx@v0.1.3 >/dev/null \
+  && go get github.com/lynxland/appkit@v0.8.0 >/dev/null \
+  && go get github.com/lynxland/appkit/contrib/bunx@v0.5.0 >/dev/null \
   && go mod tidy >/dev/null \
   && go build ./... && go vet ./...) \
   || { echo "update build check failed"; exit 1; }
 rm -rf "$WORK3"
 fi
-# init 已生成 go.mod（含 lynx-start v0.5.0 / contrib/bunx v0.1.0 / grpcapi v0.4.0 地板）。
+# init 已生成 go.mod（含 appkit v0.8.0 / contrib/bunx v0.5.0 / grpcapi v0.5.0 地板）。
 "$WORK/lynx-mods" generate
 go mod tidy >/dev/null
 go build ./... && go vet ./... && go test ./...

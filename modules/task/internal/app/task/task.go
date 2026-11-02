@@ -9,12 +9,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/lynx-go/lynx-mods/modules/organization/domain/organization"
-	"github.com/lynx-go/lynx-mods/modules/task/domain/task"
 	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/appkit/idgen"
 	"github.com/lynxland/appkit/uow"
+	"github.com/lynxland/lynx-mods/modules/organization/domain/organization"
+	"github.com/lynxland/lynx-mods/modules/task/domain/task"
 )
 
 // UseCase 是任务模块的用例集。

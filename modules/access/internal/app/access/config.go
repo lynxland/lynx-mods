@@ -3,7 +3,7 @@ package access
 import (
 	"fmt"
 
-	"github.com/lynx-go/lynx-mods/modules/access/domain/access"
+	"github.com/lynxland/lynx-mods/modules/access/domain/access"
 )
 
 // Config 是 access 模块的配置段（契约③：自有段 access）。角色目录在此

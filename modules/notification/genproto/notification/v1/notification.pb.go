@@ -7,7 +7,7 @@
 package notificationv1
 
 import (
-	_ "github.com/lynx-go/grpcapi/genproto/grpcapi/v1"
+	_ "github.com/lynxland/grpcapi/genproto/grpcapi/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -419,9 +419,9 @@ const file_notification_v1_notification_proto_rawDesc = "" +
 	"\x14MarkNotificationRead\x12,.notification.v1.MarkNotificationReadRequest\x1a\x16.google.protobuf.Empty\"@\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x022:\x01*\"-/v1/notifications/{notification_id}:mark-read\x12\xb3\x01\n" +
 	"\x18MarkAllNotificationsRead\x120.notification.v1.MarkAllNotificationsReadRequest\x1a1.notification.v1.MarkAllNotificationsReadResponse\"2\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/notifications:mark-all-readBi\xca\xf0\x19\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/notifications:mark-all-readBj\xca\xf0\x19\n" +
 	"\n" +
-	"\x06public \x02ZYgithub.com/lynx-go/lynx-mods/modules/notification/genproto/notification/v1;notificationv1b\x06proto3"
+	"\x06public \x02ZZgithub.com/lynxland/lynx-mods/modules/notification/genproto/notification/v1;notificationv1b\x06proto3"
 
 var (
 	file_notification_v1_notification_proto_rawDescOnce sync.Once

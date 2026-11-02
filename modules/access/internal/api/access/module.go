@@ -3,18 +3,18 @@ package access
 import (
 	"context"
 
-	"github.com/lynx-go/lynx-mods/modules/access/domain/access"
-	accessv1 "github.com/lynx-go/lynx-mods/modules/access/genproto/access/v1"
-	appaccess "github.com/lynx-go/lynx-mods/modules/access/internal/app/access"
-	infraaccess "github.com/lynx-go/lynx-mods/modules/access/internal/infra/access"
-	"github.com/lynx-go/lynx-mods/modules/access/internal/infra/access/migrations"
+	"github.com/lynxland/lynx-mods/modules/access/domain/access"
+	accessv1 "github.com/lynxland/lynx-mods/modules/access/genproto/access/v1"
+	appaccess "github.com/lynxland/lynx-mods/modules/access/internal/app/access"
+	infraaccess "github.com/lynxland/lynx-mods/modules/access/internal/infra/access"
+	"github.com/lynxland/lynx-mods/modules/access/internal/infra/access/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/lynx-go/grpcapi/authn"
-	"github.com/lynx-go/grpcapi/server"
 	"github.com/lynxland/appkit"
 	"github.com/lynxland/appkit/configkit"
 	"github.com/lynxland/appkit/contrib/bunx"
+	"github.com/lynxland/grpcapi/authn"
+	"github.com/lynxland/grpcapi/server"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )

@@ -7,7 +7,7 @@
 package accessv1
 
 import (
-	_ "github.com/lynx-go/grpcapi/genproto/grpcapi/v1"
+	_ "github.com/lynxland/grpcapi/genproto/grpcapi/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -332,9 +332,9 @@ const file_access_v1_access_proto_rawDesc = "" +
 	"\rListUserRoles\x12\x1f.access.v1.ListUserRolesRequest\x1a .access.v1.ListUserRolesResponse\"G\xda\xf0\x19\x1b\n" +
 	"\x192\x17access.assignment.write\x82\xd3\xe4\x93\x02\"\x12 /v1/access/users/{user_id}/roles\x12q\n" +
 	"\vListMyRoles\x12\x1d.access.v1.ListMyRolesRequest\x1a\x1e.access.v1.ListMyRolesResponse\"#\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/access/me/rolesBW\xca\xf0\x19\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/access/me/rolesBX\xca\xf0\x19\n" +
 	"\n" +
-	"\x06public \x02ZGgithub.com/lynx-go/lynx-mods/modules/access/genproto/access/v1;accessv1b\x06proto3"
+	"\x06public \x02ZHgithub.com/lynxland/lynx-mods/modules/access/genproto/access/v1;accessv1b\x06proto3"
 
 var (
 	file_access_v1_access_proto_rawDescOnce sync.Once

@@ -6,11 +6,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/lynx-go/lynx-mods/modules/access/domain/access"
-	accessv1 "github.com/lynx-go/lynx-mods/modules/access/genproto/access/v1"
-	appaccess "github.com/lynx-go/lynx-mods/modules/access/internal/app/access"
+	"github.com/lynxland/lynx-mods/modules/access/domain/access"
+	accessv1 "github.com/lynxland/lynx-mods/modules/access/genproto/access/v1"
+	appaccess "github.com/lynxland/lynx-mods/modules/access/internal/app/access"
 
-	"github.com/lynx-go/grpcapi/principal"
+	"github.com/lynxland/grpcapi/principal"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

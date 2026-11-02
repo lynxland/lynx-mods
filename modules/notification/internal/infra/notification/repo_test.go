@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lynx-go/lynx-mods/modules/notification/domain/notification"
-	"github.com/lynx-go/lynx-mods/modules/notification/internal/infra/notification/migrations"
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
+	"github.com/lynxland/lynx-mods/modules/notification/domain/notification"
+	"github.com/lynxland/lynx-mods/modules/notification/internal/infra/notification/migrations"
 )
 
 func TestRepo(t *testing.T) {

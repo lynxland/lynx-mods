@@ -4,7 +4,7 @@ deps:
   - buf.build/googleapis/googleapis
   # grpcapi 声明语法（policy.proto）经 BSR 供给：应用只 import 不持有，
   # 生成 inputs 仅 directory: proto，dep 文件不产码（Go 类型由 grpcapi Go 模块提供）。
-  - buf.build/lynx-go/grpcapi
+  - buf.build/lynxland/grpcapi
 modules:
   - path: proto
 lint:

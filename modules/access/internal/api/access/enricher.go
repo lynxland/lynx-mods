@@ -3,10 +3,10 @@ package access
 import (
 	"context"
 
-	appaccess "github.com/lynx-go/lynx-mods/modules/access/internal/app/access"
+	appaccess "github.com/lynxland/lynx-mods/modules/access/internal/app/access"
 
-	"github.com/lynx-go/grpcapi/authn"
-	"github.com/lynx-go/grpcapi/principal"
+	"github.com/lynxland/grpcapi/authn"
+	"github.com/lynxland/grpcapi/principal"
 )
 
 // PrincipalEnricher 在认证成功后往 Principal 注入 roles/permissions

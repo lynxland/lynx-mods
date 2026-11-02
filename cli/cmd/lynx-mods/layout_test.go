@@ -35,17 +35,17 @@ func TestRelocateModule(t *testing.T) {
 // TestModuleRewriter 断言五条结构化改写（含 genproto 与跨模块依赖）。
 func TestModuleRewriter(t *testing.T) {
 	canonicals := map[string]string{
-		"session":  "github.com/lynx-go/lynx-mods/modules/session",
-		"identity": "github.com/lynx-go/lynx-mods/modules/identity",
+		"session":  "github.com/lynxland/lynx-mods/modules/session",
+		"identity": "github.com/lynxland/lynx-mods/modules/identity",
 	}
 	rw := moduleRewriter("example.com/app", canonicals)
 	goSrc := `package x
 
 import (
-	"github.com/lynx-go/lynx-mods/modules/session/domain/session"
-	appsession "github.com/lynx-go/lynx-mods/modules/session/internal/app/session"
-	sessionv1 "github.com/lynx-go/lynx-mods/modules/session/genproto/session/v1"
-	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
+	"github.com/lynxland/lynx-mods/modules/session/domain/session"
+	appsession "github.com/lynxland/lynx-mods/modules/session/internal/app/session"
+	sessionv1 "github.com/lynxland/lynx-mods/modules/session/genproto/session/v1"
+	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
 )
 
 var _ = session.X
@@ -72,7 +72,7 @@ var _ = identity.User{}
 		}
 	}
 
-	protoSrc := `option go_package = "github.com/lynx-go/lynx-mods/modules/session/genproto/session/v1;sessionv1";`
+	protoSrc := `option go_package = "github.com/lynxland/lynx-mods/modules/session/genproto/session/v1;sessionv1";`
 	got = string(rw("proto/session/v1/session.proto", []byte(protoSrc)))
 	if !strings.Contains(got, `"example.com/app/genproto/session/v1;sessionv1"`) {
 		t.Errorf("go_package rewrite wrong: %s", got)
@@ -95,17 +95,18 @@ func TestCanonicalResidue(t *testing.T) {
 	}
 }
 
-// TestDualPrefixCompat 双前缀兼容（ADR-0006）：新 canonical（lynx-mods）与
-// 历史 tag（lynx-mods）两系的源码都要能经各自的 canonicals 正确改写——
-// .go import 与 .proto go_package 双路径同验。
+// TestDualPrefixCompat 多前缀兼容（ADR-0006）：新 canonical（lynxland/lynx-mods）、
+// 历史 tag（lynx-go/lynx-mods）与更早的（lynx-go/lynx-start）各系源码都要能经
+// 各自的 canonicals 正确改写——.go import 与 .proto go_package 双路径同验。
 func TestDualPrefixCompat(t *testing.T) {
 	for _, tc := range []struct {
 		name      string
 		canonical string
 		importPID string
 	}{
-		{"modern", "github.com/lynx-go/lynx-mods/modules/identity", "github.com/lynx-go/lynx-mods/modules/"},
-		{"legacy", "github.com/lynx-go/lynx-mods/modules/identity", "github.com/lynx-go/lynx-mods/modules/"},
+		{"modern", "github.com/lynxland/lynx-mods/modules/identity", "github.com/lynxland/lynx-mods/modules/"},
+		{"legacy-lynx-go", "github.com/lynx-go/lynx-mods/modules/identity", "github.com/lynx-go/lynx-mods/modules/"},
+		{"legacy-lynx-start", "github.com/lynx-go/lynx-start/modules/identity", "github.com/lynx-go/lynx-start/modules/"},
 	} {
 		rw := moduleRewriter("example.com/app", map[string]string{"identity": tc.canonical})
 		goSrc := `import "` + tc.canonical + `/domain/identity"`
@@ -134,6 +135,7 @@ func TestBridgeModule(t *testing.T) {
 	got := string(bridgeModule("example.com/app", "identity"))
 	for _, want := range []string{
 		"package identity",
+		`"github.com/lynxland/appkit"`,
 		`api "example.com/app/modules/identity/internal/api"`,
 		"func Module() appkit.Module { return api.Module() }",
 		"func Assemble(deps appkit.Deps) (appkit.Assembly, error) { return api.Assemble(deps) }",

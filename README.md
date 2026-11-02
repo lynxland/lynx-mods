@@ -1,6 +1,6 @@
 # lynx-mods
 
-[![CI](https://github.com/lynx-go/lynx-mods/actions/workflows/ci.yml/badge.svg)](https://github.com/lynx-go/lynx-mods/actions/workflows/ci.yml)
+[![CI](https://github.com/lynxland/lynx-mods/actions/workflows/ci.yml/badge.svg)](https://github.com/lynxland/lynx-mods/actions/workflows/ci.yml)
 
 **lynx 生态的 shadcn 式模块分发**：registry + 安装 CLI + 源码模块。为任何基于
 lynx 的 Go 后端应用提供按需安装的业务域源码——安装后代码归你所有，随便改。
@@ -31,10 +31,10 @@ shadcn/ui 是参照系：Radix 是库、组件是源码、registry 是分发协�
 
 ```bash
 # 安装 CLI
-go install github.com/lynx-go/lynx-mods/cli/cmd/lynx-mods@latest
+go install github.com/lynxland/lynx-mods/cli/cmd/lynx-mods@latest
 
 # registry 两种形态：本仓库目录，或 git URL（自动 clone 到 ~/.cache/lynx-mods 并增量刷新）
-export LYNXMODS_REGISTRY=https://github.com/lynx-go/lynx-mods.git
+export LYNXMODS_REGISTRY=https://github.com/lynxland/lynx-mods.git
 
 # 生成应用骨架 + 安装模块
 lynx-mods init myapp --module github.com/acme/myapp --registry <本仓库目录>
@@ -73,7 +73,8 @@ mise run dev             # gRPC :9060 / HTTP :8080
 
 - registry 是 **git 协议**：`--registry` 接受任意 git URL（https/git@/ssh/file），
   第三方可自建私有 registry（模块经 kernelConstraint 声明对契约版本的约束）。
-- 安装器**双前缀兼容**（ADR-0006）：lynx-start 时代的历史 tag
+- 安装器**多前缀兼容**（ADR-0006）：lynx-go 机构时代的历史 tag
+  （`github.com/lynx-go/lynx-mods/modules/*`）与更早 lynx-start 时代的
   （`github.com/lynx-go/lynx-start/modules/*`）照常安装与改写。
 
 写自己的业务域模块：见 [docs/module-authoring.md](docs/module-authoring.md)

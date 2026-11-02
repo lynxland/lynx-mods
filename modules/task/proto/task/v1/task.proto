@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package task.v1;
 
-option go_package = "github.com/lynx-go/lynx-mods/modules/task/genproto/task/v1;taskv1";
+option go_package = "github.com/lynxland/lynx-mods/modules/task/genproto/task/v1;taskv1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";

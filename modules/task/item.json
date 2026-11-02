@@ -2,20 +2,20 @@
   "configFragment": "",
   "description": "任务模块：组织内任务（创建/查询/完成/删除，完成与删除限创建者）——第一个组织挂靠业务资源（ADR-0008 姿势首秀），依赖 organization",
   "goDependencies": [
-    "github.com/lynx-go/lynx-start@v0.5.0",
-    "github.com/lynx-go/lynx-start/contrib/bunx@v0.1.0"
+    "github.com/lynxland/appkit@v0.8.0",
+    "github.com/lynxland/appkit/contrib/bunx@v0.5.0"
   ],
-  "kernelConstraint": ">=0.5.0",
+  "kernelConstraint": ">=0.8.0",
   "moduleDependencies": [
     {
       "organization": ">=0.1.0"
     }
   ],
-  "modulePath": "github.com/lynx-go/lynx-mods/modules/task",
+  "modulePath": "github.com/lynxland/lynx-mods/modules/task",
   "name": "task",
   "publishedEvents": [
     "task.task.created",
     "task.task.completed"
   ],
-  "version": "0.2.0"
+  "version": "0.3.0"
 }

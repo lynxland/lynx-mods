@@ -6,11 +6,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
-	identityv1 "github.com/lynx-go/lynx-mods/modules/identity/genproto/identity/v1"
-	appidentity "github.com/lynx-go/lynx-mods/modules/identity/internal/app/identity"
+	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
+	identityv1 "github.com/lynxland/lynx-mods/modules/identity/genproto/identity/v1"
+	appidentity "github.com/lynxland/lynx-mods/modules/identity/internal/app/identity"
 
-	"github.com/lynx-go/grpcapi/principal"
+	"github.com/lynxland/grpcapi/principal"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

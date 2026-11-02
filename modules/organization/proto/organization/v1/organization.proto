@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package organization.v1;
 
-option go_package = "github.com/lynx-go/lynx-mods/modules/organization/genproto/organization/v1;organizationv1";
+option go_package = "github.com/lynxland/lynx-mods/modules/organization/genproto/organization/v1;organizationv1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";

@@ -10,11 +10,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lynx-go/lynx-mods/cli/internal/lock"
-	"github.com/lynx-go/lynx-mods/cli/internal/manifest"
-	"github.com/lynx-go/lynx-mods/cli/internal/merge"
-	"github.com/lynx-go/lynx-mods/cli/internal/registry"
-	"github.com/lynx-go/lynx-mods/cli/internal/render"
+	"github.com/lynxland/lynx-mods/cli/internal/lock"
+	"github.com/lynxland/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-mods/cli/internal/merge"
+	"github.com/lynxland/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-mods/cli/internal/render"
 )
 
 // cmdUpdate: lynx-mods update <module>[@<version>] —— 把已装模块更新到

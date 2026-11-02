@@ -7,7 +7,7 @@
 package auditv1
 
 import (
-	_ "github.com/lynx-go/grpcapi/genproto/grpcapi/v1"
+	_ "github.com/lynxland/grpcapi/genproto/grpcapi/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -387,9 +387,9 @@ const file_audit_v1_audit_proto_rawDesc = "" +
 	"\x06Record\x12\x17.audit.v1.RecordRequest\x1a\x15.audit.v1.AuditRecord\"#\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/v1/audit:record\x12\x8a\x01\n" +
 	"\x10ListAuditRecords\x12!.audit.v1.ListAuditRecordsRequest\x1a\".audit.v1.ListAuditRecordsResponse\"/\xda\xf0\x19\x12\n" +
-	"\x102\x0eaudit.log.read\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/audit/recordsBT\xca\xf0\x19\n" +
+	"\x102\x0eaudit.log.read\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/audit/recordsBU\xca\xf0\x19\n" +
 	"\n" +
-	"\x06public \x02ZDgithub.com/lynx-go/lynx-mods/modules/audit/genproto/audit/v1;auditv1b\x06proto3"
+	"\x06public \x02ZEgithub.com/lynxland/lynx-mods/modules/audit/genproto/audit/v1;auditv1b\x06proto3"
 
 var (
 	file_audit_v1_audit_proto_rawDescOnce sync.Once

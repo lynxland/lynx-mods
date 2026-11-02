@@ -3,20 +3,20 @@ package identity
 import (
 	"context"
 
-	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
-	identityv1 "github.com/lynx-go/lynx-mods/modules/identity/genproto/identity/v1"
-	appidentity "github.com/lynx-go/lynx-mods/modules/identity/internal/app/identity"
-	infraindentity "github.com/lynx-go/lynx-mods/modules/identity/internal/infra/identity"
-	"github.com/lynx-go/lynx-mods/modules/identity/internal/infra/identity/migrations"
+	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
+	identityv1 "github.com/lynxland/lynx-mods/modules/identity/genproto/identity/v1"
+	appidentity "github.com/lynxland/lynx-mods/modules/identity/internal/app/identity"
+	infraindentity "github.com/lynxland/lynx-mods/modules/identity/internal/infra/identity"
+	"github.com/lynxland/lynx-mods/modules/identity/internal/infra/identity/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/lynx-go/grpcapi/authn"
-	"github.com/lynx-go/grpcapi/server"
 	"github.com/lynxland/appkit"
 	"github.com/lynxland/appkit/clock"
 	"github.com/lynxland/appkit/configkit"
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/jwt"
+	"github.com/lynxland/grpcapi/authn"
+	"github.com/lynxland/grpcapi/server"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )

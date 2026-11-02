@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/lynx-go/lynx-mods/cli/internal/manifest"
-	"github.com/lynx-go/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-mods/cli/internal/registry"
 )
 
 // cmdAudit: lynx-mods audit —— 安全公告门禁。模块安装即断连，已装用户

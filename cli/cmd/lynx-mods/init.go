@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/lynx-go/lynx-mods/cli/internal/manifest"
-	"github.com/lynx-go/lynx-mods/cli/internal/registry"
-	"github.com/lynx-go/lynx-mods/cli/internal/render"
+	"github.com/lynxland/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-mods/cli/internal/render"
 )
 
 // goDirective 是生成应用 go.mod 的 go 指令——与 lynx-start go.mod 一致，
@@ -20,9 +20,9 @@ const goDirective = "1.26.8"
 // grpcapi openapi 免费挂载）。升级 appkit / grpcapi 破坏 scaffold 模板时
 // 同步抬这里——应用 tidy 走 MVS 取 max，地板保证新 init 的应用直接可编译。
 const (
-	appkitFloor  = "v0.7.0" // appkit 根 module（契约 + compose/chain + storeerr）
-	bunxFloor    = "v0.4.0" // appkit/contrib/bunx（scaffold 装配 + MapError）
-	grpcapiFloor = "v0.4.0"
+	appkitFloor  = "v0.8.0" // appkit 根 module（契约 + compose/chain + storeerr）
+	bunxFloor    = "v0.5.0" // appkit/contrib/bunx（scaffold 装配 + MapError）
+	grpcapiFloor = "v0.5.0"
 )
 
 // cmdInit: lynx-mods init <name> —— 从 scaffold 生成应用骨架。
@@ -77,7 +77,7 @@ func cmdInit(args []string) error {
 	if _, statErr := os.Stat(goMod); statErr == nil {
 		fmt.Println("skip   go.mod (already exists)")
 	} else {
-		content := fmt.Sprintf("module %s\n\ngo %s\n\nrequire (\n\tgithub.com/lynx-go/grpcapi %s\n\tgithub.com/lynxland/appkit %s\n\tgithub.com/lynxland/appkit/contrib/bunx %s\n)\n", modulePath, goDirective, grpcapiFloor, appkitFloor, bunxFloor)
+		content := fmt.Sprintf("module %s\n\ngo %s\n\nrequire (\n\tgithub.com/lynxland/grpcapi %s\n\tgithub.com/lynxland/appkit %s\n\tgithub.com/lynxland/appkit/contrib/bunx %s\n)\n", modulePath, goDirective, grpcapiFloor, appkitFloor, bunxFloor)
 		if err := os.WriteFile(goMod, []byte(content), 0o644); err != nil {
 			return err
 		}

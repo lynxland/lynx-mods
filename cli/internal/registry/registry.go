@@ -155,7 +155,7 @@ func (i *Item) CanonicalModulePath() string {
 	if i.ModulePath != "" {
 		return i.ModulePath
 	}
-	return "github.com/lynx-go/lynx-mods/modules/" + i.Name
+	return "github.com/lynxland/lynx-mods/modules/" + i.Name
 }
 
 // Load 读 registryDir/registry/registry.json。

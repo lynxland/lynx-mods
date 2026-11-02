@@ -7,13 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
 	"github.com/lynxland/appkit/clock"
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/appkit/idgen"
 	"github.com/lynxland/appkit/jwt"
 	"github.com/lynxland/appkit/password"
 	"github.com/lynxland/appkit/uow"
+	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
 )
 
 // PurposeAccessToken 是访问令牌的密钥派生用途标签（appkit/secretkey 的

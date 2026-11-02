@@ -3,16 +3,16 @@ package demo
 import (
 	"context"
 
-	"github.com/lynx-go/lynx-mods/modules/demo/domain/demo"
-	demov1 "github.com/lynx-go/lynx-mods/modules/demo/genproto/demo/v1"
-	appdemo "github.com/lynx-go/lynx-mods/modules/demo/internal/app/demo"
-	infrademo "github.com/lynx-go/lynx-mods/modules/demo/internal/infra/demo"
-	"github.com/lynx-go/lynx-mods/modules/demo/internal/infra/demo/migrations"
+	"github.com/lynxland/lynx-mods/modules/demo/domain/demo"
+	demov1 "github.com/lynxland/lynx-mods/modules/demo/genproto/demo/v1"
+	appdemo "github.com/lynxland/lynx-mods/modules/demo/internal/app/demo"
+	infrademo "github.com/lynxland/lynx-mods/modules/demo/internal/infra/demo"
+	"github.com/lynxland/lynx-mods/modules/demo/internal/infra/demo/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/lynx-go/grpcapi/server"
 	"github.com/lynxland/appkit"
 	"github.com/lynxland/appkit/contrib/bunx"
+	"github.com/lynxland/grpcapi/server"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )

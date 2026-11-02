@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lynx-go/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-mods/cli/internal/registry"
 )
 
 // cmdRegistry: 模块贡献者在 registry 仓库内使用的登记/体检命令。

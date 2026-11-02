@@ -3,16 +3,16 @@ package organization
 import (
 	"context"
 
-	"github.com/lynx-go/lynx-mods/modules/organization/domain/organization"
-	organizationv1 "github.com/lynx-go/lynx-mods/modules/organization/genproto/organization/v1"
-	apporganization "github.com/lynx-go/lynx-mods/modules/organization/internal/app/organization"
-	infraorganization "github.com/lynx-go/lynx-mods/modules/organization/internal/infra/organization"
-	"github.com/lynx-go/lynx-mods/modules/organization/internal/infra/organization/migrations"
+	"github.com/lynxland/lynx-mods/modules/organization/domain/organization"
+	organizationv1 "github.com/lynxland/lynx-mods/modules/organization/genproto/organization/v1"
+	apporganization "github.com/lynxland/lynx-mods/modules/organization/internal/app/organization"
+	infraorganization "github.com/lynxland/lynx-mods/modules/organization/internal/infra/organization"
+	"github.com/lynxland/lynx-mods/modules/organization/internal/infra/organization/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/lynx-go/grpcapi/server"
 	"github.com/lynxland/appkit"
 	"github.com/lynxland/appkit/contrib/bunx"
+	"github.com/lynxland/grpcapi/server"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )

@@ -156,9 +156,9 @@ service TodoService {
 ```
 
 策略注解速查（`grpcapi/v1/policy.proto` 经 `buf.yaml` 的
-`buf.build/lynx-go/grpcapi` 依赖从 BSR 解析，事实源是 grpcapi 仓
+`buf.build/lynxland/grpcapi` 依赖从 BSR 解析，事实源是 grpcapi 仓
 `proto/grpcapi/v1/policy.proto`——模块与应用都不 vendor 该文件，Go 类型
-由 `github.com/lynx-go/grpcapi` 提供）：
+由 `github.com/lynxland/grpcapi` 提供）：
 
 - `anonymous: true`——方法公开；
 - `permissions: [...]`（MATCH_ALL）/ `roles: [...]`（MATCH_ANY）——装了
@@ -263,8 +263,8 @@ import todo "<app-module-path>/modules/todo"
 把模块放进本仓 `modules/<name>/` 并让它成为**真实 Go module**：
 
 1. 自带 `go.mod`（module path 形如
-   `github.com/lynx-go/lynx-mods/modules/<name>`）、`buf.yaml`/`buf.gen.yaml`
-   （deps 声明 `buf.build/lynx-go/grpcapi`：policy.proto 从 BSR 解析，
+   `github.com/lynxland/lynx-mods/modules/<name>`）、`buf.yaml`/`buf.gen.yaml`
+   （deps 声明 `buf.build/lynxland/grpcapi`：policy.proto 从 BSR 解析，
    不 vendor 进模块），genproto 入库——在本仓可编译、可测试，kernel 破坏性
    变更在本仓 CI 立即暴露，而不是等到某个应用安装时才炸；
 2. 写 `item.json`：
@@ -274,7 +274,7 @@ import todo "<app-module-path>/modules/todo"
      "name": "todo",
      "version": "0.1.0",
      "description": "待办任务",
-     "modulePath": "github.com/lynx-go/lynx-mods/modules/todo",
+     "modulePath": "github.com/lynxland/lynx-mods/modules/todo",
      "moduleDependencies": [],
      "goDependencies": [],
      "configFragment": "todo:\n  default_page_size: 50\n",

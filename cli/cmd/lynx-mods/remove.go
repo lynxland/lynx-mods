@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lynx-go/lynx-mods/cli/internal/lock"
-	"github.com/lynx-go/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-mods/cli/internal/lock"
+	"github.com/lynxland/lynx-mods/cli/internal/manifest"
 )
 
 // cmdRemove: lynx-mods remove <module> —— 卸载模块：回退 modules.go 注入

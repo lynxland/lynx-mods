@@ -11,13 +11,13 @@ import (
 	"errors"
 	"time"
 
-	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
-	"github.com/lynx-go/lynx-mods/modules/session/domain/session"
 	"github.com/lynxland/appkit/clock"
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/appkit/idgen"
 	"github.com/lynxland/appkit/jwt"
 	"github.com/lynxland/appkit/uow"
+	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
+	"github.com/lynxland/lynx-mods/modules/session/domain/session"
 )
 
 // 令牌派生用途（appkit/secretkey purpose 域隔离）：访问/刷新两类令牌

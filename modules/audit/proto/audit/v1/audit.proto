@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package audit.v1;
 
-option go_package = "github.com/lynx-go/lynx-mods/modules/audit/genproto/audit/v1;auditv1";
+option go_package = "github.com/lynxland/lynx-mods/modules/audit/genproto/audit/v1;auditv1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";

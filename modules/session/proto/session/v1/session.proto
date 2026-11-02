@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package session.v1;
 
-option go_package = "github.com/lynx-go/lynx-mods/modules/session/genproto/session/v1;sessionv1";
+option go_package = "github.com/lynxland/lynx-mods/modules/session/genproto/session/v1;sessionv1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";

@@ -13,10 +13,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lynx-go/lynx-mods/cli/internal/lock"
-	"github.com/lynx-go/lynx-mods/cli/internal/manifest"
-	"github.com/lynx-go/lynx-mods/cli/internal/registry"
-	"github.com/lynx-go/lynx-mods/cli/internal/render"
+	"github.com/lynxland/lynx-mods/cli/internal/lock"
+	"github.com/lynxland/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-mods/cli/internal/render"
 )
 
 // 注入锚点（与 scaffold/internal/modules/modules.go、configs/config.yaml 模板一致）。

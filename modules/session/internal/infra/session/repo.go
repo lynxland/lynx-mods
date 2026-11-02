@@ -7,10 +7,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/lynx-go/lynx-mods/modules/session/domain/session"
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
 	"github.com/lynxland/appkit/occ"
+	"github.com/lynxland/lynx-mods/modules/session/domain/session"
 	"github.com/uptrace/bun"
 )
 

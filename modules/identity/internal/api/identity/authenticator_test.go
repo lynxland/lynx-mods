@@ -6,13 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
-	appidentity "github.com/lynx-go/lynx-mods/modules/identity/internal/app/identity"
+	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
+	appidentity "github.com/lynxland/lynx-mods/modules/identity/internal/app/identity"
 
-	"github.com/lynx-go/grpcapi/authn"
 	"github.com/lynxland/appkit/clock"
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/appkit/jwt"
+	"github.com/lynxland/grpcapi/authn"
 )
 
 // miniRepo 是认证器测试的最小仓储桩。

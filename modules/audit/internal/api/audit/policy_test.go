@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	grpcapipolicy "github.com/lynx-go/grpcapi/policy"
-	grpcapiprotopolicy "github.com/lynx-go/grpcapi/policy/protopolicy"
+	grpcapipolicy "github.com/lynxland/grpcapi/policy"
+	grpcapiprotopolicy "github.com/lynxland/grpcapi/policy/protopolicy"
 )
 
 // TestPolicyBuildable 契约护栏：proto 注解必须能通过 grpcapi 的策略构建

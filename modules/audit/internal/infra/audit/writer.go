@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/lynx-go/lynx"
-	domainaudit "github.com/lynx-go/lynx-mods/modules/audit/domain/audit"
+	"github.com/lynxland/lynx"
+	domainaudit "github.com/lynxland/lynx-mods/modules/audit/domain/audit"
 )
 
 // Writer 是拦截器路径的异步审计写入器：RPC 线程只投递（非阻塞），批量

@@ -3,16 +3,16 @@ package task
 import (
 	"context"
 
-	"github.com/lynx-go/lynx-mods/modules/task/domain/task"
-	taskv1 "github.com/lynx-go/lynx-mods/modules/task/genproto/task/v1"
-	apptask "github.com/lynx-go/lynx-mods/modules/task/internal/app/task"
-	infratask "github.com/lynx-go/lynx-mods/modules/task/internal/infra/task"
-	"github.com/lynx-go/lynx-mods/modules/task/internal/infra/task/migrations"
+	"github.com/lynxland/lynx-mods/modules/task/domain/task"
+	taskv1 "github.com/lynxland/lynx-mods/modules/task/genproto/task/v1"
+	apptask "github.com/lynxland/lynx-mods/modules/task/internal/app/task"
+	infratask "github.com/lynxland/lynx-mods/modules/task/internal/infra/task"
+	"github.com/lynxland/lynx-mods/modules/task/internal/infra/task/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/lynx-go/grpcapi/server"
 	"github.com/lynxland/appkit"
 	"github.com/lynxland/appkit/contrib/bunx"
+	"github.com/lynxland/grpcapi/server"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )

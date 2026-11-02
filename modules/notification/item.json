@@ -2,10 +2,10 @@
   "configFragment": "",
   "description": "通知模块：订阅身份/组织事件自动生成站内通知（渲染快照落库）+ 自助查询与已读标记，依赖 identity+organization",
   "goDependencies": [
-    "github.com/lynx-go/lynx-start@v0.5.0",
-    "github.com/lynx-go/lynx-start/contrib/bunx@v0.1.0"
+    "github.com/lynxland/appkit@v0.8.0",
+    "github.com/lynxland/appkit/contrib/bunx@v0.5.0"
   ],
-  "kernelConstraint": ">=0.5.0",
+  "kernelConstraint": ">=0.8.0",
   "moduleDependencies": [
     {
       "identity": ">=0.1.1"
@@ -14,7 +14,7 @@
       "organization": ">=0.1.1"
     }
   ],
-  "modulePath": "github.com/lynx-go/lynx-mods/modules/notification",
+  "modulePath": "github.com/lynxland/lynx-mods/modules/notification",
   "name": "notification",
-  "version": "0.2.0"
+  "version": "0.3.0"
 }

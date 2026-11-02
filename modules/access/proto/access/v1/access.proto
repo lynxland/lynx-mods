@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package access.v1;
 
-option go_package = "github.com/lynx-go/lynx-mods/modules/access/genproto/access/v1;accessv1";
+option go_package = "github.com/lynxland/lynx-mods/modules/access/genproto/access/v1;accessv1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";

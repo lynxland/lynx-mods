@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lynx-go/lynx-mods/modules/notification/domain/notification"
+	"github.com/lynxland/lynx-mods/modules/notification/domain/notification"
 )
 
 // fakeRepo 是内存仓储（不透明实现：测试只经端口交互）。

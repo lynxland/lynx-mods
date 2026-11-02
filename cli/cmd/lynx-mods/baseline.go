@@ -21,10 +21,10 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/lynx-go/lynx-mods/cli/internal/lock"
-	"github.com/lynx-go/lynx-mods/cli/internal/manifest"
-	"github.com/lynx-go/lynx-mods/cli/internal/registry"
-	"github.com/lynx-go/lynx-mods/cli/internal/render"
+	"github.com/lynxland/lynx-mods/cli/internal/lock"
+	"github.com/lynxland/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-mods/cli/internal/render"
 )
 
 // syncBaseline 在 add 后同步基线：本次被 upstream 写入的文件（Created）刷新

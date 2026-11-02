@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lynx-go/lynx-mods/cli/internal/lock"
-	"github.com/lynx-go/lynx-mods/cli/internal/manifest"
-	"github.com/lynx-go/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-mods/cli/internal/lock"
+	"github.com/lynxland/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-mods/cli/internal/registry"
 )
 
 // cmdDoctor: lynx-mods doctor —— 应用与安装清单的一致性体检（只读）：

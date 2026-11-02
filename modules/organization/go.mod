@@ -1,19 +1,19 @@
-module github.com/lynx-go/lynx-mods/modules/organization
+module github.com/lynxland/lynx-mods/modules/organization
 
 go 1.26.8
 
 // 模块在本仓内以真实代码形态维护（可编译、可测试、CI 覆盖）。
 // 契约库（lynx-start 核心 + contrib/bunx）以版本依赖消费（ADR-0006）。
 // DependsOn: identity——本模块消费其 domain 端口（契约②允许的跨模块 import）。
-replace github.com/lynx-go/lynx-mods/modules/identity => ../identity
+replace github.com/lynxland/lynx-mods/modules/identity => ../identity
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
-	github.com/lynx-go/grpcapi v0.4.0
-	github.com/lynx-go/grpcapi/genproto v0.3.0
-	github.com/lynx-go/lynx-mods/modules/identity v0.0.0
-	github.com/lynxland/appkit v0.7.0
-	github.com/lynxland/appkit/contrib/bunx v0.4.0
+	github.com/lynxland/appkit v0.8.0
+	github.com/lynxland/appkit/contrib/bunx v0.5.0
+	github.com/lynxland/grpcapi v0.5.0
+	github.com/lynxland/grpcapi/genproto v0.4.0
+	github.com/lynxland/lynx-mods/modules/identity v0.0.0
 	github.com/uptrace/bun v1.3.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20261005182115-fad411399dd8
 	google.golang.org/grpc v1.84.0
@@ -34,9 +34,9 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/lynx-go/lynx v1.20.0 // indirect
-	github.com/lynx-go/lynx/contrib/cluster v1.0.0 // indirect
-	github.com/lynx-go/lynx/contrib/schedule v1.7.0 // indirect
+	github.com/lynxland/lynx v1.21.0 // indirect
+	github.com/lynxland/lynx/contrib/cluster v1.21.0 // indirect
+	github.com/lynxland/lynx/contrib/schedule v1.21.0 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/pressly/goose/v3 v3.29.0 // indirect

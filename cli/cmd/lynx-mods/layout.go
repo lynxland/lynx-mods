@@ -40,28 +40,33 @@ func relocateModule(name, rel string) (string, error) {
 }
 
 // canonicalModulesPrefixes 是 registry 模块规范路径的公共前缀集合（残留扫描用）。
-// 双前缀兼容（ADR-0006）：新 canonical 是 lynx-go/lynx-mods/modules/，历史
-// tag（lynx-mods 时代原样搬入）仍是 lynx-go/lynx-start/modules/——两系都
-// 必须被改写与残留扫描覆盖。
+// 多前缀兼容（ADR-0006）：新 canonical 是 lynxland/lynx-mods/modules/（GitHub
+// 机构更名 lynx-go → lynxland 后）；历史 tag 仍是 lynx-go/lynx-mods/modules/，
+// 更早的（lynx-mods 时代原样搬入）是 lynx-go/lynx-start/modules/——各系都
+// 必须被改写与残留扫描覆盖。首项为新 canonical。
 var canonicalModulesPrefixes = []string{
+	"github.com/lynxland/lynx-mods/modules/",
 	"github.com/lynx-go/lynx-mods/modules/",
 	"github.com/lynx-go/lynx-start/modules/",
 }
 
-// canonicalBothPrefixes 返回 canonical 在两系前缀下的形态（canonical 本身
-// 优先；仅当命中已知前缀系时给出另一系）。
+// canonicalBothPrefixes 返回 canonical 在各前缀系下的形态（canonical 本身
+// 优先；仅当命中已知前缀系时给出其余各系）。
 func canonicalBothPrefixes(canonical string) []string {
-	const modsSuffix = "modules/"
-	newer := "github.com/lynx-go/lynx-mods/" + modsSuffix
-	legacy := "github.com/lynx-go/lynx-start/" + modsSuffix
-	switch {
-	case strings.HasPrefix(canonical, newer):
-		return []string{canonical, legacy + strings.TrimPrefix(canonical, newer)}
-	case strings.HasPrefix(canonical, legacy):
-		return []string{canonical, newer + strings.TrimPrefix(canonical, legacy)}
-	default:
-		return []string{canonical}
+	for _, p := range canonicalModulesPrefixes {
+		rest, ok := strings.CutPrefix(canonical, p)
+		if !ok {
+			continue
+		}
+		out := []string{canonical}
+		for _, q := range canonicalModulesPrefixes {
+			if q != p {
+				out = append(out, q+rest)
+			}
+		}
+		return out
 	}
+	return []string{canonical}
 }
 
 // moduleRewriter 构造逐依赖的结构化导入改写（add/update 共用）。
@@ -159,7 +164,7 @@ func bridgeModule(appModulePath, name string) []byte {
 package %s
 
 import (
-	"github.com/lynx-go/lynx-start"
+	"github.com/lynxland/appkit"
 
 	api "%s/modules/%s/internal/api"
 )

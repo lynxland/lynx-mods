@@ -1,8 +1,8 @@
 {
   "name": "demo",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "样例模块：单实体 CRUD，验证装配管线（不承载业务语义）",
-  "modulePath": "github.com/lynx-go/lynx-mods/modules/demo",
+  "modulePath": "github.com/lynxland/lynx-mods/modules/demo",
   "moduleDependencies": [],
   "goDependencies": [],
   "configFragment": "",

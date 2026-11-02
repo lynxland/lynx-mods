@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lynx-go/lynx-mods/modules/access/domain/access"
-	"github.com/lynx-go/lynx-mods/modules/identity/domain/identity"
 	"github.com/lynxland/appkit/events"
+	"github.com/lynxland/lynx-mods/modules/access/domain/access"
+	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
 )
 
 // fakeRepo 是分配仓储端口的内存实现。

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	grpcapiserver "github.com/lynx-go/grpcapi/server"
-	"github.com/lynx-go/lynx"
+	grpcapiserver "github.com/lynxland/grpcapi/server"
+	"github.com/lynxland/lynx"
 	"github.com/lynxland/appkit"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
 	"github.com/lynxland/appkit/events"

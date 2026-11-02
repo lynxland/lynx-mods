@@ -5,18 +5,18 @@ package audit
 import (
 	"context"
 
-	domainaudit "github.com/lynx-go/lynx-mods/modules/audit/domain/audit"
-	auditv1 "github.com/lynx-go/lynx-mods/modules/audit/genproto/audit/v1"
-	appaudit "github.com/lynx-go/lynx-mods/modules/audit/internal/app/audit"
-	infraaudit "github.com/lynx-go/lynx-mods/modules/audit/internal/infra/audit"
-	"github.com/lynx-go/lynx-mods/modules/audit/internal/infra/audit/migrations"
+	domainaudit "github.com/lynxland/lynx-mods/modules/audit/domain/audit"
+	auditv1 "github.com/lynxland/lynx-mods/modules/audit/genproto/audit/v1"
+	appaudit "github.com/lynxland/lynx-mods/modules/audit/internal/app/audit"
+	infraaudit "github.com/lynxland/lynx-mods/modules/audit/internal/infra/audit"
+	"github.com/lynxland/lynx-mods/modules/audit/internal/infra/audit/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/lynx-go/grpcapi/interceptor"
-	"github.com/lynx-go/grpcapi/server"
-	"github.com/lynx-go/lynx"
 	"github.com/lynxland/appkit"
 	"github.com/lynxland/appkit/contrib/bunx"
+	"github.com/lynxland/grpcapi/interceptor"
+	"github.com/lynxland/grpcapi/server"
+	"github.com/lynxland/lynx"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )

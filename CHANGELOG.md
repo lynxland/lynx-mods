@@ -4,6 +4,29 @@
 registry/scaffold）整体迁入。以下历史条目承接 lynx-start 时代的根 CHANGELOG
 （全仓视角）；kernel 谱系的 changelog 留在 lynx-start。条目按发布时间倒序。
 
+## 全模块 v0.3.0 + cli v0.4.0（2026-11-02，appkit 基座 + 机构更名 lynxland）
+
+- **module path 换系（GitHub 机构更名 lynx-go → lynxland）**：8 个模块与 cli
+  `github.com/lynx-go/lynx-mods/...` → `github.com/lynxland/lynx-mods/...`
+  （含 .proto go_package 与 genproto 重生成；BSR dep 换
+  `buf.build/lynxland/grpcapi`，buf.lock 重锁）。
+- **appkit 基座切换随版发布**（`53373d6`）：契约依赖统一为 appkit v0.8.0 +
+  contrib/bunx v0.5.0 + grpcapi v0.5.0（genproto v0.4.0）+ lynx v1.21.0；
+  item.json 的 goDependencies 同步换 appkit（此前仍列 lynx-start），
+  kernelConstraint `>=0.5.0` → `>=0.8.0`（appkit v0.8.0 起依赖 lynxland
+  路径的 lynx 类型，与旧基座混用必然类型不兼容）。
+- **cli**：init 地板 appkit v0.8.0 / contrib/bunx v0.5.0 / grpcapi v0.5.0，
+  生成 go.mod 指新路径；安装器前缀兼容扩为三系——lynxland/lynx-mods（新
+  canonical）+ lynx-go/lynx-mods + lynx-go/lynx-start（历史 tag），
+  `canonicalBothPrefixes` 泛化为按前缀表求其余各系；`TestDualPrefixCompat`
+  复原 legacy 行（此前两行经批量替换成同值，实际未测 legacy 前缀）。
+- **修复**：`bridgeModule` 生成的桥接包仍 import `github.com/lynx-go/lynx-start`
+  （包名 `kernel`）却用 `appkit.` 限定符——`add` 生成的应用编译失败
+  （`53373d6` 遗漏）；改 import `github.com/lynxland/appkit`，
+  `TestBridgeModule` 增 import 断言钉住。`test:scaffold` update 构建段的
+  `go get` 同步由 lynx-start 换 appkit。
+- 历史条目与 ADR 按既定政策保留旧名。
+
 ## cli v0.3.1 + session v0.2.1（2026-11-01，dogfood 首循环③）
 
 - **cli：安装期自动应用 goDependencies**（ADR-0006 分发器改进提前落地）：
