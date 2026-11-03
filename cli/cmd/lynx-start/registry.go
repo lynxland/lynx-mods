@@ -9,22 +9,22 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lynxland/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-start/cli/internal/registry"
 )
 
 // cmdRegistry: 模块贡献者在 registry 仓库内使用的登记/体检命令。
 //
-//	lynx-mods registry add <module-dir>   一处输入三处一致：item.json 骨架
+//	lynx-start registry add <module-dir>   一处输入三处一致：item.json 骨架
 //	                                      （缺时生成）+ registry.json 登记 + go.work use
-//	lynx-mods registry check              三处一致性体检（CI 可用，问题即非零退出）
+//	lynx-start registry check              三处一致性体检（CI 可用，问题即非零退出）
 func cmdRegistry(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: lynx-mods registry <add|check> [--registry <repo-root>] [<module-dir>]")
+		return fmt.Errorf("usage: lynx-start registry <add|check> [--registry <repo-root>] [<module-dir>]")
 	}
 	sub := args[0]
 	rest := args[1:]
 	fs := flag.NewFlagSet("registry "+sub, flag.ContinueOnError)
-	registryDir := fs.String("registry", os.Getenv("LYNXMODS_REGISTRY"), "lynx-mods repo root (the directory containing registry/ and go.work)")
+	registryDir := fs.String("registry", os.Getenv("LYNXSTART_REGISTRY"), "lynx-start repo root (the directory containing registry/ and go.work)")
 	rest = reorderArgs(map[string]bool{"registry": true}, rest)
 	if err := fs.Parse(rest); err != nil {
 		return err
@@ -37,17 +37,17 @@ func cmdRegistry(args []string) error {
 		}
 	}
 	if *registryDir == "" {
-		return fmt.Errorf("--registry is required (or run from inside the lynx-mods repo, or set LYNXMODS_REGISTRY)")
+		return fmt.Errorf("--registry is required (or run from inside the lynx-start repo, or set LYNXSTART_REGISTRY)")
 	}
 	switch sub {
 	case "add":
 		if fs.NArg() != 1 {
-			return fmt.Errorf("usage: lynx-mods registry add <module-dir> (e.g. modules/todo)")
+			return fmt.Errorf("usage: lynx-start registry add <module-dir> (e.g. modules/todo)")
 		}
 		return registryAdd(*registryDir, fs.Arg(0))
 	case "check":
 		if fs.NArg() != 0 {
-			return fmt.Errorf("usage: lynx-mods registry check")
+			return fmt.Errorf("usage: lynx-start registry check")
 		}
 		return registryCheck(*registryDir)
 	default:
@@ -248,7 +248,7 @@ func registryCheck(root string) error {
 	goWorkRaw, _ := os.ReadFile(filepath.Join(root, "go.work"))
 	goWork := string(goWorkRaw)
 
-	fmt.Printf("lynx-mods registry check: %s (%d items)\n", root, len(idx.Items))
+	fmt.Printf("lynx-start registry check: %s (%d items)\n", root, len(idx.Items))
 	// 先全量收集登记名再做依赖检查（依赖检查与登记顺序无关——
 	// registry.json 按字母序排列时，依赖模块可能排在声明方之后）。
 	registered := map[string]bool{}

@@ -446,9 +446,9 @@ const file_session_v1_session_proto_rawDesc = "" +
 	"\x06Logout\x12\x19.session.v1.LogoutRequest\x1a\x16.google.protobuf.Empty\"%\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/session:logout\x12s\n" +
 	"\tLogoutAll\x12\x1c.session.v1.LogoutAllRequest\x1a\x1d.session.v1.LogoutAllResponse\")\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/session:logout-allB[\xca\xf0\x19\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/session:logout-allB\\\xca\xf0\x19\n" +
 	"\n" +
-	"\x06public \x02ZKgithub.com/lynxland/lynx-mods/modules/session/genproto/session/v1;sessionv1b\x06proto3"
+	"\x06public \x02ZLgithub.com/lynxland/lynx-start/modules/session/genproto/session/v1;sessionv1b\x06proto3"
 
 var (
 	file_session_v1_session_proto_rawDescOnce sync.Once

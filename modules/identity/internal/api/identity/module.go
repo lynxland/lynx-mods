@@ -3,11 +3,11 @@ package identity
 import (
 	"context"
 
-	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
-	identityv1 "github.com/lynxland/lynx-mods/modules/identity/genproto/identity/v1"
-	appidentity "github.com/lynxland/lynx-mods/modules/identity/internal/app/identity"
-	infraindentity "github.com/lynxland/lynx-mods/modules/identity/internal/infra/identity"
-	"github.com/lynxland/lynx-mods/modules/identity/internal/infra/identity/migrations"
+	"github.com/lynxland/lynx-start/modules/identity/domain/identity"
+	identityv1 "github.com/lynxland/lynx-start/modules/identity/genproto/identity/v1"
+	appidentity "github.com/lynxland/lynx-start/modules/identity/internal/app/identity"
+	infraindentity "github.com/lynxland/lynx-start/modules/identity/internal/infra/identity"
+	"github.com/lynxland/lynx-start/modules/identity/internal/infra/identity/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"
@@ -36,7 +36,7 @@ func Module() appkit.Module {
 			Defaults: map[string]any{
 				"secret":    appidentity.DefaultDevSecret,
 				"token_ttl": "30m",
-				"issuer":    "lynx-mods",
+				"issuer":    "lynx-start",
 			},
 		},
 	}

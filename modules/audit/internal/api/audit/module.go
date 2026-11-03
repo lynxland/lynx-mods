@@ -5,11 +5,11 @@ package audit
 import (
 	"context"
 
-	domainaudit "github.com/lynxland/lynx-mods/modules/audit/domain/audit"
-	auditv1 "github.com/lynxland/lynx-mods/modules/audit/genproto/audit/v1"
-	appaudit "github.com/lynxland/lynx-mods/modules/audit/internal/app/audit"
-	infraaudit "github.com/lynxland/lynx-mods/modules/audit/internal/infra/audit"
-	"github.com/lynxland/lynx-mods/modules/audit/internal/infra/audit/migrations"
+	domainaudit "github.com/lynxland/lynx-start/modules/audit/domain/audit"
+	auditv1 "github.com/lynxland/lynx-start/modules/audit/genproto/audit/v1"
+	appaudit "github.com/lynxland/lynx-start/modules/audit/internal/app/audit"
+	infraaudit "github.com/lynxland/lynx-start/modules/audit/internal/infra/audit"
+	"github.com/lynxland/lynx-start/modules/audit/internal/infra/audit/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"

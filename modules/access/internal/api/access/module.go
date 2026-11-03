@@ -3,11 +3,11 @@ package access
 import (
 	"context"
 
-	"github.com/lynxland/lynx-mods/modules/access/domain/access"
-	accessv1 "github.com/lynxland/lynx-mods/modules/access/genproto/access/v1"
-	appaccess "github.com/lynxland/lynx-mods/modules/access/internal/app/access"
-	infraaccess "github.com/lynxland/lynx-mods/modules/access/internal/infra/access"
-	"github.com/lynxland/lynx-mods/modules/access/internal/infra/access/migrations"
+	"github.com/lynxland/lynx-start/modules/access/domain/access"
+	accessv1 "github.com/lynxland/lynx-start/modules/access/genproto/access/v1"
+	appaccess "github.com/lynxland/lynx-start/modules/access/internal/app/access"
+	infraaccess "github.com/lynxland/lynx-start/modules/access/internal/infra/access"
+	"github.com/lynxland/lynx-start/modules/access/internal/infra/access/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"

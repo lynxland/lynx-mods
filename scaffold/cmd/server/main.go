@@ -1,5 +1,5 @@
-// {{.AppName}} 服务入口：装配已安装的 lynx-mods 模块并托管生命周期。
-// 本文件由 lynx-mods init 生成，后续基本不再变——模块增减只改 modules/modules.go。
+// {{.AppName}} 服务入口：装配已安装的 lynx-start 模块并托管生命周期。
+// 本文件由 lynx-start init 生成，后续基本不再变——模块增减只改 modules/modules.go。
 package main
 
 import (

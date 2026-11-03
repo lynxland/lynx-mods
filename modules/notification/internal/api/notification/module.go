@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lynxland/lynx-mods/modules/notification/domain/notification"
-	notificationv1 "github.com/lynxland/lynx-mods/modules/notification/genproto/notification/v1"
-	appnotification "github.com/lynxland/lynx-mods/modules/notification/internal/app/notification"
-	infranotification "github.com/lynxland/lynx-mods/modules/notification/internal/infra/notification"
-	"github.com/lynxland/lynx-mods/modules/notification/internal/infra/notification/migrations"
+	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
+	notificationv1 "github.com/lynxland/lynx-start/modules/notification/genproto/notification/v1"
+	appnotification "github.com/lynxland/lynx-start/modules/notification/internal/app/notification"
+	infranotification "github.com/lynxland/lynx-start/modules/notification/internal/infra/notification"
+	"github.com/lynxland/lynx-start/modules/notification/internal/infra/notification/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"

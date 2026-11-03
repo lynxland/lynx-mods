@@ -1,9 +1,9 @@
-module github.com/lynxland/lynx-mods/modules/demo
+module github.com/lynxland/lynx-start/modules/demo
 
 go 1.26.8
 
 // 模块在本仓内以真实代码形态维护（可编译、可测试、CI 覆盖）。
-// 契约库（lynx-start 核心 + contrib/bunx）以版本依赖消费（ADR-0006）。
+// 契约库（appkit + contrib/bunx）以版本依赖消费（ADR-0006）。
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
 	github.com/lynxland/appkit v0.8.0

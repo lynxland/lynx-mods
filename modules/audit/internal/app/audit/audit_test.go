@@ -12,7 +12,7 @@ import (
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
 	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/events"
-	domainaudit "github.com/lynxland/lynx-mods/modules/audit/domain/audit"
+	domainaudit "github.com/lynxland/lynx-start/modules/audit/domain/audit"
 )
 
 // fakeRepo 记录调用供断言（List 固定返回一页）。

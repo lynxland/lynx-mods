@@ -6,12 +6,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/lynxland/lynx-mods/modules/session/domain/session"
-	sessionv1 "github.com/lynxland/lynx-mods/modules/session/genproto/session/v1"
-	appsession "github.com/lynxland/lynx-mods/modules/session/internal/app/session"
+	"github.com/lynxland/lynx-start/modules/session/domain/session"
+	sessionv1 "github.com/lynxland/lynx-start/modules/session/genproto/session/v1"
+	appsession "github.com/lynxland/lynx-start/modules/session/internal/app/session"
 
 	"github.com/lynxland/grpcapi/principal"
-	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
+	"github.com/lynxland/lynx-start/modules/identity/domain/identity"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

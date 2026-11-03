@@ -1,4 +1,4 @@
-// Package lock 维护应用侧安装锁（.lynx-mods/lock.json）：每模块的解析
+// Package lock 维护应用侧安装锁（.lynx-start/lock.json）：每模块的解析
 // 版本、来源（tag / worktree）与 commit、基线文件的 sha256。供应链审计的
 // 最小闭环——「往应用贴源码」必须可事后核验：
 //
@@ -37,7 +37,7 @@ type Lock struct {
 
 // Path 返回锁文件路径。
 func Path(appDir string) string {
-	return filepath.Join(appDir, ".lynx-mods", "lock.json")
+	return filepath.Join(appDir, ".lynx-start", "lock.json")
 }
 
 // Load 读锁；文件不存在返回空锁（旧应用无锁，跳过校验语义）。

@@ -6,9 +6,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/lynxland/lynx-mods/modules/access/domain/access"
-	accessv1 "github.com/lynxland/lynx-mods/modules/access/genproto/access/v1"
-	appaccess "github.com/lynxland/lynx-mods/modules/access/internal/app/access"
+	"github.com/lynxland/lynx-start/modules/access/domain/access"
+	accessv1 "github.com/lynxland/lynx-start/modules/access/genproto/access/v1"
+	appaccess "github.com/lynxland/lynx-start/modules/access/internal/app/access"
 
 	"github.com/lynxland/grpcapi/principal"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"

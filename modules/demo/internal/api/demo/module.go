@@ -3,11 +3,11 @@ package demo
 import (
 	"context"
 
-	"github.com/lynxland/lynx-mods/modules/demo/domain/demo"
-	demov1 "github.com/lynxland/lynx-mods/modules/demo/genproto/demo/v1"
-	appdemo "github.com/lynxland/lynx-mods/modules/demo/internal/app/demo"
-	infrademo "github.com/lynxland/lynx-mods/modules/demo/internal/infra/demo"
-	"github.com/lynxland/lynx-mods/modules/demo/internal/infra/demo/migrations"
+	"github.com/lynxland/lynx-start/modules/demo/domain/demo"
+	demov1 "github.com/lynxland/lynx-start/modules/demo/genproto/demo/v1"
+	appdemo "github.com/lynxland/lynx-start/modules/demo/internal/app/demo"
+	infrademo "github.com/lynxland/lynx-start/modules/demo/internal/infra/demo"
+	"github.com/lynxland/lynx-start/modules/demo/internal/infra/demo/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"

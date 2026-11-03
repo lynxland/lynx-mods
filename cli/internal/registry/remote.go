@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// 远端 registry：--registry / LYNXMODS_REGISTRY 接受 git URL（https://…、
+// 远端 registry：--registry / LYNXSTART_REGISTRY 接受 git URL（https://…、
 // git@…:…、ssh://…、*.git），clone 到用户缓存目录后按本地路径使用；
 // 已缓存则 fetch --tags + reset --hard origin/HEAD 增量刷新。tag 版本解析
 //（modules/<m>/v<x.y.z>）对缓存目录天然生效。
@@ -37,7 +37,7 @@ func Resolve(raw string) (string, error) {
 		return "", fmt.Errorf("resolve registry cache dir: %w", err)
 	}
 	sum := sha256.Sum256([]byte(raw))
-	dir := filepath.Join(cacheRoot, "lynx-mods", "registry", hex.EncodeToString(sum[:])[:12])
+	dir := filepath.Join(cacheRoot, "lynx-start", "registry", hex.EncodeToString(sum[:])[:12])
 	if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
 		if err := refreshClone(dir); err != nil {
 			return "", err

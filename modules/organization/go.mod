@@ -1,11 +1,11 @@
-module github.com/lynxland/lynx-mods/modules/organization
+module github.com/lynxland/lynx-start/modules/organization
 
 go 1.26.8
 
 // 模块在本仓内以真实代码形态维护（可编译、可测试、CI 覆盖）。
-// 契约库（lynx-start 核心 + contrib/bunx）以版本依赖消费（ADR-0006）。
+// 契约库（appkit + contrib/bunx）以版本依赖消费（ADR-0006）。
 // DependsOn: identity——本模块消费其 domain 端口（契约②允许的跨模块 import）。
-replace github.com/lynxland/lynx-mods/modules/identity => ../identity
+replace github.com/lynxland/lynx-start/modules/identity => ../identity
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
@@ -13,7 +13,7 @@ require (
 	github.com/lynxland/appkit/contrib/bunx v0.5.0
 	github.com/lynxland/grpcapi v0.5.0
 	github.com/lynxland/grpcapi/genproto v0.4.0
-	github.com/lynxland/lynx-mods/modules/identity v0.0.0
+	github.com/lynxland/lynx-start/modules/identity v0.0.0
 	github.com/uptrace/bun v1.3.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20261005182115-fad411399dd8
 	google.golang.org/grpc v1.84.0

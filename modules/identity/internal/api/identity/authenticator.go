@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	appidentity "github.com/lynxland/lynx-mods/modules/identity/internal/app/identity"
+	appidentity "github.com/lynxland/lynx-start/modules/identity/internal/app/identity"
 
 	"github.com/lynxland/appkit/clock"
 	"github.com/lynxland/appkit/jwt"

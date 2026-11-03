@@ -1,5 +1,10 @@
 # Launch post draft (Show HN / r/golang)
 
+
+> 语境注（2026-11-03）：本文写于拆分与两次更名之前——文中 lynx-start 指当时
+> 全仓项目（今 appkit + 本仓），`lynx-start` 命令为现 CLI 前身（曾随仓更名
+> 为 lynx-mods，2026-11-03 起复名 lynx-start）。仓库链接均指旧仓，发布前
+> 需按届时真实名称/URL 重写。
 > 发布素材初稿（2026-10-26）。标题二选一；正文按 Show HN 惯例短而实，
 > 细节由 README 承接。发布前用真实账号跑一遍 quickstart 再贴命令。
 

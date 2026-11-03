@@ -9,7 +9,7 @@ import (
 
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
 	"github.com/lynxland/appkit/crud"
-	domainaudit "github.com/lynxland/lynx-mods/modules/audit/domain/audit"
+	domainaudit "github.com/lynxland/lynx-start/modules/audit/domain/audit"
 	"github.com/uptrace/bun"
 )
 

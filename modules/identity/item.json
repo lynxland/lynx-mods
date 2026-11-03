@@ -1,15 +1,15 @@
 {
   "name": "identity",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "身份模块：注册/登录（Argon2id + HS256 JWT）/自助改密，并向应用贡献 Bearer 认证器",
-  "modulePath": "github.com/lynxland/lynx-mods/modules/identity",
+  "modulePath": "github.com/lynxland/lynx-start/modules/identity",
   "moduleDependencies": [],
   "goDependencies": [
     "github.com/lynxland/appkit@v0.8.0",
     "github.com/lynxland/appkit/contrib/bunx@v0.5.0",
     "github.com/lynxland/grpcapi@v0.5.0"
   ],
-  "configFragment": "identity:\n  secret: \"dev-only-identity-secret-change-me\"  # 令牌主密钥，生产必须更换\n  token_ttl: 30m   # 无吊销机制（v0.1），保持短时效\n  issuer: lynx-mods",
+  "configFragment": "identity:\n  secret: \"dev-only-identity-secret-change-me\"  # 令牌主密钥，生产必须更换\n  token_ttl: 30m   # 无吊销机制（v0.1），保持短时效\n  issuer: lynx-start",
   "publishedEvents": [
     "identity.user.created",
     "identity.user.password-changed"

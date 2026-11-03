@@ -16,7 +16,7 @@ import (
 // 冲突时结果是带 <<<<<<< yours / ======= / >>>>>>> theirs 标记的文本，
 // 交由调用方落盘并提示用户解决。
 func File(local, base, other []byte) (merged []byte, conflicts int, err error) {
-	dir, err := os.MkdirTemp("", "lynx-mods-merge-")
+	dir, err := os.MkdirTemp("", "lynx-start-merge-")
 	if err != nil {
 		return nil, 0, err
 	}

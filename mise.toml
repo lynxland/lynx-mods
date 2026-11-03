@@ -1,4 +1,4 @@
-# lynx-mods 开发工具链与任务（mise-en-place）
+# lynx-start 开发工具链与任务（mise-en-place）
 #
 #   mise install          安装钉版工具链（go / buf / golangci-lint）
 #   mise tasks            列出全部任务
@@ -60,14 +60,14 @@ run = '''
 ROOT="$PWD"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-(cd cli && go build -o "$WORK/lynx-mods" ./cmd/lynx-mods)
+(cd cli && go build -o "$WORK/lynx-start" ./cmd/lynx-start)
 cd "$WORK"
-"$WORK/lynx-mods" init e2eapp --module example.com/e2eapp --registry "$ROOT" >/dev/null
+"$WORK/lynx-start" init e2eapp --module example.com/e2eapp --registry "$ROOT" >/dev/null
 cd e2eapp
 mise trust >/dev/null 2>&1 || true
-# 模块组合可经 LYNXMODS_E2E_MODULES 覆盖（CI 组合矩阵：单模块/依赖边/全量）。
-MODULES="${LYNXMODS_E2E_MODULES:-demo identity session access audit organization notification task}"
-for m in $MODULES; do "$WORK/lynx-mods" add "$m" --registry "$ROOT" >/dev/null; done
+# 模块组合可经 LYNXSTART_E2E_MODULES 覆盖（CI 组合矩阵：单模块/依赖边/全量）。
+MODULES="${LYNXSTART_E2E_MODULES:-demo identity session access audit organization notification task}"
+for m in $MODULES; do "$WORK/lynx-start" add "$m" --registry "$ROOT" >/dev/null; done
 # 依赖负路径：session 依赖 identity，干净应用上直接装必须被拒。
 # 依赖负路径与 update 场景以 identity 为主角：组合不含 identity 时跳过。
 case " $MODULES " in
@@ -77,11 +77,11 @@ esac
 if [ -z "${SKIP_IDENTITY_SCENARIOS:-}" ]; then
 WORK2="$(mktemp -d)"
 (cd "$WORK2" \
-  && "$WORK/lynx-mods" init depapp --module example.com/depapp --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" init depapp --module example.com/depapp --registry "$ROOT" >/dev/null \
   && cd depapp \
-  && ! "$WORK/lynx-mods" add session --registry "$ROOT" >/dev/null 2>&1 \
-  && "$WORK/lynx-mods" add identity@0.1.0 --registry "$ROOT" >/dev/null \
-  && ! "$WORK/lynx-mods" add session --registry "$ROOT" >/dev/null 2>&1) \
+  && ! "$WORK/lynx-start" add session --registry "$ROOT" >/dev/null 2>&1 \
+  && "$WORK/lynx-start" add identity@0.1.0 --registry "$ROOT" >/dev/null \
+  && ! "$WORK/lynx-start" add session --registry "$ROOT" >/dev/null 2>&1) \
   || { echo "dependency check failed"; exit 1; }
 rm -rf "$WORK2"
 # 版本约束负路径：organization@0.1.0（旧 tag，载荷无 organization_name）
@@ -89,11 +89,11 @@ rm -rf "$WORK2"
 # organization>=0.1.1——安装期必须被拒（I-16 版本范围机制实战场景）。
 WORK2B="$(mktemp -d)"
 (cd "$WORK2B" \
-  && "$WORK/lynx-mods" init depapp2 --module example.com/depapp2 --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" init depapp2 --module example.com/depapp2 --registry "$ROOT" >/dev/null \
   && cd depapp2 \
-  && "$WORK/lynx-mods" add identity --registry "$ROOT" >/dev/null \
-  && "$WORK/lynx-mods" add organization@0.1.0 --registry "$ROOT" >/dev/null \
-  && ! "$WORK/lynx-mods" add notification --registry "$ROOT" >/dev/null 2>&1) \
+  && "$WORK/lynx-start" add identity --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" add organization@0.1.0 --registry "$ROOT" >/dev/null \
+  && ! "$WORK/lynx-start" add notification --registry "$ROOT" >/dev/null 2>&1) \
   || { echo "version constraint check failed"; exit 1; }
 rm -rf "$WORK2B"
 # update e2e：装 tag 旧版 → 本地定制 → update 到工作区新版 → 断言三方合并
@@ -102,19 +102,19 @@ rm -rf "$WORK2B"
 # 锻炼安装器双前缀兼容（.go import 与 .proto go_package 双改写路径）。
 WORK3="$(mktemp -d)"
 (cd "$WORK3" \
-  && "$WORK/lynx-mods" init updapp --module example.com/updapp --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" init updapp --module example.com/updapp --registry "$ROOT" >/dev/null \
   && cd updapp \
-  && "$WORK/lynx-mods" add identity@0.1.0 --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" add identity@0.1.0 --registry "$ROOT" >/dev/null \
   && grep -q 'const dummyHash' modules/identity/internal/app/identity.go \
   && printf '\n// localCustomMark marks an app-side edit kept by the update merge.\nconst localCustomMark = "e2e-update"\n' >> modules/identity/internal/app/identity.go \
-  && "$WORK/lynx-mods" update identity --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" update identity --registry "$ROOT" >/dev/null \
   && [ ! -e proto/grpcapi ] \
   && grep -q 'localCustomMark' modules/identity/internal/app/identity.go \
   && grep -q 'password.DummyHash()' modules/identity/internal/app/identity.go \
   && [ "$(grep -c 'const dummyHash' modules/identity/internal/app/identity.go)" = "0" ]) \
   || { echo "update merge check failed"; exit 1; }
 (cd "$WORK3/updapp" \
-  && "$WORK/lynx-mods" generate \
+  && "$WORK/lynx-start" generate \
   && go get github.com/lynxland/appkit@v0.8.0 >/dev/null \
   && go get github.com/lynxland/appkit/contrib/bunx@v0.5.0 >/dev/null \
   && go mod tidy >/dev/null \
@@ -123,7 +123,7 @@ WORK3="$(mktemp -d)"
 rm -rf "$WORK3"
 fi
 # init 已生成 go.mod（含 appkit v0.8.0 / contrib/bunx v0.5.0 / grpcapi v0.5.0 地板）。
-"$WORK/lynx-mods" generate
+"$WORK/lynx-start" generate
 go mod tidy >/dev/null
 go build ./... && go vet ./... && go test ./...
 # remove e2e：负路径（identity 被 session/access 依赖必须拒绝）、正路径
@@ -132,13 +132,13 @@ go build ./... && go vet ./... && go test ./...
 case " $MODULES " in
   *" identity "*" audit "*)
   (cd "$WORK/e2eapp" \
-    && ! "$WORK/lynx-mods" remove identity --registry "$ROOT" >/dev/null 2>&1 \
-    && "$WORK/lynx-mods" remove audit --registry "$ROOT" >/dev/null \
+    && ! "$WORK/lynx-start" remove identity --registry "$ROOT" >/dev/null 2>&1 \
+    && "$WORK/lynx-start" remove audit --registry "$ROOT" >/dev/null \
     && go build ./... && go vet ./...) \
     || { echo "remove check failed"; exit 1; }
   ;;
 esac
-"$WORK/lynx-mods" doctor --dir "$WORK/e2eapp" --registry "$ROOT" >/dev/null \
+"$WORK/lynx-start" doctor --dir "$WORK/e2eapp" --registry "$ROOT" >/dev/null \
   || { echo "doctor check failed"; exit 1; }
 echo "scaffold e2e: OK（init→add→generate→build→vet→test + update/remove/doctor 全绿）"
 '''

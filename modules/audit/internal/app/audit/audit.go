@@ -11,7 +11,7 @@ import (
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/appkit/idgen"
 	"github.com/lynxland/appkit/uow"
-	domainaudit "github.com/lynxland/lynx-mods/modules/audit/domain/audit"
+	domainaudit "github.com/lynxland/lynx-start/modules/audit/domain/audit"
 )
 
 // UseCase 是审计模块的用例集。

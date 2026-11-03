@@ -26,7 +26,7 @@ type Config struct {
 func (c *Config) ApplyDefaults() {
 	c.Secret = DefaultDevSecret
 	c.TokenTTL = 30 * time.Minute
-	c.Issuer = "lynx-mods"
+	c.Issuer = "lynx-start"
 }
 
 // Validate fail-fast 校验（组合根调用）。

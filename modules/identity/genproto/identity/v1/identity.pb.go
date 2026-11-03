@@ -539,9 +539,9 @@ const file_identity_v1_identity_proto_rawDesc = "" +
 	"\x05GetMe\x12\x19.identity.v1.GetMeRequest\x1a\x1a.identity.v1.GetMeResponse\"\x1f\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/identity/me\x12y\n" +
 	"\x0eChangePassword\x12\".identity.v1.ChangePasswordRequest\x1a\x16.google.protobuf.Empty\"+\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02\x1d:\x01*2\x18/v1/identity/me/passwordB^\xca\xf0\x19\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02\x1d:\x01*2\x18/v1/identity/me/passwordB_\xca\xf0\x19\n" +
 	"\n" +
-	"\x06public \x02ZNgithub.com/lynxland/lynx-mods/modules/identity/genproto/identity/v1;identityv1b\x06proto3"
+	"\x06public \x02ZOgithub.com/lynxland/lynx-start/modules/identity/genproto/identity/v1;identityv1b\x06proto3"
 
 var (
 	file_identity_v1_identity_proto_rawDescOnce sync.Once

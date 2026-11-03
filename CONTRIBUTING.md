@@ -7,8 +7,8 @@
 2. **登记**(一处输入三处一致,item.json 骨架 / registry.json / go.work):
 
    ```bash
-   lynx-mods registry add modules/<name>
-   lynx-mods registry check        # 三处一致性体检(可入 CI)
+   lynx-start registry add modules/<name>
+   lynx-start registry check        # 三处一致性体检(可入 CI)
    ```
 
 3. **补齐清单**:填 item.json 的 `description` 与 `publishedEvents`
@@ -24,7 +24,7 @@
 
 模块安装即断连,已装用户**只能靠公告**得知安全修复。修复合入后,在
 `registry/advisories.json` 追加条目(affectedVersions 精确列出受影响版本,
-不写范围);应用侧 `lynx-mods doctor` / `lynx-mods audit` 比对已装版本
+不写范围);应用侧 `lynx-start doctor` / `lynx-start audit` 比对已装版本
 报告。安全敏感实现优先下沉 kernel(semver 推修复),公告兜底模块侧残余。
 
 ## 发布 kernel / cli / English docs
@@ -41,8 +41,8 @@
 2. **Register** (one command keeps item.json / registry.json / go.work consistent):
 
    ```bash
-   lynx-mods registry add modules/<name>
-   lynx-mods registry check
+   lynx-start registry add modules/<name>
+   lynx-start registry check
    ```
 
 3. **Fill the manifest**: `description` and `publishedEvents` in item.json
@@ -53,6 +53,6 @@
    creates the GitHub Release automatically.
 
 Security fixes: append an entry to `registry/advisories.json` (exact
-`affectedVersions`, no ranges); app-side `lynx-mods doctor`/`audit` reports
+`affectedVersions`, no ranges); app-side `lynx-start doctor`/`audit` reports
 installed versions against it. Prefer sinking security-sensitive code into
 kernel (fixes ship via semver); advisories cover the module-side remainder.

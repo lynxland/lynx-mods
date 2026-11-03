@@ -3,7 +3,7 @@ package access
 import (
 	"context"
 
-	appaccess "github.com/lynxland/lynx-mods/modules/access/internal/app/access"
+	appaccess "github.com/lynxland/lynx-start/modules/access/internal/app/access"
 
 	"github.com/lynxland/grpcapi/authn"
 	"github.com/lynxland/grpcapi/principal"

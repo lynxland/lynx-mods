@@ -7,7 +7,7 @@
 - **应用开发者**——装了几个 registry 模块之后，要写自己的业务域；
 - **模块贡献者**——想把一个业务域发布回本 registry。
 
-两种姿势共用同一套结构与契约，差别只在最后一节（是否走 `lynx-mods add` 分发）。
+两种姿势共用同一套结构与契约，差别只在最后一节（是否走 `lynx-start add` 分发）。
 通读约 15 分钟；对照 `modules/demo`（466 行，最小完整样例）与
 `modules/identity`（带认证器与配置段）阅读最佳。
 
@@ -26,11 +26,11 @@
 
    | 代码性质 | 分发通道 | 例子 |
    |---|---|---|
-   | 用户会改的业务逻辑 | 模块源码（`lynx-mods add`） | 聚合、用例流程、policy 取舍 |
+   | 用户会改的业务逻辑 | 模块源码（`lynx-start add`） | 聚合、用例流程、policy 取舍 |
    | 用户不想改、出 CVE 必须能推送修复 | kernel（Go module，semver） | Argon2 参数、JWT 校验、时序对齐哑靶 |
    | 接口派生物 | 生成（buf / protoc 插件） | DTO、HTTP/GRPC 骨架 |
 
-   模块源码一旦装进应用就与 registry 断连——`lynx-mods update` 靠人触发
+   模块源码一旦装进应用就与 registry 断连——`lynx-start update` 靠人触发
    三方合并，安全修复不能指望它。所以凡是「参数错了就是漏洞」的实现
    （哈希参数、恒定时间比较、令牌校验、随机数），一律下沉 kernel：
    应用 `go get kernel@fix` 即修复，无需逐模块合并。反例教训：identity
@@ -219,14 +219,14 @@ Assemble 里 `configkit.LoadSection(deps.Config, "todo", cfg.ApplyDefaults, &cfg
 ### 第 6 步：生成代码
 
 ```bash
-mise run generate    # lynx-mods generate：buf 管线（genproto/** 落应用根）
+mise run generate    # lynx-start generate：buf 管线（genproto/** 落应用根）
 go mod tidy
 ```
 
 ### 第 7 步：登记
 
 `modules/modules.go` 的 `Installed` 列表追加（锚点内；import 指向模块
-桥接包，`lynx-mods add` 自动注入——手写私有模块时照抄）：
+桥接包，`lynx-start add` 自动注入——手写私有模块时照抄）：
 
 ```go
 import todo "<app-module-path>/modules/todo"
@@ -263,7 +263,7 @@ import todo "<app-module-path>/modules/todo"
 把模块放进本仓 `modules/<name>/` 并让它成为**真实 Go module**：
 
 1. 自带 `go.mod`（module path 形如
-   `github.com/lynxland/lynx-mods/modules/<name>`）、`buf.yaml`/`buf.gen.yaml`
+   `github.com/lynxland/lynx-start/modules/<name>`）、`buf.yaml`/`buf.gen.yaml`
    （deps 声明 `buf.build/lynxland/grpcapi`：policy.proto 从 BSR 解析，
    不 vendor 进模块），genproto 入库——在本仓可编译、可测试，kernel 破坏性
    变更在本仓 CI 立即暴露，而不是等到某个应用安装时才炸；
@@ -274,7 +274,7 @@ import todo "<app-module-path>/modules/todo"
      "name": "todo",
      "version": "0.1.0",
      "description": "待办任务",
-     "modulePath": "github.com/lynxland/lynx-mods/modules/todo",
+     "modulePath": "github.com/lynxland/lynx-start/modules/todo",
      "moduleDependencies": [],
      "goDependencies": [],
      "configFragment": "todo:\n  default_page_size: 50\n",
@@ -290,8 +290,8 @@ import todo "<app-module-path>/modules/todo"
 一条命令完成登记与三处同步（item.json 骨架 / registry.json / go.work）：
 
    ```bash
-   lynx-mods registry add modules/<name>   # 骨架生成后补 description/publishedEvents
-   lynx-mods registry check                # 一致性体检（可入 CI）
+   lynx-start registry add modules/<name>   # 骨架生成后补 description/publishedEvents
+   lynx-start registry check                # 一致性体检（可入 CI）
    ```
 
 3. 在 `registry/registry.json` 的 `items` 里登记 `{ "name", "path" }`；
@@ -304,17 +304,17 @@ import todo "<app-module-path>/modules/todo"
 
 ### 版本安装与更新（应用侧）
 
-- `lynx-mods add todo@0.1.0` 从 tag 提取该版本源码（可复现安装）；
+- `lynx-start add todo@0.1.0` 从 tag 提取该版本源码（可复现安装）；
   不带 `@version` 取 registry 工作区最新形态；
-- `add` 在用户目录 `~/.lynx-mods/baselines/<appModulePath>/<name>@<commit>/`
+- `add` 在用户目录 `~/.lynx-start/baselines/<appModulePath>/<name>@<commit>/`
   写**安装基线**（安装后最终形态：已改写导入路径、已 gofmt）。基线是可
-  重建缓存（不进应用仓库）：随应用提交的只有 `.lynx-mods/lock.json`
-  （供应链锁）与 `lynx-mods.json`（manifest）——缓存缺失时 update/doctor
+  重建缓存（不进应用仓库）：随应用提交的只有 `.lynx-start/lock.json`
+  （供应链锁）与 `lynx-start.json`（manifest）——缓存缺失时 update/doctor
   按 lock 记录的 commit 自动从 registry 重建，跨机器不再依赖提交基线；
-- `lynx-mods update todo` 三方合并到 registry 最新：**本地 / 基线 /
+- `lynx-start update todo` 三方合并到 registry 最新：**本地 / 基线 /
   upstream**。本地与 upstream 改动不重叠则自动合并；同区改动打 git
   冲突标记（`<<<<<<< yours / baseline / theirs`），覆盖前的本地副本留在
-  `~/.lynx-mods/backups/<appModulePath>/<name>/`；upstream 删除的文件只
+  `~/.lynx-start/backups/<appModulePath>/<name>/`；upstream 删除的文件只
   提示不自动删。
   合并写盘不可回滚——**update 前先 commit 应用**；
 - 基线不变量：基线 ≡ upstream 最近一次同步形态。冲突文件解决后基线仍为
@@ -337,7 +337,7 @@ import（domain 不许 import infra/app/api）。
 
 ## 6. 替换模块内部实现(定制姿势)
 
-源码归你,直接改就是正道;但不同改法与 `lynx-mods update` 三方合并的相处
+源码归你,直接改就是正道;但不同改法与 `lynx-start update` 三方合并的相处
 难度不同。按摩擦从低到高:
 
 | 想改什么 | 推荐姿势 | update 冲突风险 |
@@ -357,4 +357,4 @@ import（domain 不许 import infra/app/api）。
   接线那一行;
 - **domain 端口是你的稳定锚**:只要端口签名不动,infra 随便换——这正是契约
   ②「跨模块只依赖 domain」给你自己的定制同样的保护;
-- 定制后跑 `lynx-mods doctor`(基线/锁仍完整)与 `go build ./...`。
+- 定制后跑 `lynx-start doctor`(基线/锁仍完整)与 `go build ./...`。

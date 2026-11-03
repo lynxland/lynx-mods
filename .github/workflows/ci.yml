@@ -94,7 +94,7 @@ jobs:
           - "identity organization task"
           - "demo identity session access audit organization notification task"
     env:
-      LYNXMODS_E2E_MODULES: ${{ matrix.modules }}
+      LYNXSTART_E2E_MODULES: ${{ matrix.modules }}
     steps:
       # fetch-depth 0：test:scaffold 的 update 场景装 identity@0.1.0，
       # 版本解析依赖 git tag（modules/identity/v0.1.0 指向历史提交）。

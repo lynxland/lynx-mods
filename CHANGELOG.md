@@ -1,8 +1,47 @@
-# Changelog — lynx-mods
+# Changelog — lynx-start
 
-本仓由 lynx-start 拆分而来（2026-10-31，ADR-0006）：模块分发（cli/modules/
-registry/scaffold）整体迁入。以下历史条目承接 lynx-start 时代的根 CHANGELOG
-（全仓视角）；kernel 谱系的 changelog 留在 lynx-start。条目按发布时间倒序。
+本仓由 lynx-start（旧基础库，2026-11-02 更名 appkit）拆分而来（2026-10-31，
+ADR-0006）：模块分发（cli/modules/registry/scaffold）整体迁入；2026-11-03
+本仓更名回 lynx-start（ADR-0007）。以下历史条目承接 lynx-start 时代的根
+CHANGELOG（全仓视角）；kernel 谱系的 changelog 留在 lynx-start。条目按发布
+时间倒序。
+
+## 全模块 v0.4.0 + cli v0.5.0（2026-11-03，更名 lynx-mods → lynx-start）
+
+- **仓更名与 module path 换系**：GitHub 仓 `lynxland/lynx-mods` →
+  `lynxland/lynx-start`（appkit 更名后 "lynx-start" 名号空出——本项目正是
+  自 lynx-start 拆出，名随实归，ADR-0007）。8 个模块与 cli
+  `github.com/lynxland/lynx-mods/...` → `github.com/lynxland/lynx-start/...`
+  （含 .proto go_package 与 genproto 同步替换）。
+- **CLI 命令与全部产品工件随更名，不留兼容**（决策与迁移见 ADR-0007）：
+  二进制 `lynx-mods` → `lynx-start`（包目录 cli/cmd/lynx-start）；应用工件
+  lynx-mods.json → lynx-start.json、.lynx-mods/ → .lynx-start/、
+  ~/.lynx-mods → ~/.lynx-start、~/.cache/lynx-mods → ~/.cache/lynx-start；
+  env LYNXMODS_REGISTRY/LYNXMODS_E2E_MODULES → LYNXSTART_REGISTRY/
+  LYNXSTART_E2E_MODULES（顺带修掉 init list 误写的 LYXSTART_REGISTRY——
+  缺 N 的存量笔误）；注入锚点 `lynx-mods:module-import/module-entry/
+  config-fragment` → `lynx-start:`（scaffold 模板同步）。
+- **安装器前缀兼容扩为四系**：lynxland/lynx-start（新 canonical）+
+  lynxland/lynx-mods + lynx-go/lynx-mods + lynx-go/lynx-start（历史 tag）；
+  `TestDualPrefixCompat` 增 lynxland/lynx-mods legacy 行。
+- **registry**：registry.json name、identity/session item.json 的
+  configFragment `issuer` 随更名；advisory 新公告改用 LYNXSTART- 前缀自
+  LYNXSTART-0002 顺延（0001 为旧基础库时代历史 ID，保留不复用）。
+- **存量 lynx-mods 时代应用迁移**（手工，一次性）：
+
+  | 旧 | 新 |
+  | --- | --- |
+  | `go install github.com/lynxland/lynx-mods/cli/cmd/lynx-mods@…` | `go install github.com/lynxland/lynx-start/cli/cmd/lynx-start@…` |
+  | `lynx-mods.json` / `.lynx-mods/` | `git mv` 为 `lynx-start.json` / `.lynx-start/` |
+  | 锚点 `lynx-mods:…`（modules.go 两处 + config.yaml 一处） | 文本替换为 `lynx-start:…` |
+  | mise 任务 `lynx-mods generate` | `lynx-start generate` |
+  | `LYNXMODS_REGISTRY` | `LYNXSTART_REGISTRY` |
+  | `~/.lynx-mods`、`~/.cache/lynx-mods` | 弃置（基线/备份可由 registry + lock 确定性重建） |
+
+- **发布顺序**：先在 GitHub 更名仓库（lynx-mods → lynx-start），后打推本条
+  tag——旧仓名下打新路径 tag 会因 go.mod 路径与仓库不符被 module proxy
+  拒绝。tag 形态不变：`cli/v0.5.0`、`modules/<m>/v0.4.0`。
+- 历史条目与 ADR 按既定政策保留旧名。
 
 ## 全模块 v0.3.0 + cli v0.4.0（2026-11-02，appkit 基座 + 机构更名 lynxland）
 
@@ -56,7 +95,7 @@ registry/scaffold）整体迁入。以下历史条目承接 lynx-start 时代的
 
 ---
 
-# Changelog — lynx-start
+# Changelog — lynx-start（旧基础库，今 appkit——2026-10-31 迁入时原样承接，勿与现仓名混淆）
 
 两类版本:kernel(`kernel/vX.Y.Z`,semver)与 registry 模块(`modules/<name>/vX.Y.Z`,
 源码分发,无稳定性承诺)。CLI / scaffold 变更随仓库 main 演进,不单独打 tag,

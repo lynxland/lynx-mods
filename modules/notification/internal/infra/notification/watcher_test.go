@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/lynxland/appkit/events"
-	"github.com/lynxland/lynx-mods/modules/notification/domain/notification"
-	appnotification "github.com/lynxland/lynx-mods/modules/notification/internal/app/notification"
+	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
+	appnotification "github.com/lynxland/lynx-start/modules/notification/internal/app/notification"
 	"github.com/lynxland/lynx/eventbus"
 )
 

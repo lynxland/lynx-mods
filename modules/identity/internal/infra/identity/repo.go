@@ -10,7 +10,7 @@ import (
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
 	"github.com/lynxland/appkit/storeerr"
-	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
+	"github.com/lynxland/lynx-start/modules/identity/domain/identity"
 	"github.com/uptrace/bun"
 )
 

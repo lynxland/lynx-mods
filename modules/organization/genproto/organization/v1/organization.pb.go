@@ -761,9 +761,9 @@ const file_organization_v1_organization_proto_rawDesc = "" +
 	"\vListMembers\x12#.organization.v1.ListMembersRequest\x1a$.organization.v1.ListMembersResponse\";\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02-\x12+/v1/organizations/{organization_id}/members\x12|\n" +
 	"\x05Leave\x12\x1d.organization.v1.LeaveRequest\x1a\x16.google.protobuf.Empty\"<\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02.:\x01*\")/v1/organizations/{organization_id}:leaveBj\xca\xf0\x19\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02.:\x01*\")/v1/organizations/{organization_id}:leaveBk\xca\xf0\x19\n" +
 	"\n" +
-	"\x06public \x02ZZgithub.com/lynxland/lynx-mods/modules/organization/genproto/organization/v1;organizationv1b\x06proto3"
+	"\x06public \x02Z[github.com/lynxland/lynx-start/modules/organization/genproto/organization/v1;organizationv1b\x06proto3"
 
 var (
 	file_organization_v1_organization_proto_rawDescOnce sync.Once

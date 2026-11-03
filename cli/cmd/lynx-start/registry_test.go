@@ -21,11 +21,11 @@ func newRegistryScratch(t *testing.T) string {
 			t.Fatal(err)
 		}
 	}
-	write("registry/registry.json", "{\n  \"name\": \"lynx-mods\",\n  \"items\": [\n    { \"name\": \"demo\", \"path\": \"modules/demo\" }\n  ]\n}\n")
+	write("registry/registry.json", "{\n  \"name\": \"lynx-start\",\n  \"items\": [\n    { \"name\": \"demo\", \"path\": \"modules/demo\" }\n  ]\n}\n")
 	write("go.work", "go 1.26.8\n\nuse (\n  ./kernel\n  ./modules/demo\n)\n")
-	write("modules/demo/go.mod", "module github.com/lynxland/lynx-mods/modules/demo\n\ngo 1.26.8\n")
-	write("modules/demo/item.json", "{\n  \"name\": \"demo\",\n  \"version\": \"0.1.0\",\n  \"description\": \"demo module\",\n  \"modulePath\": \"github.com/lynxland/lynx-mods/modules/demo\",\n  \"moduleDependencies\": [],\n  \"goDependencies\": [],\n  \"configFragment\": \"\",\n  \"publishedEvents\": [\"demo.item.created\"]\n}\n")
-	write("modules/todo/go.mod", "module github.com/lynxland/lynx-mods/modules/todo\n\ngo 1.26.8\n")
+	write("modules/demo/go.mod", "module github.com/lynxland/lynx-start/modules/demo\n\ngo 1.26.8\n")
+	write("modules/demo/item.json", "{\n  \"name\": \"demo\",\n  \"version\": \"0.1.0\",\n  \"description\": \"demo module\",\n  \"modulePath\": \"github.com/lynxland/lynx-start/modules/demo\",\n  \"moduleDependencies\": [],\n  \"goDependencies\": [],\n  \"configFragment\": \"\",\n  \"publishedEvents\": [\"demo.item.created\"]\n}\n")
+	write("modules/todo/go.mod", "module github.com/lynxland/lynx-start/modules/todo\n\ngo 1.26.8\n")
 	return root
 }
 
@@ -39,7 +39,7 @@ func TestRegistryAddRegistersThreePlaces(t *testing.T) {
 	if err != nil {
 		t.Fatalf("item.json not written: %v", err)
 	}
-	if !strings.Contains(string(itemRaw), `"modulePath": "github.com/lynxland/lynx-mods/modules/todo"`) {
+	if !strings.Contains(string(itemRaw), `"modulePath": "github.com/lynxland/lynx-start/modules/todo"`) {
 		t.Errorf("item.json modulePath not derived from go.mod:\n%s", itemRaw)
 	}
 	// registry.json 登记 + 排版保持（逗号接在上一条目后,不产生独立逗号行）。

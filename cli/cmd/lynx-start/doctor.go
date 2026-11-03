@@ -8,17 +8,17 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lynxland/lynx-mods/cli/internal/lock"
-	"github.com/lynxland/lynx-mods/cli/internal/manifest"
-	"github.com/lynxland/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-start/cli/internal/lock"
+	"github.com/lynxland/lynx-start/cli/internal/manifest"
+	"github.com/lynxland/lynx-start/cli/internal/registry"
 )
 
-// cmdDoctor: lynx-mods doctor —— 应用与安装清单的一致性体检（只读）：
+// cmdDoctor: lynx-start doctor —— 应用与安装清单的一致性体检（只读）：
 // modules.go 双向对账、config 段存在性、基线/文件完整性、模块 DAG。
 // 任何 ✗ 项退出码非零（CI/脚本可用）。
 func cmdDoctor(args []string) error {
 	fs := flag.NewFlagSet("doctor", flag.ContinueOnError)
-	registryDir := fs.String("registry", os.Getenv("LYNXMODS_REGISTRY"), "lynx-mods repo directory")
+	registryDir := fs.String("registry", os.Getenv("LYNXSTART_REGISTRY"), "lynx-start repo directory")
 	dir := fs.String("dir", ".", "app directory")
 	format := fs.String("format", "text", "output format: text | github (workflow command annotations for CI)")
 	args = reorderArgs(map[string]bool{"registry": true, "dir": true}, args)
@@ -54,19 +54,19 @@ func cmdDoctor(args []string) error {
 		problems++
 		if github {
 			// workflow command：PR 界面行内注解；退出码稳定（1=有问题）。
-			fmt.Printf("::error title=lynx-mods doctor::%s\n", fmt.Sprintf(format, args...))
+			fmt.Printf("::error title=lynx-start doctor::%s\n", fmt.Sprintf(format, args...))
 			return
 		}
 		fmt.Printf("  ✗ ")
 		fmt.Printf(format+"\n", args...)
 	}
 
-	fmt.Printf("lynx-mods doctor: %s (%d modules)\n", appDir, len(m.Modules))
+	fmt.Printf("lynx-start doctor: %s (%d modules)\n", appDir, len(m.Modules))
 
 	// 0) 旧布局检测（ADR-0006 之前的合并布局）：升级 CLI 后的旧应用，
 	//    给出重装指引而不是一连串误导性的文件缺失。
 	for _, mod := range legacyLayoutInstalled(appDir, moduleNames(m)) {
-		check(false, "%s is installed in the legacy layout (domain/%s or internal/api/%s present): re-install with `lynx-mods add %s -o` to move it under modules/%s (commit local changes first; see docs/adr/0006)", mod, mod, mod, mod, mod)
+		check(false, "%s is installed in the legacy layout (domain/%s or internal/api/%s present): re-install with `lynx-start add %s -o` to move it under modules/%s (commit local changes first; see docs/adr/0006)", mod, mod, mod, mod, mod)
 	}
 
 	// 1) modules.go 双向对账：登记的模块都在清单，清单的模块都已登记。
@@ -83,7 +83,7 @@ func cmdDoctor(args []string) error {
 		}
 		for _, name := range registeredModuleNames(modulesSrc) {
 			_, ok := m.Get(name)
-			check(ok, "manifest lists %s (registered in modules.go but missing from lynx-mods.json)", name)
+			check(ok, "manifest lists %s (registered in modules.go but missing from lynx-start.json)", name)
 		}
 	}
 
@@ -137,7 +137,7 @@ func cmdDoctor(args []string) error {
 		if len(mod.Files) == 0 {
 			check(false, "%s has no update baseline (add %s -o to rebuild)", mod.Name, mod.Name)
 		}
-		// 供应链锁（I-14）+ 基线缓存（ADR-0006：~/.lynx-mods 下按
+		// 供应链锁（I-14）+ 基线缓存（ADR-0006：~/.lynx-start 下按
 		// <m>@<commit> 寻址，缺失自动重建——重建失败才 ✗）。
 		lk, lkErr := lock.Load(appDir)
 		if lkErr != nil {
@@ -169,14 +169,14 @@ func cmdDoctor(args []string) error {
 		}
 	}
 
-	// 3) 安全公告：只提示不计数（体检不过载）；CI 门禁用 lynx-mods audit。
+	// 3) 安全公告：只提示不计数（体检不过载）；CI 门禁用 lynx-start audit。
 	if adv, err := registry.LoadAdvisories(*registryDir); err == nil {
 		for _, mod := range m.Modules {
 			for _, a := range adv.Hits(mod.Name, mod.Version) {
 				if github {
-					fmt.Printf("::warning title=%s/%s::%s@%s affected — upgrade to %s (lynx-mods audit gate)\n", a.Severity, a.ID, a.Module, mod.Version, a.Fixed)
+					fmt.Printf("::warning title=%s/%s::%s@%s affected — upgrade to %s (lynx-start audit gate)\n", a.Severity, a.ID, a.Module, mod.Version, a.Fixed)
 				} else {
-					fmt.Printf("  ⚠ %s [%s] %s@%s affected — upgrade to %s (see lynx-mods audit)\n", a.ID, a.Severity, a.Module, mod.Version, a.Fixed)
+					fmt.Printf("  ⚠ %s [%s] %s@%s affected — upgrade to %s (see lynx-start audit)\n", a.ID, a.Severity, a.Module, mod.Version, a.Fixed)
 				}
 			}
 		}
@@ -184,7 +184,7 @@ func cmdDoctor(args []string) error {
 
 	if problems == 0 {
 		if github {
-			fmt.Println("::notice title=lynx-mods doctor::all checks passed")
+			fmt.Println("::notice title=lynx-start doctor::all checks passed")
 		} else {
 			fmt.Println("✓ all checks passed")
 		}

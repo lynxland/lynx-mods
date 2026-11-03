@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	appsession "github.com/lynxland/lynx-mods/modules/session/internal/app/session"
+	appsession "github.com/lynxland/lynx-start/modules/session/internal/app/session"
 
 	"github.com/lynxland/appkit/clock"
 	"github.com/lynxland/appkit/jwt"

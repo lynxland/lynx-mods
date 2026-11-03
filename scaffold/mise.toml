@@ -7,7 +7,7 @@
 go = "1.26.8"
 buf = "1.65.0"
 golangci-lint = "2.12.2"
-# lynx-mods CLI 不在此声明：它就是安装应用的工具，已在你的 PATH
+# lynx-start CLI 不在此声明：它就是安装应用的工具，已在你的 PATH
 #（generate 管线与布局归位规则随 CLI 版本演进——升级 CLI 即得）。
 
 [task_config]
@@ -26,8 +26,8 @@ description = "执行全部已装模块的迁移链（独立版本表；DSN 取 
 run = "go run ./cmd/migrate"
 
 [tasks.generate]
-description = "buf 依赖解析 + lint + generate（genproto/**；经 lynx-mods generate）"
-run = "lynx-mods generate"
+description = "buf 依赖解析 + lint + generate（genproto/**；经 lynx-start generate）"
+run = "lynx-start generate"
 
 [tasks.dev]
 description = "启动 server"

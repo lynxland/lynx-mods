@@ -10,24 +10,24 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lynxland/lynx-mods/cli/internal/lock"
-	"github.com/lynxland/lynx-mods/cli/internal/manifest"
-	"github.com/lynxland/lynx-mods/cli/internal/merge"
-	"github.com/lynxland/lynx-mods/cli/internal/registry"
-	"github.com/lynxland/lynx-mods/cli/internal/render"
+	"github.com/lynxland/lynx-start/cli/internal/lock"
+	"github.com/lynxland/lynx-start/cli/internal/manifest"
+	"github.com/lynxland/lynx-start/cli/internal/merge"
+	"github.com/lynxland/lynx-start/cli/internal/registry"
+	"github.com/lynxland/lynx-start/cli/internal/render"
 )
 
-// cmdUpdate: lynx-mods update <module>[@<version>] —— 把已装模块更新到
+// cmdUpdate: lynx-start update <module>[@<version>] —— 把已装模块更新到
 // registry 新版，与本地改动做三方合并（local / 安装基线 / upstream）。
 //
 // 语义：基线 ≡ 上次从 registry 同步的形态（add 时建立，update 后刷新）。
 // 本地与 upstream 改动不重叠则自动合并；同区改动打 git 冲突标记，冲突文件
-// 覆盖前在 .lynx-mods/backup/ 留副本。upstream 删除：本地未改 → 自动删
+// 覆盖前在 .lynx-start/backup/ 留副本。upstream 删除：本地未改 → 自动删
 // （删除前同款备份）；本地有改动 → 保留并提示。建议先 commit 应用再
 // update——合并写盘不可自动回滚。
 func cmdUpdate(args []string) error {
 	fs := flag.NewFlagSet("update", flag.ContinueOnError)
-	registryDir := fs.String("registry", os.Getenv("LYNXMODS_REGISTRY"), "lynx-mods repo directory")
+	registryDir := fs.String("registry", os.Getenv("LYNXSTART_REGISTRY"), "lynx-start repo directory")
 	dir := fs.String("dir", ".", "app directory")
 	force := fs.Bool("force", false, "re-sync even when the version is unchanged")
 	dryRun := fs.Bool("dry-run", false, "preview the merge plan without writing anything")
@@ -36,7 +36,7 @@ func cmdUpdate(args []string) error {
 		return err
 	}
 	if fs.NArg() != 1 {
-		return fmt.Errorf("usage: lynx-mods update <module>[@<version>] [--registry <dir>] [--dry-run]")
+		return fmt.Errorf("usage: lynx-start update <module>[@<version>] [--registry <dir>] [--dry-run]")
 	}
 	name := fs.Arg(0)
 	version := ""
@@ -53,7 +53,7 @@ func cmdUpdate(args []string) error {
 	}
 	installed, ok := m.Get(name)
 	if !ok {
-		return fmt.Errorf("module %s is not installed (see lynx-mods add)", name)
+		return fmt.Errorf("module %s is not installed (see lynx-start add)", name)
 	}
 	if *registryDir == "" {
 		*registryDir = m.Registry
@@ -73,7 +73,7 @@ func cmdUpdate(args []string) error {
 		fmt.Printf("✓ %s already at %s (use --force to re-sync the baseline from the registry worktree)\n", name, item.Version)
 		return nil
 	}
-	// 供应链锁复核 + 基线缓存就位（ADR-0006：基线住 ~/.lynx-mods，缺失时
+	// 供应链锁复核 + 基线缓存就位（ADR-0006：基线住 ~/.lynx-start，缺失时
 	// 按 lock 记录的 commit 从 registry 确定性重建，换机器不依赖提交基线）。
 	lk, err := lock.Load(appDir)
 	if err != nil {
@@ -89,7 +89,7 @@ func cmdUpdate(args []string) error {
 			return err
 		}
 		if len(mismatch) > 0 {
-			return fmt.Errorf("baseline for %s drifted from .lynx-mods/lock.json (tampered or hand-edited): %s — rebuild with `lynx-mods add %s -o` (overwrites local files; commit first)", name, strings.Join(mismatch, ", "), name)
+			return fmt.Errorf("baseline for %s drifted from .lynx-start/lock.json (tampered or hand-edited): %s — rebuild with `lynx-start add %s -o` (overwrites local files; commit first)", name, strings.Join(mismatch, ", "), name)
 		}
 	}
 	base, hasBase, err := loadBaselineTree(baseDir)
@@ -97,12 +97,12 @@ func cmdUpdate(args []string) error {
 		return err
 	}
 	if !hasBase || len(base) == 0 {
-		return fmt.Errorf("no update baseline for %s: re-install with `lynx-mods add %s -o` to rebuild it (your files are overwritten by upstream; commit local changes first), then update is available again", name, name)
+		return fmt.Errorf("no update baseline for %s: re-install with `lynx-start add %s -o` to rebuild it (your files are overwritten by upstream; commit local changes first), then update is available again", name, name)
 	}
 
 	// upstream 渲染到临时目录：与 add 同一管线（改写导入路径、gofmt、
 	// 排除工程文件），保证与应用/基线处于同一形态空间。
-	tmp, err := os.MkdirTemp("", "lynx-mods-upstream-")
+	tmp, err := os.MkdirTemp("", "lynx-start-upstream-")
 	if err != nil {
 		return err
 	}

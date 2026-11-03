@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
-	"github.com/lynxland/lynx-mods/modules/task/domain/task"
-	"github.com/lynxland/lynx-mods/modules/task/internal/infra/task/migrations"
+	"github.com/lynxland/lynx-start/modules/task/domain/task"
+	"github.com/lynxland/lynx-start/modules/task/internal/infra/task/migrations"
 )
 
 func TestRepo(t *testing.T) {

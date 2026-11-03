@@ -8,8 +8,8 @@ import (
 	"github.com/lynxland/appkit/contexts"
 	"github.com/lynxland/appkit/idgen"
 	"github.com/lynxland/grpcapi/interceptor"
-	domainaudit "github.com/lynxland/lynx-mods/modules/audit/domain/audit"
-	infraaudit "github.com/lynxland/lynx-mods/modules/audit/internal/infra/audit"
+	domainaudit "github.com/lynxland/lynx-start/modules/audit/domain/audit"
+	infraaudit "github.com/lynxland/lynx-start/modules/audit/internal/infra/audit"
 	"google.golang.org/grpc"
 )
 

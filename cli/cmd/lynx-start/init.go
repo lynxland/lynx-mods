@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/lynxland/lynx-mods/cli/internal/manifest"
-	"github.com/lynxland/lynx-mods/cli/internal/registry"
-	"github.com/lynxland/lynx-mods/cli/internal/render"
+	"github.com/lynxland/lynx-start/cli/internal/manifest"
+	"github.com/lynxland/lynx-start/cli/internal/registry"
+	"github.com/lynxland/lynx-start/cli/internal/render"
 )
 
 // goDirective 是生成应用 go.mod 的 go 指令——与 lynx-start go.mod 一致，
@@ -25,26 +25,26 @@ const (
 	grpcapiFloor = "v0.5.0"
 )
 
-// cmdInit: lynx-mods init <name> —— 从 scaffold 生成应用骨架。
+// cmdInit: lynx-start init <name> —— 从 scaffold 生成应用骨架。
 func cmdInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ContinueOnError)
 	module := fs.String("module", "", "Go module path (default example.com/<name>)")
-	registryDir := fs.String("registry", os.Getenv("LYNXMODS_REGISTRY"), "lynx-mods repo directory (containing scaffold/ and registry/)")
+	registryDir := fs.String("registry", os.Getenv("LYNXSTART_REGISTRY"), "lynx-start repo directory (containing scaffold/ and registry/)")
 	force := fs.Bool("force", false, "continue even if the target directory is non-empty")
-	preset := fs.String("preset", "", "install a preset module combo (see lynx-mods list)")
+	preset := fs.String("preset", "", "install a preset module combo (see lynx-start list)")
 	args = reorderArgs(map[string]bool{"module": true, "registry": true, "preset": true}, args)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if fs.NArg() != 1 {
-		return fmt.Errorf("usage: lynx-mods init <name> [--module <path>] [--registry <dir>]")
+		return fmt.Errorf("usage: lynx-start init <name> [--module <path>] [--registry <dir>]")
 	}
 	appName := fs.Arg(0)
 	if *registryDir == "" {
-		*registryDir = os.Getenv("LYNXMODS_REGISTRY")
+		*registryDir = os.Getenv("LYNXSTART_REGISTRY")
 	}
 	if *registryDir == "" {
-		return fmt.Errorf("--registry is required (or set LYNXMODS_REGISTRY): point it at the lynx-mods repo directory")
+		return fmt.Errorf("--registry is required (or set LYNXSTART_REGISTRY): point it at the lynx-start repo directory")
 	}
 
 	target := appName
@@ -103,7 +103,7 @@ func cmdInit(args []string) error {
 		}
 		ps, ok := presets.Find(*preset)
 		if !ok {
-			return fmt.Errorf("preset %q not found in registry (see lynx-mods list)", *preset)
+			return fmt.Errorf("preset %q not found in registry (see lynx-start list)", *preset)
 		}
 		fmt.Printf("\ninstalling preset %s: %s\n", ps.Name, strings.Join(ps.Modules, " "))
 		for _, mod := range ps.Modules {
@@ -116,16 +116,16 @@ func cmdInit(args []string) error {
 	fmt.Printf("\n✓ app skeleton ready: %s (%d files, %d skipped)\n", target, len(res.Created), len(res.Skipped))
 	fmt.Printf(`Next steps:
   cd %s
-  git init && git add -A && git commit -m "chore: lynx-mods init"
-  lynx-mods add <module> --registry %s   # pick from lynx-mods list; add prints the build steps
+  git init && git add -A && git commit -m "chore: lynx-start init"
+  lynx-start add <module> --registry %s   # pick from lynx-start list; add prints the build steps
 `, target, *registryDir)
 	return nil
 }
 
-// cmdList: lynx-mods list —— 列出 registry 模块。
+// cmdList: lynx-start list —— 列出 registry 模块。
 func cmdList(args []string) error {
 	fs := flag.NewFlagSet("list", flag.ContinueOnError)
-	registryDir := fs.String("registry", os.Getenv("LYXSTART_REGISTRY"), "lynx-mods 仓库目录")
+	registryDir := fs.String("registry", os.Getenv("LYNXSTART_REGISTRY"), "lynx-start 仓库目录")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}

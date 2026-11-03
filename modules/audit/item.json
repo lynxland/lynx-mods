@@ -1,8 +1,8 @@
 {
   "name": "audit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "审计模块：RPC 拦截器自动记录 + 显式记录（同事务）+ 分页查询（append-only，零模块依赖）",
-  "modulePath": "github.com/lynxland/lynx-mods/modules/audit",
+  "modulePath": "github.com/lynxland/lynx-start/modules/audit",
   "moduleDependencies": [],
   "goDependencies": [],
   "configFragment": "",

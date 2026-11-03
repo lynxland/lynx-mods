@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// cmdGenerate: lynx-mods generate —— 应用侧代码生成管线（ADR-0006 把
+// cmdGenerate: lynx-start generate —— 应用侧代码生成管线（ADR-0006 把
 // 布局规则收到 CLI：单一事实源，规则演进靠升级 CLI，不靠改 scaffold
 // 生成的静态 mise 脚本）：buf dep update && buf lint && buf generate。
 // buf 由应用 mise 钉版，CLI 只编排不重新实现；生成物统一落应用根
@@ -28,7 +28,7 @@ func cmdGenerate(args []string) error {
 		return err
 	}
 	if _, err := os.Stat(filepath.Join(appDir, "buf.gen.yaml")); err != nil {
-		return fmt.Errorf("no buf.gen.yaml in %s (run inside a lynx-mods app: lynx-mods init generates it)", appDir)
+		return fmt.Errorf("no buf.gen.yaml in %s (run inside a lynx-start app: lynx-start init generates it)", appDir)
 	}
 	if _, err := exec.LookPath("buf"); err != nil {
 		return fmt.Errorf("buf not found in PATH: run `mise install` in the app (scaffold pins the buf toolchain)")
@@ -36,7 +36,7 @@ func cmdGenerate(args []string) error {
 	if !hasLocalProto(appDir) {
 		// 未装模块的空应用 buf lint 会因 proto 空模块报错（policy.proto 已
 		// 改经 BSR dep 供给，本地 proto/ 只承载已装模块契约源）。
-		fmt.Println("skip buf pipeline: no proto/**/*.proto yet — run `lynx-mods add <module>` first")
+		fmt.Println("skip buf pipeline: no proto/**/*.proto yet — run `lynx-start add <module>` first")
 		return nil
 	}
 

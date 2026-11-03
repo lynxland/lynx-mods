@@ -10,7 +10,7 @@ import (
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/appkit/idgen"
 	"github.com/lynxland/appkit/uow"
-	"github.com/lynxland/lynx-mods/modules/demo/domain/demo"
+	"github.com/lynxland/lynx-start/modules/demo/domain/demo"
 )
 
 // UseCase 是样例模块的用例集。

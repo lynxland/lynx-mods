@@ -3,11 +3,11 @@ package organization
 import (
 	"context"
 
-	"github.com/lynxland/lynx-mods/modules/organization/domain/organization"
-	organizationv1 "github.com/lynxland/lynx-mods/modules/organization/genproto/organization/v1"
-	apporganization "github.com/lynxland/lynx-mods/modules/organization/internal/app/organization"
-	infraorganization "github.com/lynxland/lynx-mods/modules/organization/internal/infra/organization"
-	"github.com/lynxland/lynx-mods/modules/organization/internal/infra/organization/migrations"
+	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
+	organizationv1 "github.com/lynxland/lynx-start/modules/organization/genproto/organization/v1"
+	apporganization "github.com/lynxland/lynx-start/modules/organization/internal/app/organization"
+	infraorganization "github.com/lynxland/lynx-start/modules/organization/internal/infra/organization"
+	"github.com/lynxland/lynx-start/modules/organization/internal/infra/organization/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"

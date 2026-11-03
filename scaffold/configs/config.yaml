@@ -7,4 +7,4 @@ data:
     source: "{{.DefaultDSN}}"
     max_open_conns: 8
 
-# lynx-mods:config-fragment（lynx-mods add 追加模块配置段的锚点，勿删）
+# lynx-start:config-fragment（lynx-start add 追加模块配置段的锚点，勿删）

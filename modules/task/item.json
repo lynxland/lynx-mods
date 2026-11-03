@@ -11,11 +11,11 @@
       "organization": ">=0.1.0"
     }
   ],
-  "modulePath": "github.com/lynxland/lynx-mods/modules/task",
+  "modulePath": "github.com/lynxland/lynx-start/modules/task",
   "name": "task",
   "publishedEvents": [
     "task.task.created",
     "task.task.completed"
   ],
-  "version": "0.3.0"
+  "version": "0.4.0"
 }

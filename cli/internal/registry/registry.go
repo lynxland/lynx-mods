@@ -1,4 +1,4 @@
-// Package registry 读取 lynx-mods 仓库的模块仓：registry/registry.json 索引 +
+// Package registry 读取 lynx-start 仓库的模块仓：registry/registry.json 索引 +
 // 各模块目录的 item.json 清单。版本解析走仓库 git tag（modules/<name>/v<x.y.z>，
 // 与 kernel/v<x.y.z> 同款子目录前缀形式）；远端 registry 后续接入。
 package registry
@@ -31,7 +31,7 @@ type Item struct {
 	Version     string `json:"version"`
 	Description string `json:"description"`
 	// ModulePath 是模块源码的规范 Go module path（模块在本仓内以真实代码
-	// 形态维护，自带 go.mod 与 genproto）；安装时 lynx-mods add 把 .go/.proto 中
+	// 形态维护，自带 go.mod 与 genproto）；安装时 lynx-start add 把 .go/.proto 中
 	// 的该路径改写为应用 module path。
 	ModulePath string `json:"modulePath"`
 	// ModuleDependencies 声明 domain 级依赖。JSON 双形态：
@@ -155,14 +155,14 @@ func (i *Item) CanonicalModulePath() string {
 	if i.ModulePath != "" {
 		return i.ModulePath
 	}
-	return "github.com/lynxland/lynx-mods/modules/" + i.Name
+	return "github.com/lynxland/lynx-start/modules/" + i.Name
 }
 
 // Load 读 registryDir/registry/registry.json。
 func Load(registryDir string) (*Index, error) {
 	raw, err := os.ReadFile(filepath.Join(registryDir, "registry", "registry.json"))
 	if err != nil {
-		return nil, fmt.Errorf("load registry: lynx-mods init/add need --registry pointing at the lynx-mods repo directory (containing registry/registry.json): %w", err)
+		return nil, fmt.Errorf("load registry: lynx-start init/add need --registry pointing at the lynx-start repo directory (containing registry/registry.json): %w", err)
 	}
 	var idx Index
 	if err := json.Unmarshal(raw, &idx); err != nil {
@@ -208,7 +208,7 @@ func (idx *Index) ItemAt(registryDir, name, version string) (*Item, func(), erro
 	if err != nil {
 		return nil, nil, fmt.Errorf("git archive %s: %w", tag, err)
 	}
-	tmp, err := os.MkdirTemp("", "lynx-mods-registry-")
+	tmp, err := os.MkdirTemp("", "lynx-start-registry-")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -237,20 +237,20 @@ func (idx *Index) ItemAt(registryDir, name, version string) (*Item, func(), erro
 // 即拒绝（registry 历史被改写，重建不再可信）。
 func (idx *Index) ItemAtCommit(registryDir, name, commit, expectedVersion string) (*Item, func(), error) {
 	if commit == "" || commit == "unknown" {
-		return nil, nil, fmt.Errorf("module %s: install source commit is unknown, cannot rebuild the baseline (re-install with `lynx-mods add %s -o`)", name, name)
+		return nil, nil, fmt.Errorf("module %s: install source commit is unknown, cannot rebuild the baseline (re-install with `lynx-start add %s -o`)", name, name)
 	}
 	path, err := idx.modulePath(name)
 	if err != nil {
 		return nil, nil, err
 	}
 	if err := exec.Command("git", "-C", registryDir, "rev-parse", "--verify", "--quiet", commit+"^{commit}").Run(); err != nil {
-		return nil, nil, fmt.Errorf("module %s: commit %s not found in the registry repo (history rewritten?): rebuild the baseline with `lynx-mods add %s -o`", name, shortHash(commit), name)
+		return nil, nil, fmt.Errorf("module %s: commit %s not found in the registry repo (history rewritten?): rebuild the baseline with `lynx-start add %s -o`", name, shortHash(commit), name)
 	}
 	raw, err := exec.Command("git", "-C", registryDir, "archive", "--format=tar", commit, "--", path).Output()
 	if err != nil {
 		return nil, nil, fmt.Errorf("git archive %s: %w", shortHash(commit), err)
 	}
-	tmp, err := os.MkdirTemp("", "lynx-mods-registry-")
+	tmp, err := os.MkdirTemp("", "lynx-start-registry-")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -267,7 +267,7 @@ func (idx *Index) ItemAtCommit(registryDir, name, commit, expectedVersion string
 	}
 	if item.Version != expectedVersion {
 		cleanup()
-		return nil, nil, fmt.Errorf("module %s: registry commit %s carries item.json version %q but the lock pins %s — rebuild the baseline with `lynx-mods add %s -o`", name, shortHash(commit), item.Version, expectedVersion, name)
+		return nil, nil, fmt.Errorf("module %s: registry commit %s carries item.json version %q but the lock pins %s — rebuild the baseline with `lynx-start add %s -o`", name, shortHash(commit), item.Version, expectedVersion, name)
 	}
 	item.Dir = dir
 	return item, cleanup, nil
@@ -279,7 +279,7 @@ func (idx *Index) modulePath(name string) (string, error) {
 			return it.Path, nil
 		}
 	}
-	return "", fmt.Errorf("module %q not found in registry (see lynx-mods list)", name)
+	return "", fmt.Errorf("module %q not found in registry (see lynx-start list)", name)
 }
 
 func loadItem(dir, name string) (*Item, error) {

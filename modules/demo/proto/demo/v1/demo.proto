@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package demo.v1;
 
-option go_package = "github.com/lynxland/lynx-mods/modules/demo/genproto/demo/v1;demov1";
+option go_package = "github.com/lynxland/lynx-start/modules/demo/genproto/demo/v1;demov1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";

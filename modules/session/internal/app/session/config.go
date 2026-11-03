@@ -29,7 +29,7 @@ func (c *Config) ApplyDefaults() {
 	c.Secret = DefaultDevSecret
 	c.AccessTTL = 15 * time.Minute
 	c.RefreshTTL = 30 * 24 * time.Hour
-	c.Issuer = "lynx-mods"
+	c.Issuer = "lynx-start"
 }
 
 // Validate fail-fast 校验（组合根调用）。

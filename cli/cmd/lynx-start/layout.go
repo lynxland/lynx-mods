@@ -9,7 +9,7 @@ package main
 //	└── internal/{app,api,infra}/…   # ← 模块仓 internal/{app,api,infra}/<name>/
 //（proto 源与 genproto 生成物均集中应用根 proto/<name>/ 与 genproto/<name>/）
 //
-// proto 契约源集中应用根 proto/<name>/v1/；基线/备份是 ~/.lynx-mods 下
+// proto 契约源集中应用根 proto/<name>/v1/；基线/备份是 ~/.lynx-start 下
 // 按 <appModulePath>/<module>@<commit> 寻址的可重建缓存（lock+manifest
 // 才随应用提交）。本文件被 add/update/remove/doctor/generate 共用。
 
@@ -40,11 +40,14 @@ func relocateModule(name, rel string) (string, error) {
 }
 
 // canonicalModulesPrefixes 是 registry 模块规范路径的公共前缀集合（残留扫描用）。
-// 多前缀兼容（ADR-0006）：新 canonical 是 lynxland/lynx-mods/modules/（GitHub
-// 机构更名 lynx-go → lynxland 后）；历史 tag 仍是 lynx-go/lynx-mods/modules/，
-// 更早的（lynx-mods 时代原样搬入）是 lynx-go/lynx-start/modules/——各系都
-// 必须被改写与残留扫描覆盖。首项为新 canonical。
+// 多前缀兼容（ADR-0006/0007）：新 canonical 是 lynxland/lynx-start/modules/
+// （2026-11-03 本仓更名 lynx-mods → lynx-start 后）；历史 tag 三系——
+// lynxland/lynx-mods/modules/（更名前）、lynx-go/lynx-mods/modules/（机构
+// 更名 lynx-go → lynxland 前）、lynx-go/lynx-start/modules/（拆分前自
+// lynx-start 仓原样搬入）——各系都必须被改写与残留扫描覆盖。首项为新
+// canonical。
 var canonicalModulesPrefixes = []string{
+	"github.com/lynxland/lynx-start/modules/",
 	"github.com/lynxland/lynx-mods/modules/",
 	"github.com/lynx-go/lynx-mods/modules/",
 	"github.com/lynx-go/lynx-start/modules/",
@@ -90,11 +93,11 @@ func moduleRewriter(appModulePath string, canonicals map[string]string) func(rel
 	sort.Strings(names)
 	var rules []rule
 	for _, name := range names {
-		// 双前缀兼容（ADR-0006）：canonical 可能是新系（lynx-mods/modules/，
-		// 工作区 item）也可能是旧系（lynx-start/modules/，历史 tag item）。
-		// 混代组合（旧 tag 模块源码引用旧系 sibling 路径 + sibling 解析自
-		// 工作区新系 item）下，单一 canonical 会漏改——对每个 canonical
-		// 同时生成两系规则，改写器对前缀系别完全无感。
+		// 多前缀兼容（ADR-0006/0007）：canonical 可能是新系（lynx-start/
+		// modules/，工作区 item）也可能是旧系（lynx-mods/modules/ 等历史系，
+		// 历史 tag item）。混代组合（旧 tag 模块源码引用旧系 sibling 路径 +
+		// sibling 解析自工作区新系 item）下，单一 canonical 会漏改——对每个
+		// canonical 同时生成全系规则，改写器对前缀系别完全无感。
 		for _, c := range canonicalBothPrefixes(canonicals[name]) {
 			rules = append(rules,
 				rule{[]byte(c + "/genproto/"), []byte(appModulePath + "/genproto/")},
@@ -158,7 +161,7 @@ func rewriteGuardTest(name, rel string, content []byte) []byte {
 // 包名 <name> 不一致」的歧义。
 func bridgeModule(appModulePath, name string) []byte {
 	var b strings.Builder
-	fmt.Fprintf(&b, `// lynx-mods:bridge —— 由 add 生成（remove 删除）。转发装配入口：
+	fmt.Fprintf(&b, `// lynx-start:bridge —— 由 add 生成（remove 删除）。转发装配入口：
 // modules/<name>/internal 受 Go 可见性保护，应用唯一入口是本包。
 // 改模块装配请改 internal/api；本文件属注入物，不参与 update 合并。
 package %s
@@ -181,26 +184,26 @@ func Assemble(deps appkit.Deps) (appkit.Assembly, error) { return api.Assemble(d
 // bridgeRelPath 是桥接包在应用内的相对路径（remove 与 doctor 用）。
 func bridgeRelPath(name string) string { return "modules/" + name + "/module.go" }
 
-// ---- ~/.lynx-mods 用户缓存 ----
+// ---- ~/.lynx-start 用户缓存 ----
 
-// userCacheRoot 返回 ~/.lynx-mods（基线/备份缓存的根，与应用仓库分离，
+// userCacheRoot 返回 ~/.lynx-start（基线/备份缓存的根，与应用仓库分离，
 // 不进版本库；内容可由 registry + lock 确定性重建）。
 func userCacheRoot() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("locate user home for the lynx-mods cache: %w", err)
+		return "", fmt.Errorf("locate user home for the lynx-start cache: %w", err)
 	}
-	return filepath.Join(home, ".lynx-mods"), nil
+	return filepath.Join(home, ".lynx-start"), nil
 }
 
-// baselineCacheDir 返回基线缓存目录：~/.lynx-mods/baselines/<appModulePath>/<m>@<commit12>。
+// baselineCacheDir 返回基线缓存目录：~/.lynx-start/baselines/<appModulePath>/<m>@<commit12>。
 // appModulePath 作应用维度隔离（基线含改写后的导入路径，per-app 不同）；
 // commit 短化仅用于目录名，内容寻址不变。
 func baselineCacheDir(appModulePath, module, commit string) string {
 	root, err := userCacheRoot()
 	if err != nil {
 		// UserHomeDir 在常规环境不会失败；保守回退到应用内临时态由调用方兜底。
-		return filepath.Join(os.TempDir(), "lynx-mods-baseline", appModulePath, module+"@"+shortHash(commit))
+		return filepath.Join(os.TempDir(), "lynx-start-baseline", appModulePath, module+"@"+shortHash(commit))
 	}
 	return filepath.Join(root, "baselines", appModulePath, module+"@"+shortHash(commit))
 }
@@ -209,7 +212,7 @@ func baselineCacheDir(appModulePath, module, commit string) string {
 func backupCacheDir(appModulePath, module string) string {
 	root, err := userCacheRoot()
 	if err != nil {
-		return filepath.Join(os.TempDir(), "lynx-mods-backup", appModulePath, module)
+		return filepath.Join(os.TempDir(), "lynx-start-backup", appModulePath, module)
 	}
 	return filepath.Join(root, "backups", appModulePath, module)
 }

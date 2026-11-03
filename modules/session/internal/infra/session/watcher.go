@@ -7,8 +7,8 @@ import (
 
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/lynx"
-	domainsession "github.com/lynxland/lynx-mods/modules/session/domain/session"
-	appsession "github.com/lynxland/lynx-mods/modules/session/internal/app/session"
+	domainsession "github.com/lynxland/lynx-start/modules/session/domain/session"
+	appsession "github.com/lynxland/lynx-start/modules/session/internal/app/session"
 	"github.com/lynxland/lynx/eventbus"
 )
 

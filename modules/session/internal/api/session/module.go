@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lynxland/lynx-mods/modules/session/domain/session"
-	sessionv1 "github.com/lynxland/lynx-mods/modules/session/genproto/session/v1"
-	appsession "github.com/lynxland/lynx-mods/modules/session/internal/app/session"
-	infrasession "github.com/lynxland/lynx-mods/modules/session/internal/infra/session"
-	"github.com/lynxland/lynx-mods/modules/session/internal/infra/session/migrations"
+	"github.com/lynxland/lynx-start/modules/session/domain/session"
+	sessionv1 "github.com/lynxland/lynx-start/modules/session/genproto/session/v1"
+	appsession "github.com/lynxland/lynx-start/modules/session/internal/app/session"
+	infrasession "github.com/lynxland/lynx-start/modules/session/internal/infra/session"
+	"github.com/lynxland/lynx-start/modules/session/internal/infra/session/migrations"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"
@@ -43,7 +43,7 @@ func Module() appkit.Module {
 				"secret":      appsession.DefaultDevSecret,
 				"access_ttl":  "15m",
 				"refresh_ttl": "720h",
-				"issuer":      "lynx-mods",
+				"issuer":      "lynx-start",
 			},
 		},
 	}

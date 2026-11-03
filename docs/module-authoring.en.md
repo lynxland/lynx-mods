@@ -8,7 +8,7 @@ This guide serves two audiences:
 - **Module contributors** — you want to publish a business domain back to this registry.
 
 Both share the same structure and contracts; the only difference is the final
-section (whether it is distributed via `lynx-mods add`). A full read takes about
+section (whether it is distributed via `lynx-start add`). A full read takes about
 15 minutes; it pairs best with `modules/demo` (466 lines, the minimal complete
 example) and `modules/identity` (authenticator + config section).
 
@@ -31,12 +31,12 @@ example) and `modules/identity` (authenticator + config section).
 
    | Nature of the code | Channel | Examples |
    |---|---|---|
-   | Business logic users will change | module source (`lynx-mods add`) | aggregates, use-case flows, policy trade-offs |
+   | Business logic users will change | module source (`lynx-start add`) | aggregates, use-case flows, policy trade-offs |
    | Users won't change it; CVEs must ship as patches | kernel (Go module, semver) | Argon2 parameters, JWT verification, timing-alignment decoy |
    | Interface derivatives | generated (buf / protoc plugins) | DTOs, HTTP/gRPC skeletons |
 
    Once module source is installed it is disconnected from the registry —
-   `lynx-mods update` is a human-triggered three-way merge, so security fixes
+   `lynx-start update` is a human-triggered three-way merge, so security fixes
    cannot rely on it. Therefore any implementation where "wrong parameters are
    a vulnerability" (hash parameters, constant-time comparison, token
    verification, randomness) sinks into the kernel: the app runs
@@ -247,14 +247,14 @@ automatically via the item.json `configFragment`).
 ### Step 6: generate code
 
 ```bash
-mise run generate    # lynx-mods generate: buf pipeline (genproto/** lands at the app root)
+mise run generate    # lynx-start generate: buf pipeline (genproto/** lands at the app root)
 go mod tidy
 ```
 
 ### Step 7: register
 
 Append (inside the anchors) to the `Installed` list in `modules/modules.go`
-(`lynx-mods add` injects this automatically — copy the shape for hand-written
+(`lynx-start add` injects this automatically — copy the shape for hand-written
 private modules; the import points at the module bridge package):
 
 ```go
@@ -294,7 +294,7 @@ explicit; there is no generated DI.
 Put the module into `modules/<name>/` of this repo as a **real Go module**:
 
 1. Ship its own `go.mod` (module path like
-   `github.com/lynxland/lynx-mods/modules/<name>`), `buf.yaml`/`buf.gen.yaml`
+   `github.com/lynxland/lynx-start/modules/<name>`), `buf.yaml`/`buf.gen.yaml`
    (deps declare `buf.build/lynxland/grpcapi`: policy.proto resolves from the
    BSR and is never vendored into the module), and committed genproto —
    compiled and tested inside this repo, so kernel breaking changes surface in
@@ -306,7 +306,7 @@ Put the module into `modules/<name>/` of this repo as a **real Go module**:
      "name": "todo",
      "version": "0.1.0",
      "description": "todo tasks",
-     "modulePath": "github.com/lynxland/lynx-mods/modules/todo",
+     "modulePath": "github.com/lynxland/lynx-start/modules/todo",
      "moduleDependencies": [],
      "goDependencies": [],
      "configFragment": "todo:\n  default_page_size: 50\n",
@@ -322,8 +322,8 @@ Put the module into `modules/<name>/` of this repo as a **real Go module**:
 Registering is one command (item.json skeleton / registry.json / go.work kept consistent):
 
    ```bash
-   lynx-mods registry add modules/<name>   # fill description/publishedEvents after the skeleton
-   lynx-mods registry check                # consistency check (CI-friendly)
+   lynx-start registry add modules/<name>   # fill description/publishedEvents after the skeleton
+   lynx-start registry check                # consistency check (CI-friendly)
    ```
 
 3. Register `{ "name", "path" }` in the `items` of `registry/registry.json`;
@@ -338,20 +338,20 @@ Registering is one command (item.json skeleton / registry.json / go.work kept co
 
 ### Versioned install and update (app side)
 
-- `lynx-mods add todo@0.1.0` extracts that version's source from the tag
+- `lynx-start add todo@0.1.0` extracts that version's source from the tag
   (reproducible installs); without `@version` the registry worktree is taken
   (latest);
 - `add` writes an **install baseline** to the user cache
-  `~/.lynx-mods/baselines/<appModulePath>/<name>@<commit>/` (the exact
+  `~/.lynx-start/baselines/<appModulePath>/<name>@<commit>/` (the exact
   post-install form: rewritten imports, gofmt'd). The baseline is a rebuildable
-  cache and never enters the app repo: commit only `.lynx-mods/lock.json`
-  (supply-chain lock) and `lynx-mods.json` (manifest) — when the cache is
+  cache and never enters the app repo: commit only `.lynx-start/lock.json`
+  (supply-chain lock) and `lynx-start.json` (manifest) — when the cache is
   missing, update/doctor rebuild it from the registry at the commit recorded
   in the lock, so cross-machine updates no longer depend on committed baselines;
-- `lynx-mods update todo` three-way-merges to the registry latest: **local /
+- `lynx-start update todo` three-way-merges to the registry latest: **local /
   baseline / upstream**. Non-overlapping changes merge automatically; same-region
   changes get git conflict markers (`<<<<<<< yours / baseline / theirs`), the
-  pre-overwrite local copy is kept in `~/.lynx-mods/backups/<appModulePath>/<name>/`; files deleted
+  pre-overwrite local copy is kept in `~/.lynx-start/backups/<appModulePath>/<name>/`; files deleted
   upstream are only reported, never auto-deleted. Merging writes are not
   rollback-safe — **commit the app before update**;
 - Baseline invariant: baseline ≡ the last-synced upstream form. After resolving
@@ -376,7 +376,7 @@ out-of-bounds imports (domain must not import infra/app/api).
 ## 6. Replacing a module's internals (customization recipes)
 
 The code is yours — editing directly is the intended path. But different edits
-co-exist with `lynx-mods update`'s three-way merge at different friction
+co-exist with `lynx-start update`'s three-way merge at different friction
 levels, from low to high:
 
 | What you want | Recommended recipe | Update-conflict risk |
@@ -399,5 +399,5 @@ Key points:
 - **The domain port is your stable anchor**: as long as the port signature
   stays, swap infra freely — contract 2 ("cross-module depends on domain
   only") protects your customization exactly as it protects modules;
-- After customizing run `lynx-mods doctor` (baseline/lock intact) and
+- After customizing run `lynx-start doctor` (baseline/lock intact) and
   `go build ./...`.

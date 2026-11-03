@@ -6,8 +6,8 @@ import (
 	"context"
 	"errors"
 
-	organizationv1 "github.com/lynxland/lynx-mods/modules/organization/genproto/organization/v1"
-	apporganization "github.com/lynxland/lynx-mods/modules/organization/internal/app/organization"
+	organizationv1 "github.com/lynxland/lynx-start/modules/organization/genproto/organization/v1"
+	apporganization "github.com/lynxland/lynx-start/modules/organization/internal/app/organization"
 
 	"github.com/lynxland/grpcapi/principal"
 	"google.golang.org/grpc/codes"
@@ -15,7 +15,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/lynxland/lynx-mods/modules/organization/domain/organization"
+	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
 )
 
 // Service 实现 OrganizationService（薄转发：参数校验交给 protovalidate，

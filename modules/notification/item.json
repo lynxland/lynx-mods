@@ -14,7 +14,7 @@
       "organization": ">=0.1.1"
     }
   ],
-  "modulePath": "github.com/lynxland/lynx-mods/modules/notification",
+  "modulePath": "github.com/lynxland/lynx-start/modules/notification",
   "name": "notification",
-  "version": "0.3.0"
+  "version": "0.4.0"
 }

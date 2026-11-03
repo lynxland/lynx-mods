@@ -1,15 +1,15 @@
 package main
 
 // 基线快照（update 三方合并的 base）存用户目录缓存
-// ~/.lynx-mods/baselines/<appModulePath>/<module>@<commit>/，内容是
+// ~/.lynx-start/baselines/<appModulePath>/<module>@<commit>/，内容是
 // 「最近一次从 registry 同步的最终形态」——已过导入改写与 gofmt，与应用
 // 文件同处一个路径空间（modules/<m>/…），合并不会产生虚假冲突。
 //
-// 缓存不进应用仓库（lock.json + lynx-mods.json 才提交）：基线可由
+// 缓存不进应用仓库（lock.json + lynx-start.json 才提交）：基线可由
 // registry + lock 确定性重建（ensureBaseline——按 lock 记录的 commit
 // archive 源码，经 add 同款改写管线复现），换机器不再依赖提交基线。
 // 同一模块不同 commit 的基线并存（多版本区分）；旧 commit 不自动清理，
-// 可定期手动删 ~/.lynx-mods/baselines。
+// 可定期手动删 ~/.lynx-start/baselines。
 //
 // 不变量：基线 ≡ upstream 最近一次同步形态。冲突文件解决后 baseline 仍为
 // upstream 形态（下次 update 把用户的解决结果视为本地改动自然保留）。
@@ -21,10 +21,10 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/lynxland/lynx-mods/cli/internal/lock"
-	"github.com/lynxland/lynx-mods/cli/internal/manifest"
-	"github.com/lynxland/lynx-mods/cli/internal/registry"
-	"github.com/lynxland/lynx-mods/cli/internal/render"
+	"github.com/lynxland/lynx-start/cli/internal/lock"
+	"github.com/lynxland/lynx-start/cli/internal/manifest"
+	"github.com/lynxland/lynx-start/cli/internal/registry"
+	"github.com/lynxland/lynx-start/cli/internal/render"
 )
 
 // syncBaseline 在 add 后同步基线：本次被 upstream 写入的文件（Created）刷新
@@ -89,14 +89,14 @@ func ensureBaseline(idx *registry.Index, registryDir string, m *manifest.Manifes
 		return baseDir, nil
 	}
 	if commit == "" || commit == "unknown" {
-		return "", fmt.Errorf("no baseline cache for %s and the install source is unrecorded (pre-lock install): re-install with `lynx-mods add %s -o` to rebuild it (your files are overwritten by upstream; commit local changes first)", name, name)
+		return "", fmt.Errorf("no baseline cache for %s and the install source is unrecorded (pre-lock install): re-install with `lynx-start add %s -o` to rebuild it (your files are overwritten by upstream; commit local changes first)", name, name)
 	}
 	item, cleanup, err := idx.ItemAtCommit(registryDir, name, commit, version)
 	if err != nil {
 		return "", err
 	}
 	defer cleanup()
-	tmp, err := os.MkdirTemp("", "lynx-mods-baseline-")
+	tmp, err := os.MkdirTemp("", "lynx-start-baseline-")
 	if err != nil {
 		return "", err
 	}

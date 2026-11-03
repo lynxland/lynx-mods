@@ -9,17 +9,17 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lynxland/lynx-mods/cli/internal/lock"
-	"github.com/lynxland/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-start/cli/internal/lock"
+	"github.com/lynxland/lynx-start/cli/internal/manifest"
 )
 
-// cmdRemove: lynx-mods remove <module> —— 卸载模块：回退 modules.go 注入
+// cmdRemove: lynx-start remove <module> —— 卸载模块：回退 modules.go 注入
 // 与 config 段、删除安装文件（共享文件保护）、整树清理 modules/<m>（含
 // 桥接）与 genproto/<m>、清用户目录基线/备份缓存。迁移表 goose_<m>_db
 // 一律保留（数据安全）。
 func cmdRemove(args []string) error {
 	fs := flag.NewFlagSet("remove", flag.ContinueOnError)
-	registryDir := fs.String("registry", os.Getenv("LYNXMODS_REGISTRY"), "lynx-mods repo directory")
+	registryDir := fs.String("registry", os.Getenv("LYNXSTART_REGISTRY"), "lynx-start repo directory")
 	dir := fs.String("dir", ".", "app directory")
 	dryRun := fs.Bool("dry-run", false, "preview without deleting")
 	args = reorderArgs(map[string]bool{"registry": true, "dir": true}, args)
@@ -27,7 +27,7 @@ func cmdRemove(args []string) error {
 		return err
 	}
 	if fs.NArg() != 1 {
-		return fmt.Errorf("usage: lynx-mods remove <module> [--registry <dir>] [--dry-run]")
+		return fmt.Errorf("usage: lynx-start remove <module> [--registry <dir>] [--dry-run]")
 	}
 	name := fs.Arg(0)
 	appDir, err := filepath.Abs(*dir)
@@ -40,7 +40,7 @@ func cmdRemove(args []string) error {
 	}
 	installed, ok := m.Get(name)
 	if !ok {
-		return fmt.Errorf("module %s is not installed (see lynx-mods.json)", name)
+		return fmt.Errorf("module %s is not installed (see lynx-start.json)", name)
 	}
 	if *registryDir == "" {
 		*registryDir = m.Registry

@@ -8,8 +8,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
-	"github.com/lynxland/lynx-mods/modules/organization/domain/organization"
+	"github.com/lynxland/lynx-start/modules/identity/domain/identity"
+	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
 
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"

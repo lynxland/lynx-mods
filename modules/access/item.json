@@ -1,8 +1,8 @@
 {
   "name": "access",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "授权模块：RBAC（配置角色目录 + DB 分配），认证后注入 roles/permissions claims，依赖 identity",
-  "modulePath": "github.com/lynxland/lynx-mods/modules/access",
+  "modulePath": "github.com/lynxland/lynx-start/modules/access",
   "moduleDependencies": ["identity"],
   "goDependencies": [],
   "configFragment": "access:\n  roles:                      # 角色目录（可审计可改；精确匹配无通配符）\n    admin: [\"access.assignment.write\"]\n    editor: []\n  bootstrap_admins:           # 启动期自动授予 admin 的邮箱（未注册则告警跳过，注册后重启生效）\n    - \"admin@example.com\"",

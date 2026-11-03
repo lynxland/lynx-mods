@@ -12,11 +12,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	taskv1 "github.com/lynxland/lynx-mods/modules/task/genproto/task/v1"
-	apptask "github.com/lynxland/lynx-mods/modules/task/internal/app/task"
+	taskv1 "github.com/lynxland/lynx-start/modules/task/genproto/task/v1"
+	apptask "github.com/lynxland/lynx-start/modules/task/internal/app/task"
 
-	"github.com/lynxland/lynx-mods/modules/organization/domain/organization"
-	"github.com/lynxland/lynx-mods/modules/task/domain/task"
+	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
+	"github.com/lynxland/lynx-start/modules/task/domain/task"
 )
 
 // Service 实现 TaskService（薄转发：成员资格与创建者裁决在用例层，

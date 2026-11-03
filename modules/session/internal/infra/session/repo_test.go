@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
-	"github.com/lynxland/lynx-mods/modules/session/domain/session"
-	"github.com/lynxland/lynx-mods/modules/session/internal/infra/session/migrations"
+	"github.com/lynxland/lynx-start/modules/session/domain/session"
+	"github.com/lynxland/lynx-start/modules/session/internal/infra/session/migrations"
 )
 
 var t0 = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)

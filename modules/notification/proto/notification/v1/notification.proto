@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package notification.v1;
 
-option go_package = "github.com/lynxland/lynx-mods/modules/notification/genproto/notification/v1;notificationv1";
+option go_package = "github.com/lynxland/lynx-start/modules/notification/genproto/notification/v1;notificationv1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";

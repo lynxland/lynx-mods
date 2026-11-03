@@ -6,9 +6,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/lynxland/lynx-mods/modules/identity/domain/identity"
-	identityv1 "github.com/lynxland/lynx-mods/modules/identity/genproto/identity/v1"
-	appidentity "github.com/lynxland/lynx-mods/modules/identity/internal/app/identity"
+	"github.com/lynxland/lynx-start/modules/identity/domain/identity"
+	identityv1 "github.com/lynxland/lynx-start/modules/identity/genproto/identity/v1"
+	appidentity "github.com/lynxland/lynx-start/modules/identity/internal/app/identity"
 
 	"github.com/lynxland/grpcapi/principal"
 	"google.golang.org/grpc/codes"

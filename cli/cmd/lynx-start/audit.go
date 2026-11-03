@@ -6,17 +6,17 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/lynxland/lynx-mods/cli/internal/manifest"
-	"github.com/lynxland/lynx-mods/cli/internal/registry"
+	"github.com/lynxland/lynx-start/cli/internal/manifest"
+	"github.com/lynxland/lynx-start/cli/internal/registry"
 )
 
-// cmdAudit: lynx-mods audit —— 安全公告门禁。模块安装即断连，已装用户
+// cmdAudit: lynx-start audit —— 安全公告门禁。模块安装即断连，已装用户
 // 只能靠 registry 维护的 advisories.json 得知安全修复；本命令比对应用
 // 已装版本，命中即非零退出（doctor 只作 ⚠ 提示不过载体检语义，CI 门禁
 // 用本命令）。
 func cmdAudit(args []string) error {
 	fs := flag.NewFlagSet("audit", flag.ContinueOnError)
-	registryDir := fs.String("registry", os.Getenv("LYNXMODS_REGISTRY"), "lynx-mods repo directory")
+	registryDir := fs.String("registry", os.Getenv("LYNXSTART_REGISTRY"), "lynx-start repo directory")
 	dir := fs.String("dir", ".", "app directory")
 	format := fs.String("format", "text", "output format: text | github")
 	args = reorderArgs(map[string]bool{"registry": true, "dir": true}, args)
@@ -58,14 +58,14 @@ func cmdAudit(args []string) error {
 	}
 	if hits == 0 {
 		if github {
-			fmt.Println("::notice title=lynx-mods audit::no known advisories affect installed versions")
+			fmt.Println("::notice title=lynx-start audit::no known advisories affect installed versions")
 		} else {
 			fmt.Println("✓ no known advisories affect installed versions")
 		}
 		return nil
 	}
 	if !github {
-		fmt.Println("\nupgrade: git add -A && git commit -m wip && lynx-mods update <module>")
+		fmt.Println("\nupgrade: git add -A && git commit -m wip && lynx-start update <module>")
 	}
 	return fmt.Errorf("audit: %d advisory hit(s)", hits)
 }

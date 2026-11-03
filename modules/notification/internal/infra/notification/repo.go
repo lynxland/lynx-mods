@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
-	"github.com/lynxland/lynx-mods/modules/notification/domain/notification"
+	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
 
 	"github.com/uptrace/bun"
 )

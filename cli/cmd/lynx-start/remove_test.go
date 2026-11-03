@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lynxland/lynx-mods/cli/internal/manifest"
+	"github.com/lynxland/lynx-start/cli/internal/manifest"
 )
 
 func TestRevertModulesEntryRoundtrip(t *testing.T) {
@@ -15,7 +15,7 @@ func TestRevertModulesEntryRoundtrip(t *testing.T) {
 	const tmpl = `package modules
 
 import (
-	// lynx-mods:module-import（lynx-mods add 注入锚点，勿删）
+	// lynx-start:module-import（lynx-start add 注入锚点，勿删）
 )
 
 var Installed = []appkit.InstalledModule{
@@ -23,7 +23,7 @@ var Installed = []appkit.InstalledModule{
 		Module:   demo.Module(),
 		Assemble: demo.Assemble,
 	},
-	// lynx-mods:module-entry（lynx-mods add 注入锚点，勿删）
+	// lynx-start:module-entry（lynx-start add 注入锚点，勿删）
 }
 `
 	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
@@ -65,7 +65,7 @@ func TestRemoveConfigFragment(t *testing.T) {
 	p := filepath.Join(dir, "configs", "config.yaml")
 	const tmpl = `app:
   name: x
-# lynx-mods:config-fragment（lynx-mods add 追加模块配置段的锚点，勿删）
+# lynx-start:config-fragment（lynx-start add 追加模块配置段的锚点，勿删）
 # --- module: demo ---
 demo:
   x: 1

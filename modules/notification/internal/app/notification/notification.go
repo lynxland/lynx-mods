@@ -11,7 +11,7 @@ import (
 
 	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/idgen"
-	"github.com/lynxland/lynx-mods/modules/notification/domain/notification"
+	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
 )
 
 // UseCase 是通知模块的用例集。
