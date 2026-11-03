@@ -43,7 +43,7 @@ const (
 )
 
 // 本模块发布的事件目录（契约②）：app 层发布与 Module().PublishedEvents
-// 共用同一常量，item.json 的 publishedEvents 与此同步。
+// 共用同一常量，module.json 的 publishedEvents 与此同步。
 const (
 	EventSessionCreated   = "session.session.created"
 	EventSessionRefreshed = "session.session.refreshed"

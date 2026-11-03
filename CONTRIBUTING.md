@@ -4,18 +4,18 @@
 
 1. **写模块**:按 [docs/module-authoring.md](docs/module-authoring.md)([English](docs/module-authoring.en.md))
    的四层结构在 `modules/<name>/` 实现一个真实 Go module(自带 go.mod 与 genproto)。
-2. **登记**(一处输入三处一致,item.json 骨架 / registry.json / go.work):
+2. **登记**(一处输入三处一致,module.json 骨架 / registry.json / go.work):
 
    ```bash
    lynx-start registry add modules/<name>
    lynx-start registry check        # 三处一致性体检(可入 CI)
    ```
 
-3. **补齐清单**:填 item.json 的 `description` 与 `publishedEvents`
+3. **补齐清单**:填 module.json 的 `description` 与 `publishedEvents`
    (后者必须与 `Module().PublishedEvents` 一致——启动期校验的事实源)。
 4. **验证**:`mise run lint && mise run test`,并确认 CI 的 e2e 组合矩阵
    (`.github/workflows/ci.yml`,新增模块后补一个组合)。
-5. **发版**:`git tag modules/<name>/v<x.y.z>`(tag 必须指向 item.json 已写
+5. **发版**:`git tag modules/<name>/v<x.y.z>`(tag 必须指向 module.json 已写
    该版本的提交,安装器校验漂移);推送 tag 自动建 GitHub Release。
 
 组合预设(preset)在 `registry/presets.json` 登记(组合顺序即安装顺序)。
@@ -38,18 +38,18 @@
 
 1. **Write the module** following [docs/module-authoring.en.md](docs/module-authoring.en.md)
    ([中文](docs/module-authoring.md)) — a real Go module under `modules/<name>/`.
-2. **Register** (one command keeps item.json / registry.json / go.work consistent):
+2. **Register** (one command keeps module.json / registry.json / go.work consistent):
 
    ```bash
    lynx-start registry add modules/<name>
    lynx-start registry check
    ```
 
-3. **Fill the manifest**: `description` and `publishedEvents` in item.json
+3. **Fill the manifest**: `description` and `publishedEvents` in module.json
    (the latter must match `Module().PublishedEvents`).
 4. **Verify**: `mise run lint && mise run test`; add a combo to the CI e2e matrix.
 5. **Release**: `git tag modules/<name>/v<x.y.z>` (the tag must point at a
-   commit whose item.json already carries that version); the release workflow
+   commit whose module.json already carries that version); the release workflow
    creates the GitHub Release automatically.
 
 Security fixes: append an entry to `registry/advisories.json` (exact

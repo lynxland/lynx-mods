@@ -1,5 +1,5 @@
 // Package registry 读取 lynx-start 仓库的模块仓：registry/registry.json 索引 +
-// 各模块目录的 item.json 清单。版本解析走仓库 git tag（modules/<name>/v<x.y.z>，
+// 各模块目录的 module.json 清单。版本解析走仓库 git tag（modules/<name>/v<x.y.z>，
 // 与 kernel/v<x.y.z> 同款子目录前缀形式）；远端 registry 后续接入。
 package registry
 
@@ -25,8 +25,8 @@ type Index struct {
 	} `json:"items"`
 }
 
-// Item 是模块目录里的 item.json（registry item 清单）。
-type Item struct {
+// ModuleManifest 是模块目录里的 module.json（模块清单）。
+type ModuleManifest struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
@@ -51,7 +51,7 @@ type Item struct {
 	Dir string `json:"-"`
 }
 
-// EnvVar 是 item.json 的 env 声明。
+// EnvVar 是 module.json 的 env 声明。
 type EnvVar struct {
 	Key         string `json:"key"`
 	Description string `json:"description"`
@@ -151,11 +151,11 @@ func (d Dependency) Meets(installed string) bool {
 }
 
 // CanonicalModulePath 返回模块的规范路径（缺省推导）。
-func (i *Item) CanonicalModulePath() string {
-	if i.ModulePath != "" {
-		return i.ModulePath
+func (m *ModuleManifest) CanonicalModulePath() string {
+	if m.ModulePath != "" {
+		return m.ModulePath
 	}
-	return "github.com/lynxland/lynx-start/modules/" + i.Name
+	return "github.com/lynxland/lynx-start/modules/" + m.Name
 }
 
 // Load 读 registryDir/registry/registry.json。
@@ -171,29 +171,29 @@ func Load(registryDir string) (*Index, error) {
 	return &idx, nil
 }
 
-// Item 按名查模块：定位 item.json 与源码目录（registry 工作区最新形态）。
-func (idx *Index) Item(registryDir, name string) (*Item, error) {
+// Manifest 按名查模块：定位 module.json 与源码目录（registry 工作区最新形态）。
+func (idx *Index) Manifest(registryDir, name string) (*ModuleManifest, error) {
 	path, err := idx.modulePath(name)
 	if err != nil {
 		return nil, err
 	}
 	dir := filepath.Join(registryDir, path)
-	item, err := loadItem(dir, name)
+	manifest, err := loadManifest(dir, name)
 	if err != nil {
 		return nil, err
 	}
-	item.Dir = dir
-	return item, nil
+	manifest.Dir = dir
+	return manifest, nil
 }
 
-// ItemAt 按名与可选版本查模块：version 为空等价 Item（工作区最新）；
+// ManifestAt 按名与可选版本查模块：version 为空等价 Manifest（工作区最新）；
 // 非空则从 git tag modules/<name>/v<version> 提取该版本源码树。
 // 返回的 cleanup 释放临时目录，调用方必须 defer（工作区形态时为 nil）。
-// tag 内 item.json 的 version 必须与请求一致（防 tag 与清单漂移）。
-func (idx *Index) ItemAt(registryDir, name, version string) (*Item, func(), error) {
+// tag 内 module.json 的 version 必须与请求一致（防 tag 与清单漂移）。
+func (idx *Index) ManifestAt(registryDir, name, version string) (*ModuleManifest, func(), error) {
 	if version == "" {
-		item, err := idx.Item(registryDir, name)
-		return item, func() {}, err
+		manifest, err := idx.Manifest(registryDir, name)
+		return manifest, func() {}, err
 	}
 	path, err := idx.modulePath(name)
 	if err != nil {
@@ -218,24 +218,24 @@ func (idx *Index) ItemAt(registryDir, name, version string) (*Item, func(), erro
 		return nil, nil, fmt.Errorf("extract %s: %w", tag, err)
 	}
 	dir := filepath.Join(tmp, path)
-	item, err := loadItem(dir, name)
+	manifest, err := loadManifest(dir, name)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	if item.Version != version {
+	if manifest.Version != version {
 		cleanup()
-		return nil, nil, fmt.Errorf("tag %s carries item.json version %q (tag/manifest drift): fix the tag or the manifest", tag, item.Version)
+		return nil, nil, fmt.Errorf("tag %s carries module.json version %q (tag/manifest drift): fix the tag or the manifest", tag, manifest.Version)
 	}
-	item.Dir = dir
-	return item, cleanup, nil
+	manifest.Dir = dir
+	return manifest, cleanup, nil
 }
 
-// ItemAtCommit 按名与 commit 提取该历史形态源码树（基线缓存重建用：
+// ManifestAtCommit 按名与 commit 提取该历史形态源码树（基线缓存重建用：
 // worktree 安装记当时 HEAD，tag 安装记 tag 指向——统一按 commit 寻址，
-// 与 tag 是否存在/移动无关）。expectedVersion 与树内 item.json 不一致
+// 与 tag 是否存在/移动无关）。expectedVersion 与树内 module.json 不一致
 // 即拒绝（registry 历史被改写，重建不再可信）。
-func (idx *Index) ItemAtCommit(registryDir, name, commit, expectedVersion string) (*Item, func(), error) {
+func (idx *Index) ManifestAtCommit(registryDir, name, commit, expectedVersion string) (*ModuleManifest, func(), error) {
 	if commit == "" || commit == "unknown" {
 		return nil, nil, fmt.Errorf("module %s: install source commit is unknown, cannot rebuild the baseline (re-install with `lynx-start add %s -o`)", name, name)
 	}
@@ -260,17 +260,17 @@ func (idx *Index) ItemAtCommit(registryDir, name, commit, expectedVersion string
 		return nil, nil, fmt.Errorf("extract %s: %w", shortHash(commit), err)
 	}
 	dir := filepath.Join(tmp, path)
-	item, err := loadItem(dir, name)
+	manifest, err := loadManifest(dir, name)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	if item.Version != expectedVersion {
+	if manifest.Version != expectedVersion {
 		cleanup()
-		return nil, nil, fmt.Errorf("module %s: registry commit %s carries item.json version %q but the lock pins %s — rebuild the baseline with `lynx-start add %s -o`", name, shortHash(commit), item.Version, expectedVersion, name)
+		return nil, nil, fmt.Errorf("module %s: registry commit %s carries module.json version %q but the lock pins %s — rebuild the baseline with `lynx-start add %s -o`", name, shortHash(commit), manifest.Version, expectedVersion, name)
 	}
-	item.Dir = dir
-	return item, cleanup, nil
+	manifest.Dir = dir
+	return manifest, cleanup, nil
 }
 
 func (idx *Index) modulePath(name string) (string, error) {
@@ -282,23 +282,23 @@ func (idx *Index) modulePath(name string) (string, error) {
 	return "", fmt.Errorf("module %q not found in registry (see lynx-start list)", name)
 }
 
-func loadItem(dir, name string) (*Item, error) {
-	raw, err := os.ReadFile(filepath.Join(dir, "item.json"))
+func loadManifest(dir, name string) (*ModuleManifest, error) {
+	raw, err := os.ReadFile(filepath.Join(dir, "module.json"))
 	if err != nil {
-		return nil, fmt.Errorf("read item.json: %w", err)
+		return nil, fmt.Errorf("read module.json: %w", err)
 	}
-	var item Item
-	if err := json.Unmarshal(raw, &item); err != nil {
+	var manifest ModuleManifest
+	if err := json.Unmarshal(raw, &manifest); err != nil {
 		return nil, err
 	}
-	if item.Name == "" {
-		item.Name = name
+	if manifest.Name == "" {
+		manifest.Name = name
 	}
-	return &item, nil
+	return &manifest, nil
 }
 
-// LoadItem 导出 loadItem 供 registry add/check 命令（贡献者工具）使用。
-func LoadItem(dir, name string) (*Item, error) { return loadItem(dir, name) }
+// LoadManifest 导出 loadManifest 供 registry add/check 命令（贡献者工具）使用。
+func LoadManifest(dir, name string) (*ModuleManifest, error) { return loadManifest(dir, name) }
 
 // Advisory 是 registry/advisories.json 中的一条安全公告：affectedVersions
 // 精确列出受影响版本（0.x 世界不做范围解析），fixed 是修复版本。

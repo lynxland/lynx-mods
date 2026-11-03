@@ -67,7 +67,7 @@ func usage() {
   lynx-start audit [--registry <dir>] [--format text|github]   # security advisory gate (non-zero on hits)
   lynx-start list [--registry <dir>]
   lynx-start registry <add|check> [--registry <repo-root>] [<module-dir>]
-      contributor tooling: register a module (item.json/registry.json/go.work) and check consistency
+      contributor tooling: register a module (module.json/registry.json/go.work) and check consistency
 
 Versions resolve to git tags modules/<name>/v<x.y.z> in the registry repo;
 add/update without @<version> take the registry worktree (latest).

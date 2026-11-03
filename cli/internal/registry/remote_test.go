@@ -33,7 +33,7 @@ func mkGitRepo(t *testing.T) string {
 		}
 	}
 	write("registry/registry.json", `{"name":"t","items":[{"name":"demo","path":"modules/demo"}]}`)
-	write("modules/demo/item.json", `{"name":"demo","version":"0.1.0"}`)
+	write("modules/demo/module.json", `{"name":"demo","version":"0.1.0"}`)
 	write("scaffold/go.mod.tpl", "x")
 	run("git", "init", "-q", "-b", "main")
 	run("git", "add", "-A")
@@ -91,7 +91,7 @@ func TestResolveRemoteCloneAndRefresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := idx.ItemAt(dir1, "demo", "0.1.0"); err != nil {
-		t.Fatalf("ItemAt over cached remote clone: %v", err)
+	if _, _, err := idx.ManifestAt(dir1, "demo", "0.1.0"); err != nil {
+		t.Fatalf("ManifestAt over cached remote clone: %v", err)
 	}
 }

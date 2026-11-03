@@ -1,6 +1,6 @@
 {
   "name": "session",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "会话模块：可吊销登录会话（刷新令牌轮换 + 改密全局吊销），依赖 identity",
   "modulePath": "github.com/lynxland/lynx-start/modules/session",
   "moduleDependencies": [

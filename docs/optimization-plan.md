@@ -81,7 +81,7 @@
 | P-08 | 模块目录薄 | 5 个模块(demo/identity/session/access/audit)全是账号域;registry 网络效应未启动 | 只省一周认证工作,对其余业务无引力 |
 | P-09 | 配置片段无更新通道 | configFragment 仅在 add 时追加;模块新版本需要新配置键时,update 不碰 config.yaml,缺键靠运行时报错 | 升级后"莫名坏掉" |
 | P-10 | 无变更记录 | kernel 有 semver 承诺但无 CHANGELOG;无 GitHub Releases 自动化 | 第三方评估 0.x 项目第一件事("在动吗、破坏性变更说清了吗")无法回答 |
-| P-11 | 贡献路径三处手工 | 发布模块需手工改 item.json + registry.json + go.work,doctor 只能事后查错 | 模块贡献的摩擦,抑制 registry 增长 |
+| P-11 | 贡献路径三处手工 | 发布模块需手工改 module.json + registry.json + go.work,doctor 只能事后查错 | 模块贡献的摩擦,抑制 registry 增长 |
 
 ### C. 表达能力(多为"边界未声明"而非缺陷)
 
@@ -207,7 +207,7 @@
 
 ### I-12 贡献路径去手工化
 
-- **做法**:`lynx-start registry add <dir>`(或 Make 目标)从模块目录生成/校验 item.json、登记 registry.json、追加 go.work,一处输入三处一致;配 CONTRIBUTING.md(中文+英文)。
+- **做法**:`lynx-start registry add <dir>`(或 Make 目标)从模块目录生成/校验 module.json、登记 registry.json、追加 go.work,一处输入三处一致;配 CONTRIBUTING.md(中文+英文)。
 - **验收**:新模块登记由一条命令完成,doctor/CI 全绿。
 
 ---
@@ -231,12 +231,12 @@
 
 ### I-15 env 声明机制
 
-- **做法**:item.json 增加 `env` 字段(变量名/说明/是否密钥);add 时写 `.env.example`(密钥生成随机占位);doctor 校验生产密钥非默认值(联动 identity 的 Assemble 警告)。
+- **做法**:module.json 增加 `env` 字段(变量名/说明/是否密钥);add 时写 `.env.example`(密钥生成随机占位);doctor 校验生产密钥非默认值(联动 identity 的 Assemble 警告)。
 - **验收**:add identity 后 .env.example 出现 IDENTITY_SECRET 条目;默认密钥在 doctor 报 WARN。
 
 ### I-16 依赖版本范围 + kernelConstraint
 
-- **做法**:moduleDependencies 从 `[]string` 扩展为支持 `{"identity": ">=0.1.1"}`(旧格式兼容);item.json 声明 `kernelConstraint`,doctor 比对 go.mod 的 kernel 版本;add 时求解校验,冲突给出可执行建议(先 `update identity`)。
+- **做法**:moduleDependencies 从 `[]string` 扩展为支持 `{"identity": ">=0.1.1"}`(旧格式兼容);module.json 声明 `kernelConstraint`,doctor 比对 go.mod 的 kernel 版本;add 时求解校验,冲突给出可执行建议(先 `update identity`)。
 - **验收**:装 identity@0.1.0 后 add 需 0.1.1 的 session,安装期被拒并指引;而非启动期。
 
 ### I-17 Preset 机制
@@ -259,7 +259,7 @@
 
 ### I-20 破坏性变更 codemod 通道
 
-- **做法**:模块版本升级可附带 Go 编写的 codemod(item.json 声明,如 `codemods: [{"from": "0.1", "to": "0.2", "path": "..."}]`);update 合并后、编译前执行,处理"改不了你的调用代码"的部分(domain 改名后业务代码引用修复)。codemod 在本仓 CI 与组合矩阵中随模块一起测试。
+- **做法**:模块版本升级可附带 Go 编写的 codemod(module.json 声明,如 `codemods: [{"from": "0.1", "to": "0.2", "path": "..."}]`);update 合并后、编译前执行,处理"改不了你的调用代码"的部分(domain 改名后业务代码引用修复)。codemod 在本仓 CI 与组合矩阵中随模块一起测试。
 - **验收**:构造 domain 常量改名的模块升级,codemod 自动修复应用侧引用,`go build` 绿。
 - **成本**:L;先做最小形态(仅支持基于 golang.org/x/tools 的文本级重写规则),AST 级后续。
 

@@ -63,14 +63,14 @@ func cmdUpdate(args []string) error {
 		return err
 	}
 	*registryDir = regDir
-	item, cleanup, err := idx.ItemAt(*registryDir, name, version)
+	mod, cleanup, err := idx.ManifestAt(*registryDir, name, version)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 
-	if item.Version == installed.Version && !*force {
-		fmt.Printf("✓ %s already at %s (use --force to re-sync the baseline from the registry worktree)\n", name, item.Version)
+	if mod.Version == installed.Version && !*force {
+		fmt.Printf("✓ %s already at %s (use --force to re-sync the baseline from the registry worktree)\n", name, mod.Version)
 		return nil
 	}
 	// 供应链锁复核 + 基线缓存就位（ADR-0006：基线住 ~/.lynx-start，缺失时
@@ -107,7 +107,7 @@ func cmdUpdate(args []string) error {
 		return err
 	}
 	defer func() { _ = os.RemoveAll(tmp) }()
-	if err := renderUpstream(idx, *registryDir, item, m, tmp); err != nil {
+	if err := renderUpstream(idx, *registryDir, mod, m, tmp); err != nil {
 		return err
 	}
 	other, err := readTree(tmp)
@@ -115,7 +115,7 @@ func cmdUpdate(args []string) error {
 		return err
 	}
 	if len(other) == 0 {
-		return fmt.Errorf("registry module %s rendered to an empty tree (item.json broken?)", name)
+		return fmt.Errorf("registry module %s rendered to an empty tree (module.json broken?)", name)
 	}
 
 	// local 树：基线与 upstream 文件并集对应的应用现状（缺 = 用户已删）。
@@ -143,7 +143,7 @@ func cmdUpdate(args []string) error {
 	// 不写任何文件——把「写盘不可回滚，先 commit」的判断依据交给用户。
 	if *dryRun {
 		fmt.Printf("\n(dry-run) %s %s → %s: %d auto-merged, %d unchanged, %d conflicts, %d deleted-upstream, %d removed-upstream-needs-review\n",
-			name, installed.Version, item.Version, len(res.Updates), res.Unchanged, len(res.Conflicts), len(res.Deleted), len(res.Removed))
+			name, installed.Version, mod.Version, len(res.Updates), res.Unchanged, len(res.Conflicts), len(res.Deleted), len(res.Removed))
 		printPlan("auto-merge", sortedKeys(res.Updates))
 		printPlan("conflict", res.Conflicts)
 		printPlan("delete", res.Deleted)
@@ -208,10 +208,10 @@ func cmdUpdate(args []string) error {
 	if err := injectModulesEntry(appDir, name, m.ModulePath); err != nil {
 		fmt.Printf("warn: modules.go injection skipped: %v\n", err)
 	}
-	if err := appendEnvExample(appDir, m, item); err != nil {
+	if err := appendEnvExample(appDir, m, mod); err != nil {
 		fmt.Printf("warn: env example skipped: %v\n", err)
 	}
-	if err := appendConfigFragment(appDir, name, item.ConfigFragment); err != nil {
+	if err := appendConfigFragment(appDir, name, mod.ConfigFragment); err != nil {
 		fmt.Printf("warn: config fragment skipped: %v\n", err)
 	}
 
@@ -225,18 +225,18 @@ func cmdUpdate(args []string) error {
 	if err := replaceBaselineTree(newBaseDir, other); err != nil {
 		return err
 	}
-	if err := lk.Record(newBaseDir, name, item.Version, source, commit); err != nil {
+	if err := lk.Record(newBaseDir, name, mod.Version, source, commit); err != nil {
 		return err
 	}
 	if err := lk.Save(appDir); err != nil {
 		return err
 	}
-	m.Set(manifest.Module{Name: name, Version: item.Version, Files: files})
+	m.Set(manifest.Module{Name: name, Version: mod.Version, Files: files})
 	if err := m.Save(appDir); err != nil {
 		return err
 	}
 
-	fmt.Printf("\n✓ %s %s → %s (%d merged, %d unchanged", name, installed.Version, item.Version, len(rels), res.Unchanged)
+	fmt.Printf("\n✓ %s %s → %s (%d merged, %d unchanged", name, installed.Version, mod.Version, len(rels), res.Unchanged)
 	if len(res.Deleted) > 0 {
 		fmt.Printf(", %d deleted", len(res.Deleted))
 	}
@@ -268,25 +268,25 @@ func cmdUpdate(args []string) error {
 // modules/<m>/ + 五条结构化导入改写——与应用文件/基线同处一个路径空间，
 // 合并不会产生虚假冲突）。依赖前缀集取 manifest 已装模块（与安装时
 // 确定性等价：改写只对源码中实际出现的前缀生效）。
-func renderUpstream(idx *registry.Index, registryDir string, item *registry.Item, m *manifest.Manifest, dst string) error {
-	canonicals := map[string]string{item.Name: item.CanonicalModulePath()}
-	for _, mod := range m.Modules {
-		if mod.Name == item.Name {
+func renderUpstream(idx *registry.Index, registryDir string, mod *registry.ModuleManifest, m *manifest.Manifest, dst string) error {
+	canonicals := map[string]string{mod.Name: mod.CanonicalModulePath()}
+	for _, installed := range m.Modules {
+		if installed.Name == mod.Name {
 			continue
 		}
-		depItem, err := idx.Item(registryDir, mod.Name)
+		depMod, err := idx.Manifest(registryDir, installed.Name)
 		if err != nil {
 			return err
 		}
-		canonicals[mod.Name] = depItem.CanonicalModulePath()
+		canonicals[installed.Name] = depMod.CanonicalModulePath()
 	}
 	rewrite := moduleRewriter(m.ModulePath, canonicals)
-	res, err := render.Tree(item.Dir, dst, render.NewData(m.Name, m.ModulePath), render.Options{
+	res, err := render.Tree(mod.Dir, dst, render.NewData(m.Name, m.ModulePath), render.Options{
 		Overwrite: true,
 		Skip:      skipModuleFile,
-		Relocate:  func(rel string) (string, error) { return relocateModule(item.Name, rel) },
+		Relocate:  func(rel string) (string, error) { return relocateModule(mod.Name, rel) },
 		Rewrite: func(rel string, content []byte) []byte {
-			return rewriteGuardTest(item.Name, rel, rewrite(rel, content))
+			return rewriteGuardTest(mod.Name, rel, rewrite(rel, content))
 		},
 	})
 	if err != nil {

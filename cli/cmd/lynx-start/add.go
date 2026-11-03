@@ -70,16 +70,16 @@ func cmdAdd(args []string) error {
 		return err
 	}
 	*registryDir = regDir
-	item, cleanup, err := idx.ItemAt(*registryDir, name, version)
+	mod, cleanup, err := idx.ManifestAt(*registryDir, name, version)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 
 	// 模块依赖（domain 级 DAG）必须已装，且满足声明的最低版本
-	//（item.json 的 [{"identity": ">=0.1.1"}] 形态）——把启动期 fail-closed
+	//（module.json 的 [{"identity": ">=0.1.1"}] 形态）——把启动期 fail-closed
 	// 前移到安装期。
-	for _, dep := range item.ModuleDependencies {
+	for _, dep := range mod.ModuleDependencies {
 		if !m.Has(dep.Name) {
 			return fmt.Errorf("module %s depends on %s: run lynx-start add %s first", name, dep.Name, dep.Name)
 		}
@@ -88,10 +88,10 @@ func cmdAdd(args []string) error {
 		}
 	}
 	// kernel 地板：模块声明的 kernelConstraint 对照应用 go.mod 的 require。
-	if item.KernelConstraint != "" {
-		min, err := registry.ParseConstraint(item.KernelConstraint)
+	if mod.KernelConstraint != "" {
+		min, err := registry.ParseConstraint(mod.KernelConstraint)
 		if err != nil {
-			return fmt.Errorf("%s item.json kernelConstraint: %w", name, err)
+			return fmt.Errorf("%s module.json kernelConstraint: %w", name, err)
 		}
 		have, err := appkitVersion(appDir)
 		if err != nil {
@@ -107,21 +107,21 @@ func cmdAdd(args []string) error {
 	overwriteAny := *overwrite || *overwriteLong
 
 	// 1) 渲染模块源码树：模块在本仓是真实 Go module，安装时排除工程文件
-	//    （go.mod/item.json/genproto/buf 配置）。布局重定位（ADR-0006）：
+	//    （go.mod/module.json/genproto/buf 配置）。布局重定位（ADR-0006）：
 	//    domain/<m>/** 与 internal/{app,api,infra}/<m>/** 装入应用专用区
 	//    modules/<m>/ 并拍平尾段；proto/** 集中应用根。.go/.proto 中的规范
 	//    module path 按五条结构化规则改写为应用路径（本模块与全部声明依赖
 	//    ——模块可能 import 依赖模块的 domain 包，依赖方必已安装）。
-	canonicals := map[string]string{name: item.CanonicalModulePath()}
-	for _, dep := range item.ModuleDependencies {
-		depItem, err := idx.Item(*registryDir, dep.Name)
+	canonicals := map[string]string{name: mod.CanonicalModulePath()}
+	for _, dep := range mod.ModuleDependencies {
+		depMod, err := idx.Manifest(*registryDir, dep.Name)
 		if err != nil {
 			return err
 		}
-		canonicals[dep.Name] = depItem.CanonicalModulePath()
+		canonicals[dep.Name] = depMod.CanonicalModulePath()
 	}
 	rewrite := moduleRewriter(m.ModulePath, canonicals)
-	res, err := render.Tree(item.Dir, appDir, data, render.Options{
+	res, err := render.Tree(mod.Dir, appDir, data, render.Options{
 		Overwrite: overwriteAny,
 		DryRun:    *dryRun,
 		Skip:      skipModuleFile,
@@ -172,10 +172,10 @@ func cmdAdd(args []string) error {
 			return err
 		}
 		// 4) config.yaml 追加模块配置段（幂等）。
-		if err := appendEnvExample(appDir, m, item); err != nil {
+		if err := appendEnvExample(appDir, m, mod); err != nil {
 			fmt.Printf("warn: env example skipped: %v\n", err)
 		}
-		if err := appendConfigFragment(appDir, name, item.ConfigFragment); err != nil {
+		if err := appendConfigFragment(appDir, name, mod.ConfigFragment); err != nil {
 			return err
 		}
 	}
@@ -187,8 +187,8 @@ func cmdAdd(args []string) error {
 	files := append([]string{}, res.Created...)
 	files = append(files, res.Skipped...)
 	sort.Strings(files)
-	source, commit := lock.ResolveCommit(*registryDir, item.Name, version)
-	baseDir := baselineCacheDir(m.ModulePath, item.Name, commit)
+	source, commit := lock.ResolveCommit(*registryDir, mod.Name, version)
+	baseDir := baselineCacheDir(m.ModulePath, mod.Name, commit)
 	if err := syncBaseline(appDir, baseDir, res); err != nil {
 		return fmt.Errorf("snapshot install baseline: %w", err)
 	}
@@ -198,22 +198,22 @@ func cmdAdd(args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := lk.Record(baseDir, item.Name, item.Version, source, commit); err != nil {
+	if err := lk.Record(baseDir, mod.Name, mod.Version, source, commit); err != nil {
 		return err
 	}
 	if err := lk.Save(appDir); err != nil {
 		return err
 	}
-	m.Set(manifest.Module{Name: item.Name, Version: item.Version, Files: files})
+	m.Set(manifest.Module{Name: mod.Name, Version: mod.Version, Files: files})
 	if err := m.Save(appDir); err != nil {
 		return err
 	}
 
-	fmt.Printf("\n✓ module %s@%s installed (%d written, %d skipped)\n", item.Name, item.Version, len(res.Created), len(res.Skipped))
+	fmt.Printf("\n✓ module %s@%s installed (%d written, %d skipped)\n", mod.Name, mod.Version, len(res.Created), len(res.Skipped))
 	if len(res.Skipped) > 0 && !overwriteAny {
 		fmt.Println("  note: existing files were skipped (local-modification guard); use -o to overwrite")
 	}
-	applied := applyGoDependencies(appDir, item)
+	applied := applyGoDependencies(appDir, mod)
 	fmt.Printf(`Next steps (order matters: go mod tidy fails before genproto exists):
   mise install && mise trust   # toolchain (go / buf; skip if already set up)
   mise run generate            # buf generates genproto/
@@ -224,25 +224,25 @@ func cmdAdd(args []string) error {
 	return nil
 }
 
-// applyGoDependencies 安装期自动应用 item.json 的 goDependencies（go get
+// applyGoDependencies 安装期自动应用 module.json 的 goDependencies（go get
 // 钉版）：模块源码用到新电池版本而应用地板未抬时，编译不再失败。
 // 首选 exec go get；失败（离线/mise 未 trust 等）退回纯文本改写 go.mod
 // 的 require 行（go.sum 由后续 go mod tidy 收口）——始终离线可用
 // （ADR-0006 分发器改进，2026-11-01：storeerr/occ 两轮试点均被地板绊倒后落地）。
-func applyGoDependencies(appDir string, item *registry.Item) string {
-	hint := goGetHint(item)
-	if len(item.GoDependencies) == 0 {
+func applyGoDependencies(appDir string, mod *registry.ModuleManifest) string {
+	hint := goGetHint(mod)
+	if len(mod.GoDependencies) == 0 {
 		return ""
 	}
 	if _, err := os.Stat(filepath.Join(appDir, "go.mod")); err != nil {
 		return hint
 	}
-	if applyByGoGet(appDir, item.GoDependencies) {
-		fmt.Printf("  deps applied: go get %s\n", strings.Join(item.GoDependencies, " "))
+	if applyByGoGet(appDir, mod.GoDependencies) {
+		fmt.Printf("  deps applied: go get %s\n", strings.Join(mod.GoDependencies, " "))
 		return ""
 	}
-	if applyByGoModEdit(appDir, item.GoDependencies) {
-		fmt.Printf("  deps applied (go.mod edit): %s\n", strings.Join(item.GoDependencies, " "))
+	if applyByGoModEdit(appDir, mod.GoDependencies) {
+		fmt.Printf("  deps applied (go.mod edit): %s\n", strings.Join(mod.GoDependencies, " "))
 		return ""
 	}
 	fmt.Printf("  note: could not apply dependencies, run manually:%s\n", hint)
@@ -337,18 +337,18 @@ func applyByGoModEdit(appDir string, deps []string) bool {
 // skipModuleFile 排除模块目录里的工程/生成文件（add 与 update 共用）：
 // go.mod/go.sum 是模块自身模块管理的产物（应用的由 go mod tidy 生成——
 // 尤其 go.sum，三方合并它只会产生垃圾冲突）；genproto 与 buf 配置由
-// 应用的 buf 管线生成；item.json 是 registry 元数据。
+// 应用的 buf 管线生成；module.json 是 registry 元数据。
 func skipModuleFile(rel string) bool {
-	return rel == "item.json" || rel == "go.mod" || rel == "go.sum" ||
+	return rel == "module.json" || rel == "go.mod" || rel == "go.sum" ||
 		strings.HasPrefix(rel, "genproto/") ||
 		rel == "buf.yaml" || rel == "buf.gen.yaml" || rel == "buf.lock"
 }
 
-func goGetHint(item *registry.Item) string {
-	if len(item.GoDependencies) == 0 {
+func goGetHint(mod *registry.ModuleManifest) string {
+	if len(mod.GoDependencies) == 0 {
 		return ""
 	}
-	return "\n  go get " + strings.Join(item.GoDependencies, " ")
+	return "\n  go get " + strings.Join(mod.GoDependencies, " ")
 }
 
 // injectModulesEntry 在 modules/modules.go 的锚点处注入 import 与装配登记
@@ -411,7 +411,7 @@ func appendConfigFragment(appDir, name, fragment string) error {
 
 // registryLoad 解析 registry 参数（git URL → 缓存 clone，本地路径原样）并
 // 加载索引；返回已解析的本地目录（init/add/update/remove/doctor/list 复用，
-// 后续 Item/ItemAt/scaffold 路径一律用它）。
+// 后续 Manifest/ManifestAt/scaffold 路径一律用它）。
 func registryLoad(dir string) (*registry.Index, string, error) {
 	resolved, err := registry.Resolve(dir)
 	if err != nil {
@@ -444,8 +444,8 @@ func appkitVersion(appDir string) (string, error) {
 // appendEnvExample 把模块声明的 env 变量追加进 .env.example（幂等；Secret
 // 变量生成随机占位——example 文件不入真值，生产由应用自行更换）。变量名
 // 带应用前缀（与 config 环境覆盖约定一致：identity.secret → <P>_IDENTITY_SECRET）。
-func appendEnvExample(appDir string, m *manifest.Manifest, item *registry.Item) error {
-	if len(item.Env) == 0 {
+func appendEnvExample(appDir string, m *manifest.Manifest, mod *registry.ModuleManifest) error {
+	if len(mod.Env) == 0 {
 		return nil
 	}
 	prefix := strings.ToUpper(strings.ReplaceAll(m.Name, "-", "_"))
@@ -455,7 +455,7 @@ func appendEnvExample(appDir string, m *manifest.Manifest, item *registry.Item) 
 		src = string(raw)
 	}
 	var block strings.Builder
-	for _, e := range item.Env {
+	for _, e := range mod.Env {
 		name := prefix + "_" + e.Key
 		if strings.Contains(src, name+"=") {
 			continue
@@ -472,7 +472,7 @@ func appendEnvExample(appDir string, m *manifest.Manifest, item *registry.Item) 
 		if e.Secret {
 			desc += " (secret — rotate for production)"
 		}
-		fmt.Fprintf(&block, "\n# module %s: %s\n%s=%s\n", item.Name, desc, name, value)
+		fmt.Fprintf(&block, "\n# module %s: %s\n%s=%s\n", mod.Name, desc, name, value)
 	}
 	if block.Len() == 0 {
 		return nil

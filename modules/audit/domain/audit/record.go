@@ -15,7 +15,7 @@ import (
 	"github.com/lynxland/appkit/errcode"
 )
 
-// 事件目录（契约②）：与 Module().PublishedEvents、item.json 三方一致。
+// 事件目录（契约②）：与 Module().PublishedEvents、module.json 三方一致。
 const (
 	// EventLogRecorded 是一条审计记录落库后发布的事件（供 SIEM 类下游
 	// 消费；载荷为审计记录的 JSON 形态）。

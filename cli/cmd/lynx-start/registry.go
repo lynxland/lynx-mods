@@ -14,7 +14,7 @@ import (
 
 // cmdRegistry: 模块贡献者在 registry 仓库内使用的登记/体检命令。
 //
-//	lynx-start registry add <module-dir>   一处输入三处一致：item.json 骨架
+//	lynx-start registry add <module-dir>   一处输入三处一致：module.json 骨架
 //	                                      （缺时生成）+ registry.json 登记 + go.work use
 //	lynx-start registry check              三处一致性体检（CI 可用，问题即非零退出）
 func cmdRegistry(args []string) error {
@@ -85,8 +85,8 @@ func registryAdd(root, moduleDir string) error {
 		return fmt.Errorf("%s must be a real Go module (go.mod): %w", moduleDir, err)
 	}
 
-	itemPath := filepath.Join(dir, "item.json")
-	if _, err := os.Stat(itemPath); os.IsNotExist(err) {
+	manifestPath := filepath.Join(dir, "module.json")
+	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
 		skeleton := map[string]any{
 			"name":               name,
 			"version":            "0.1.0",
@@ -101,22 +101,22 @@ func registryAdd(root, moduleDir string) error {
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(itemPath, append(raw, '\n'), 0o644); err != nil {
+		if err := os.WriteFile(manifestPath, append(raw, '\n'), 0o644); err != nil {
 			return err
 		}
-		fmt.Printf("write  %s/item.json (skeleton — fill description/publishedEvents)\n", moduleDir)
+		fmt.Printf("write  %s/module.json (skeleton — fill description/publishedEvents)\n", moduleDir)
 	} else {
-		item, err := registry.LoadItem(dir, name)
+		manifest, err := registry.LoadManifest(dir, name)
 		if err != nil {
-			return fmt.Errorf("existing item.json broken: %w", err)
+			return fmt.Errorf("existing module.json broken: %w", err)
 		}
-		if item.Name != name {
-			return fmt.Errorf("item.json name %q != directory %q", item.Name, name)
+		if manifest.Name != name {
+			return fmt.Errorf("module.json name %q != directory %q", manifest.Name, name)
 		}
-		if item.ModulePath != "" && item.ModulePath != goModPath {
-			return fmt.Errorf("item.json modulePath %q != go.mod module %q", item.ModulePath, goModPath)
+		if manifest.ModulePath != "" && manifest.ModulePath != goModPath {
+			return fmt.Errorf("module.json modulePath %q != go.mod module %q", manifest.ModulePath, goModPath)
 		}
-		fmt.Printf("ok     %s/item.json (validated)\n", moduleDir)
+		fmt.Printf("ok     %s/module.json (validated)\n", moduleDir)
 	}
 
 	if err := registerInIndex(root, name, filepath.ToSlash(moduleDir)); err != nil {
@@ -125,7 +125,7 @@ func registryAdd(root, moduleDir string) error {
 	if err := addToGoWork(root, filepath.ToSlash(moduleDir)); err != nil {
 		return err
 	}
-	fmt.Printf("\n✓ %s registered\nNext steps:\n  fill description & publishedEvents in item.json (must match Module())\n  mise run lint && mise run test\n  git tag modules/%s/v0.1.0 (item.json version must already say 0.1.0)\n", name, name)
+	fmt.Printf("\n✓ %s registered\nNext steps:\n  fill description & publishedEvents in module.json (must match Module())\n  mise run lint && mise run test\n  git tag modules/%s/v0.1.0 (module.json version must already say 0.1.0)\n", name, name)
 	return nil
 }
 
@@ -267,42 +267,42 @@ func registryCheck(root string) error {
 			fail("%s directory %s exists", it.Name, it.Path)
 			continue
 		}
-		item, err := registry.LoadItem(dir, it.Name)
+		manifest, err := registry.LoadManifest(dir, it.Name)
 		if err != nil {
-			fail("%s item.json loads: %v", it.Name, err)
+			fail("%s module.json loads: %v", it.Name, err)
 			continue
 		}
-		if item.Name != it.Name {
-			fail("%s item.json name matches (%q)", it.Name, item.Name)
+		if manifest.Name != it.Name {
+			fail("%s module.json name matches (%q)", it.Name, manifest.Name)
 		}
-		if item.Version == "" || !regexp.MustCompile(`^\d+\.\d+\.\d+$`).MatchString(item.Version) {
-			fail("%s item.json version semver (got %q)", it.Name, item.Version)
+		if manifest.Version == "" || !regexp.MustCompile(`^\d+\.\d+\.\d+$`).MatchString(manifest.Version) {
+			fail("%s module.json version semver (got %q)", it.Name, manifest.Version)
 		}
-		if item.Description == "" || strings.HasPrefix(item.Description, "TODO") {
+		if manifest.Description == "" || strings.HasPrefix(manifest.Description, "TODO") {
 			fail("%s description filled", it.Name)
 		}
-		if modPath, err := readGoModPath(dir); err == nil && item.CanonicalModulePath() != modPath {
-			fail("%s modulePath matches go.mod (%q vs %q)", it.Name, item.CanonicalModulePath(), modPath)
+		if modPath, err := readGoModPath(dir); err == nil && manifest.CanonicalModulePath() != modPath {
+			fail("%s modulePath matches go.mod (%q vs %q)", it.Name, manifest.CanonicalModulePath(), modPath)
 		}
 		if !strings.Contains(goWork, "./"+it.Path) {
 			fail("%s in go.work use(...)", it.Name)
 		}
-		for _, ev := range item.PublishedEvents {
+		for _, ev := range manifest.PublishedEvents {
 			if !strings.HasPrefix(ev, it.Name+".") {
 				fail("%s event %q prefixed by module name", it.Name, ev)
 			}
 		}
-		for _, dep := range item.ModuleDependencies {
+		for _, dep := range manifest.ModuleDependencies {
 			if !registered[dep.Name] {
 				fail("%s dependency %s registered", it.Name, dep.Name)
 			}
 		}
-		if item.KernelConstraint != "" {
-			if _, err := registry.ParseConstraint(item.KernelConstraint); err != nil {
+		if manifest.KernelConstraint != "" {
+			if _, err := registry.ParseConstraint(manifest.KernelConstraint); err != nil {
 				fail("%s kernelConstraint parses: %v", it.Name, err)
 			}
 		}
-		ok("%s (v%s, %d events)", it.Name, item.Version, len(item.PublishedEvents))
+		ok("%s (v%s, %d events)", it.Name, manifest.Version, len(manifest.PublishedEvents))
 	}
 	// 反向：go.work 里 use 了但未登记的模块目录。
 	for _, m := range regexp.MustCompile(`\./((?:modules|kernel|cli)/[A-Za-z0-9_-]+)`).FindAllStringSubmatch(goWork, -1) {

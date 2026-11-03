@@ -57,11 +57,11 @@ func cmdRemove(args []string) error {
 		if other.Name == name {
 			continue
 		}
-		item, err := idx.Item(*registryDir, other.Name)
+		manifest, err := idx.Manifest(*registryDir, other.Name)
 		if err != nil {
 			return err
 		}
-		for _, dep := range item.ModuleDependencies {
+		for _, dep := range manifest.ModuleDependencies {
 			if dep.Name == name {
 				dependents = append(dependents, other.Name)
 			}

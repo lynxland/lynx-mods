@@ -45,7 +45,7 @@ type Options struct {
 	// 模块安装是普通源码（false）——必须逐字节复制后仅做 Rewrite，
 	// 不得过模板引擎（Go 复合字面量的 `{{` 会撞模板语法）。
 	Template bool
-	// Skip 匹配的相对路径跳过（如模块目录里的 item.json）。
+	// Skip 匹配的相对路径跳过（如模块目录里的 module.json）。
 	Skip func(rel string) bool
 	// Rewrite 在模板执行（或原样复制）后对内容做最终变换（如安装时把
 	// 模块规范 module path 改写为应用 module path）。rel 用于按后缀过滤。

@@ -89,23 +89,23 @@ func cmdDoctor(args []string) error {
 
 	// 2) 每个已装模块：依赖已装、config 段在、Files 在应用、基线完整。
 	for _, mod := range m.Modules {
-		// 按已装版本解析 item（tag 冻结形态）：工作区 item 可能声明了新版才有的
+		// 按已装版本解析清单（tag 冻结形态）：工作区清单可能声明了新版才有的
 		// env/依赖约束，拿它校验旧安装会误报。
-		item, cleanupItem, err := idx.ItemAt(*registryDir, mod.Name, mod.Version)
+		manifest, cleanupManifest, err := idx.ManifestAt(*registryDir, mod.Name, mod.Version)
 		if err != nil {
 			check(false, "registry knows %s@%s: %v", mod.Name, mod.Version, err)
 			continue
 		}
-		defer cleanupItem()
-		for _, dep := range item.ModuleDependencies {
+		defer cleanupManifest()
+		for _, dep := range manifest.ModuleDependencies {
 			installedDep, has := m.Get(dep.Name)
 			check(has, "%s dependency %s installed", mod.Name, dep.Name)
 			if has && dep.Min != "" {
 				check(dep.Meets(installedDep.Version), "%s dependency %s >=%s (installed %s)", mod.Name, dep.Name, dep.Min, installedDep.Version)
 			}
 		}
-		if item.KernelConstraint != "" {
-			if min, err := registry.ParseConstraint(item.KernelConstraint); err == nil {
+		if manifest.KernelConstraint != "" {
+			if min, err := registry.ParseConstraint(manifest.KernelConstraint); err == nil {
 				have, err := appkitVersion(appDir)
 				check(err == nil && registry.CompareVersions(have, min) >= 0,
 					"%s kernelConstraint >=%s satisfied (go.mod has %s)", mod.Name, min, have)
@@ -118,11 +118,11 @@ func cmdDoctor(args []string) error {
 			envExample = string(raw)
 		}
 		envPrefix := strings.ToUpper(strings.ReplaceAll(m.Name, "-", "_"))
-		for _, e := range item.Env {
+		for _, e := range manifest.Env {
 			check(strings.Contains(envExample, envPrefix+"_"+e.Key+"="),
 				"%s env %s declared in .env.example", mod.Name, e.Key)
 		}
-		if item.ConfigFragment != "" {
+		if manifest.ConfigFragment != "" {
 			raw, err := os.ReadFile(filepath.Join(appDir, "configs", "config.yaml"))
 			has := err == nil && strings.Contains(string(raw), fmt.Sprintf("# --- module: %s ---", mod.Name))
 			check(has, "%s config fragment present", mod.Name)

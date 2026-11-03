@@ -213,7 +213,7 @@ fail-closed，而不是运行期静默不触发。消费方按契约②不 impor
 
 需要配置段时（对照 identity）：在 app 层定义 Config struct + `ApplyDefaults`，
 Assemble 里 `configkit.LoadSection(deps.Config, "todo", cfg.ApplyDefaults, &cfg)`，
-并把片段手写进 `configs/config.yaml`（registry 模块由安装器经 item.json 的
+并把片段手写进 `configs/config.yaml`（registry 模块由安装器经 module.json 的
 `configFragment` 自动追加）。
 
 ### 第 6 步：生成代码
@@ -267,7 +267,7 @@ import todo "<app-module-path>/modules/todo"
    （deps 声明 `buf.build/lynxland/grpcapi`：policy.proto 从 BSR 解析，
    不 vendor 进模块），genproto 入库——在本仓可编译、可测试，kernel 破坏性
    变更在本仓 CI 立即暴露，而不是等到某个应用安装时才炸；
-2. 写 `item.json`：
+2. 写 `module.json`：
 
    ```json
    {
@@ -287,7 +287,7 @@ import todo "<app-module-path>/modules/todo"
    - `configFragment`：追加进应用 config.yaml 的段（YAML 文本）；
    - `publishedEvents`：展示用目录数据，**与 `Module().PublishedEvents` 保持
      一致**（后者是启动期被校验的事实源）；
-一条命令完成登记与三处同步（item.json 骨架 / registry.json / go.work）：
+一条命令完成登记与三处同步（module.json 骨架 / registry.json / go.work）：
 
    ```bash
    lynx-start registry add modules/<name>   # 骨架生成后补 description/publishedEvents
@@ -297,7 +297,7 @@ import todo "<app-module-path>/modules/todo"
 3. 在 `registry/registry.json` 的 `items` 里登记 `{ "name", "path" }`；
 4. 加入根 `go.work`，`mise run lint && mise run test` 全绿后提交；
 5. **发布版本 = 打 git tag** `modules/<name>/v<x.y.z>`（与 `kernel/v<x.y.z>`
-   同款子目录前缀形式）。tag 必须指向「item.json 已写该版本号」的提交——
+   同款子目录前缀形式）。tag 必须指向「module.json 已写该版本号」的提交——
    安装器会校验 tag 与清单一致，漂移直接拒绝。版本语义（0.x 阶段）：
    破坏性变更（迁移不兼容 / proto 字段删改 / 装配签名变化）升 minor，
    安全修复与向后兼容追加升 patch。

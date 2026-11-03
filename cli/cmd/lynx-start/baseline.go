@@ -91,7 +91,7 @@ func ensureBaseline(idx *registry.Index, registryDir string, m *manifest.Manifes
 	if commit == "" || commit == "unknown" {
 		return "", fmt.Errorf("no baseline cache for %s and the install source is unrecorded (pre-lock install): re-install with `lynx-start add %s -o` to rebuild it (your files are overwritten by upstream; commit local changes first)", name, name)
 	}
-	item, cleanup, err := idx.ItemAtCommit(registryDir, name, commit, version)
+	manifest, cleanup, err := idx.ManifestAtCommit(registryDir, name, commit, version)
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +101,7 @@ func ensureBaseline(idx *registry.Index, registryDir string, m *manifest.Manifes
 		return "", err
 	}
 	defer func() { _ = os.RemoveAll(tmp) }()
-	if err := renderUpstream(idx, registryDir, item, m, tmp); err != nil {
+	if err := renderUpstream(idx, registryDir, manifest, m, tmp); err != nil {
 		return "", fmt.Errorf("rebuild baseline for %s: %w", name, err)
 	}
 	if err := os.RemoveAll(baseDir); err != nil {

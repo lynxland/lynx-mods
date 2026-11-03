@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// setupRepo 造一个最小 registry 仓库：registry.json + demo 模块 + item.json，
+// setupRepo 造一个最小 registry 仓库：registry.json + demo 模块 + module.json，
 // commit 后打 tag modules/demo/v0.1.0。
 func setupRepo(t *testing.T) string {
 	t.Helper()
@@ -34,7 +34,7 @@ func setupRepo(t *testing.T) string {
 		}
 	}
 	write("registry/registry.json", `{"name":"t","items":[{"name":"demo","path":"modules/demo"}]}`)
-	write("modules/demo/item.json", `{"name":"demo","version":"0.1.0","modulePath":"example.com/demo"}`)
+	write("modules/demo/module.json", `{"name":"demo","version":"0.1.0","modulePath":"example.com/demo"}`)
 	write("modules/demo/domain/demo/demo.go", "package demo\n")
 	run("git", "init", "-q")
 	run("git", "add", "-A")
@@ -43,58 +43,58 @@ func setupRepo(t *testing.T) string {
 	return dir
 }
 
-func TestItemAtLatest(t *testing.T) {
+func TestManifestAtLatest(t *testing.T) {
 	dir := setupRepo(t)
 	idx, err := Load(dir)
 	if err != nil {
 		t.Fatalf("load: %v", err)
 	}
-	item, cleanup, err := idx.ItemAt(dir, "demo", "")
+	manifest, cleanup, err := idx.ManifestAt(dir, "demo", "")
 	if err != nil {
-		t.Fatalf("itemat: %v", err)
+		t.Fatalf("manifestat: %v", err)
 	}
 	defer cleanup()
-	if item.Dir != filepath.Join(dir, "modules/demo") {
-		t.Fatalf("latest form must read the worktree dir, got %s", item.Dir)
+	if manifest.Dir != filepath.Join(dir, "modules/demo") {
+		t.Fatalf("latest form must read the worktree dir, got %s", manifest.Dir)
 	}
 }
 
-func TestItemAtTag(t *testing.T) {
+func TestManifestAtTag(t *testing.T) {
 	dir := setupRepo(t)
 	idx, err := Load(dir)
 	if err != nil {
 		t.Fatalf("load: %v", err)
 	}
-	item, cleanup, err := idx.ItemAt(dir, "demo", "0.1.0")
+	manifest, cleanup, err := idx.ManifestAt(dir, "demo", "0.1.0")
 	if err != nil {
-		t.Fatalf("itemat: %v", err)
+		t.Fatalf("manifestat: %v", err)
 	}
 	defer cleanup()
-	if item.Version != "0.1.0" {
-		t.Fatalf("version = %s", item.Version)
+	if manifest.Version != "0.1.0" {
+		t.Fatalf("version = %s", manifest.Version)
 	}
-	if strings.HasPrefix(item.Dir, dir) {
-		t.Fatalf("tagged form must extract to a temp dir, got %s", item.Dir)
+	if strings.HasPrefix(manifest.Dir, dir) {
+		t.Fatalf("tagged form must extract to a temp dir, got %s", manifest.Dir)
 	}
 	// 提取树里源码可读（untar 生效）。
-	if _, err := os.Stat(filepath.Join(item.Dir, "domain/demo/demo.go")); err != nil {
+	if _, err := os.Stat(filepath.Join(manifest.Dir, "domain/demo/demo.go")); err != nil {
 		t.Fatalf("extracted source missing: %v", err)
 	}
 }
 
-func TestItemAtMissingTag(t *testing.T) {
+func TestManifestAtMissingTag(t *testing.T) {
 	dir := setupRepo(t)
 	idx, _ := Load(dir)
-	_, _, err := idx.ItemAt(dir, "demo", "9.9.9")
+	_, _, err := idx.ManifestAt(dir, "demo", "9.9.9")
 	if err == nil || !strings.Contains(err.Error(), "no git tag") {
 		t.Fatalf("want actionable missing-tag error, got %v", err)
 	}
 }
 
-func TestItemAtTagManifestDrift(t *testing.T) {
+func TestManifestAtTagManifestDrift(t *testing.T) {
 	dir := setupRepo(t)
-	// 改 item.json 版本后重打同号 tag：tag 内版本与请求不一致必须拒绝。
-	if err := os.WriteFile(filepath.Join(dir, "modules/demo/item.json"),
+	// 改 module.json 版本后重打同号 tag：tag 内版本与请求不一致必须拒绝。
+	if err := os.WriteFile(filepath.Join(dir, "modules/demo/module.json"),
 		[]byte(`{"name":"demo","version":"0.2.0"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestItemAtTagManifestDrift(t *testing.T) {
 	run("git", "commit", "-qam", "bump")
 	run("git", "tag", "-f", "modules/demo/v0.1.0")
 	idx, _ := Load(dir)
-	_, _, err := idx.ItemAt(dir, "demo", "0.1.0")
+	_, _, err := idx.ManifestAt(dir, "demo", "0.1.0")
 	if err == nil || !strings.Contains(err.Error(), "drift") {
 		t.Fatalf("want drift error, got %v", err)
 	}

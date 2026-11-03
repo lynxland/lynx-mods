@@ -136,14 +136,14 @@ func cmdList(args []string) error {
 	*registryDir = regDir
 	fmt.Printf("%s registry (%d modules):\n", idx.Name, len(idx.Items))
 	for _, it := range idx.Items {
-		item, err := idx.Item(*registryDir, it.Name)
+		manifest, err := idx.Manifest(*registryDir, it.Name)
 		if err != nil {
 			return err
 		}
 		deps := ""
-		if len(item.ModuleDependencies) > 0 {
+		if len(manifest.ModuleDependencies) > 0 {
 			var parts []string
-			for _, dep := range item.ModuleDependencies {
+			for _, dep := range manifest.ModuleDependencies {
 				if dep.Min != "" {
 					parts = append(parts, dep.Name+">="+dep.Min)
 				} else {
@@ -152,7 +152,7 @@ func cmdList(args []string) error {
 			}
 			deps = "  deps: " + strings.Join(parts, ", ")
 		}
-		fmt.Printf("  %-16s %-8s %s%s\n", item.Name, item.Version, item.Description, deps)
+		fmt.Printf("  %-16s %-8s %s%s\n", manifest.Name, manifest.Version, manifest.Description, deps)
 	}
 	if presets, err := registry.LoadPresets(regDir); err == nil && len(presets.Presets) > 0 {
 		fmt.Println("presets:")

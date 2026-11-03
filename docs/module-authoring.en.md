@@ -242,7 +242,7 @@ For a config section (cf. identity): define a Config struct + `ApplyDefaults`
 in the app layer; in Assemble call
 `configkit.LoadSection(deps.Config, "todo", cfg.ApplyDefaults, &cfg)`, and add
 the fragment to `configs/config.yaml` by hand (registry modules get it appended
-automatically via the item.json `configFragment`).
+automatically via the module.json `configFragment`).
 
 ### Step 6: generate code
 
@@ -299,7 +299,7 @@ Put the module into `modules/<name>/` of this repo as a **real Go module**:
    BSR and is never vendored into the module), and committed genproto —
    compiled and tested inside this repo, so kernel breaking changes surface in
    this repo's CI instead of blowing up in some app at install time;
-2. Write `item.json`:
+2. Write `module.json`:
 
    ```json
    {
@@ -319,7 +319,7 @@ Put the module into `modules/<name>/` of this repo as a **real Go module**:
    - `configFragment`: the YAML fragment appended to the app's config.yaml;
    - `publishedEvents`: catalog data for display, **kept in sync with
      `Module().PublishedEvents`** (the latter is the validated source of truth);
-Registering is one command (item.json skeleton / registry.json / go.work kept consistent):
+Registering is one command (module.json skeleton / registry.json / go.work kept consistent):
 
    ```bash
    lynx-start registry add modules/<name>   # fill description/publishedEvents after the skeleton
@@ -330,7 +330,7 @@ Registering is one command (item.json skeleton / registry.json / go.work kept co
 4. Add to the root `go.work`; `mise run lint && mise run test` green, then commit;
 5. **Releasing = pushing a git tag** `modules/<name>/v<x.y.z>` (same
    subdirectory-prefix form as `kernel/v<x.y.z>`). The tag must point at a
-   commit where item.json already carries that version — the installer
+   commit where module.json already carries that version — the installer
    validates tag-vs-manifest consistency and rejects drift. Versioning during
    0.x: breaking changes (incompatible migrations / proto field removal or
    change / assembly signature changes) bump the minor; security fixes and

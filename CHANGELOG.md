@@ -6,6 +6,29 @@ ADR-0006）：模块分发（cli/modules/registry/scaffold）整体迁入；2026
 CHANGELOG（全仓视角）；kernel 谱系的 changelog 留在 lynx-start。条目按发布
 时间倒序。
 
+## 全模块 v0.5.0 + cli v0.6.0（2026-11-04，registry 清单更名 item.json → module.json）
+
+- **registry 清单工件更名**：`modules/<name>/item.json` →
+  `modules/<name>/module.json`——「item」是 registry 实现视角的条目话术，
+  对读者不表意；新名与 registry.json（仓库级索引）构成「索引列模块、
+  module.json 描述单模块」的对称命名。决策与备选否决见 ADR-0008。
+- **CLI 全量随更名，不留兼容**（ADR-0007 政策）：类型 `registry.Item` →
+  `registry.ModuleManifest`，方法 `Item`/`ItemAt`/`ItemAtCommit` →
+  `Manifest`/`ManifestAt`/`ManifestAtCommit`，`LoadItem` → `LoadManifest`；
+  tag/manifest 漂移等错误信息、渲染 skip 过滤、`registry add` 骨架生成
+  与 `registry check` 体检项同步。`Index.Items`（registry.json 索引条目）
+  语义不同，不动。
+- **发版工具链**：mise release 任务改读 module.json（模块版本唯一事实源
+  不变，仅文件名随更）；cli 版本钉 0.6.0。
+- **全模块重发 v0.5.0**：清单随 tag 树分发，旧 tag 树内只有 item.json，
+  改名后不可安装——8 模块 version 0.4.0 → 0.5.0。存量应用升级：取新
+  cli 后 `lynx-start add <module> -o` 重建基线，doctor 对未迁移应用给出
+  可行动报错。
+- 文档同步：CONTRIBUTING（中英）、module-authoring（中英）、
+  optimization-plan、模块 domain 注释；历史 ADR/提案/CHANGELOG 条目按
+  既定政策保留原文。optimization-plan 中 shadcn 的 `registry-item.json`
+  为竞品规范名，不在更名之列。
+
 ## 全模块 v0.4.0 + cli v0.5.0（2026-11-03，更名 lynx-mods → lynx-start）
 
 - **仓更名与 module path 换系**：GitHub 仓 `lynxland/lynx-mods` →

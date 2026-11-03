@@ -1,6 +1,6 @@
 {
   "name": "identity",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "身份模块：注册/登录（Argon2id + HS256 JWT）/自助改密，并向应用贡献 Bearer 认证器",
   "modulePath": "github.com/lynxland/lynx-start/modules/identity",
   "moduleDependencies": [],

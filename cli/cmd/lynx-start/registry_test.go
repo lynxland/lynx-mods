@@ -24,7 +24,7 @@ func newRegistryScratch(t *testing.T) string {
 	write("registry/registry.json", "{\n  \"name\": \"lynx-start\",\n  \"items\": [\n    { \"name\": \"demo\", \"path\": \"modules/demo\" }\n  ]\n}\n")
 	write("go.work", "go 1.26.8\n\nuse (\n  ./kernel\n  ./modules/demo\n)\n")
 	write("modules/demo/go.mod", "module github.com/lynxland/lynx-start/modules/demo\n\ngo 1.26.8\n")
-	write("modules/demo/item.json", "{\n  \"name\": \"demo\",\n  \"version\": \"0.1.0\",\n  \"description\": \"demo module\",\n  \"modulePath\": \"github.com/lynxland/lynx-start/modules/demo\",\n  \"moduleDependencies\": [],\n  \"goDependencies\": [],\n  \"configFragment\": \"\",\n  \"publishedEvents\": [\"demo.item.created\"]\n}\n")
+	write("modules/demo/module.json", "{\n  \"name\": \"demo\",\n  \"version\": \"0.1.0\",\n  \"description\": \"demo module\",\n  \"modulePath\": \"github.com/lynxland/lynx-start/modules/demo\",\n  \"moduleDependencies\": [],\n  \"goDependencies\": [],\n  \"configFragment\": \"\",\n  \"publishedEvents\": [\"demo.item.created\"]\n}\n")
 	write("modules/todo/go.mod", "module github.com/lynxland/lynx-start/modules/todo\n\ngo 1.26.8\n")
 	return root
 }
@@ -34,13 +34,13 @@ func TestRegistryAddRegistersThreePlaces(t *testing.T) {
 	if err := registryAdd(root, "modules/todo"); err != nil {
 		t.Fatalf("registryAdd: %v", err)
 	}
-	// item.json 骨架生成。
-	itemRaw, err := os.ReadFile(filepath.Join(root, "modules", "todo", "item.json"))
+	// module.json 骨架生成。
+	manifestRaw, err := os.ReadFile(filepath.Join(root, "modules", "todo", "module.json"))
 	if err != nil {
-		t.Fatalf("item.json not written: %v", err)
+		t.Fatalf("module.json not written: %v", err)
 	}
-	if !strings.Contains(string(itemRaw), `"modulePath": "github.com/lynxland/lynx-start/modules/todo"`) {
-		t.Errorf("item.json modulePath not derived from go.mod:\n%s", itemRaw)
+	if !strings.Contains(string(manifestRaw), `"modulePath": "github.com/lynxland/lynx-start/modules/todo"`) {
+		t.Errorf("module.json modulePath not derived from go.mod:\n%s", manifestRaw)
 	}
 	// registry.json 登记 + 排版保持（逗号接在上一条目后,不产生独立逗号行）。
 	idxRaw, _ := os.ReadFile(filepath.Join(root, "registry", "registry.json"))
@@ -81,12 +81,12 @@ func TestRegistryCheckCatchesInconsistency(t *testing.T) {
 		t.Fatal("registryCheck should fail while description is a TODO placeholder")
 	}
 	// 填掉 description → 通过。
-	itemPath := filepath.Join(root, "modules", "todo", "item.json")
-	raw, err := os.ReadFile(itemPath)
+	manifestPath := filepath.Join(root, "modules", "todo", "module.json")
+	raw, err := os.ReadFile(manifestPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(itemPath, []byte(strings.Replace(string(raw), "TODO: 一句话用途说明（registry list 展示）", "todo module", 1)), 0o644); err != nil {
+	if err := os.WriteFile(manifestPath, []byte(strings.Replace(string(raw), "TODO: 一句话用途说明（registry list 展示）", "todo module", 1)), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := registryCheck(root); err != nil {
