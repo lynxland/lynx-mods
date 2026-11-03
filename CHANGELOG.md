@@ -41,6 +41,9 @@ CHANGELOG（全仓视角）；kernel 谱系的 changelog 留在 lynx-start。条
 - **发布顺序**：先在 GitHub 更名仓库（lynx-mods → lynx-start），后打推本条
   tag——旧仓名下打新路径 tag 会因 go.mod 路径与仓库不符被 module proxy
   拒绝。tag 形态不变：`cli/v0.5.0`、`modules/<m>/v0.4.0`。
+- **发版任务 `mise run release`**：发布顺序收敛为前置守卫（origin 与
+  module path 同仓名 / 干净树 / main 已推，fail-closed 不可重入）；
+  模块版本唯一事实源 item.json，cli 版本钉于任务（与 CHANGELOG 同源）。
 - 历史条目与 ADR 按既定政策保留旧名。
 
 ## 全模块 v0.3.0 + cli v0.4.0（2026-11-02，appkit 基座 + 机构更名 lynxland）
