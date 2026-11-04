@@ -6,6 +6,20 @@ ADR-0006）：模块分发（cli/modules/registry/scaffold）整体迁入；2026
 CHANGELOG（全仓视角）；kernel 谱系的 changelog 留在 lynx-start。条目按发布
 时间倒序。
 
+## 未发版（Unreleased）
+
+- **模块新增 README**：8 个内置模块各加根级 `README.md`（registry 元文档，
+  中文主体 + English 摘要；用途/安装/依赖/配置/环境变量/事件，以
+  module.json 为事实源）。CLI `skipModuleFile` 同步把 `README.md` 列入
+  跳过——`relocateModule` 对布局契约外的文件 fail-closed，不跳过则所有
+  工作区形态 `add`/`update` 直接报错；跳过后 README 不入应用树、不进基线，
+  update 合并不受影响。
+- **e2e 负路径场景弃用历史 tag**：module.json 更名后旧 tag（item.json 形态）
+  不可安装，`test:scaffold` 的依赖负路径/版本约束/update 三场景改由 fixture
+  registry 伪造「module.json 形态低版本 tag」（临时 clone + 版本号改写 +
+  legacy 标记注入 + revert 工作区），场景语义完整保留；旧系前缀改写覆盖
+  由单元测试 TestDualPrefixCompat 承担，e2e 不再重复。
+
 ## 全模块 v0.5.0 + cli v0.6.0（2026-11-04，registry 清单更名 item.json → module.json）
 
 - **registry 清单工件更名**：`modules/<name>/item.json` →

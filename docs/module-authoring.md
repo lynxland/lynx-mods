@@ -294,6 +294,9 @@ import todo "<app-module-path>/modules/todo"
    lynx-start registry check                # 一致性体检（可入 CI）
    ```
 
+   模块根另放 `README.md`（registry 元文档：安装/更新管线跳过，不入应用树；
+   内容以 module.json 为事实源，参照任一内置模块）。
+
 3. 在 `registry/registry.json` 的 `items` 里登记 `{ "name", "path" }`；
 4. 加入根 `go.work`，`mise run lint && mise run test` 全绿后提交；
 5. **发布版本 = 打 git tag** `modules/<name>/v<x.y.z>`（与 `kernel/v<x.y.z>`

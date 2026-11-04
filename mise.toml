@@ -75,43 +75,69 @@ case " $MODULES " in
   *) SKIP_IDENTITY_SCENARIOS=1 ;;
 esac
 if [ -z "${SKIP_IDENTITY_SCENARIOS:-}" ]; then
+# fixture registry：module.json 更名（ADR-0008）后历史 tag 树内只有
+# item.json，不可安装——负路径场景所需的「低版本 tag」改由临时 clone 伪造：
+# 0.5.0 树 + 版本号改写为 0.1.0（identity 另注入 e2eLegacyMark 常量，充当
+# update 场景中「将被上游移除的旧实现」），打 tag 后 revert 工作区——
+# update 场景的 upstream（工作区 0.5.0）由此就位。
+FIXTURE="$(mktemp -d)"
+git clone -q "$ROOT" "$FIXTURE/reg"
+sed -i 's/"version": "0.5.0"/"version": "0.1.0"/' \
+  "$FIXTURE/reg/modules/identity/module.json" \
+  "$FIXTURE/reg/modules/organization/module.json"
+# 注入在 import 块结束后：gofmt 合法（声明须在 import 后），且远离 update
+# 场景的本地定制追加点（文件尾）——两处改动区域不重叠，三方合并才走自动
+# 合并而非冲突。
+awk '/^\)$/ && !done {print; print ""; print "const e2eLegacyMark = \"legacy-impl\" // e2eLegacyMark: 模拟旧版实现，update 三方合并必须将其移除"; done=1; next} {print}' \
+  "$FIXTURE/reg/modules/identity/internal/app/identity/identity.go" \
+  > "$FIXTURE/reg/modules/identity/internal/app/identity/identity.go.new" \
+  && mv "$FIXTURE/reg/modules/identity/internal/app/identity/identity.go.new" \
+    "$FIXTURE/reg/modules/identity/internal/app/identity/identity.go"
+git -C "$FIXTURE/reg" commit -qam "fixture: identity/organization 0.1.0（module.json 形态旧版载荷，仅本地 e2e）"
+# clone 携带 $ROOT 全部 tag——历史同名 tag 在 fixture 内强制覆盖（fixture
+# 一次性）；git tag 一次一 tag，两条分别锚伪造 commit（HEAD）。
+git -C "$FIXTURE/reg" tag -f modules/identity/v0.1.0 HEAD
+git -C "$FIXTURE/reg" tag -f modules/organization/v0.1.0 HEAD
+git -C "$FIXTURE/reg" revert --no-edit HEAD >/dev/null
 WORK2="$(mktemp -d)"
 (cd "$WORK2" \
-  && "$WORK/lynx-start" init depapp --module example.com/depapp --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" init depapp --module example.com/depapp --registry "$FIXTURE/reg" >/dev/null \
   && cd depapp \
-  && ! "$WORK/lynx-start" add session --registry "$ROOT" >/dev/null 2>&1 \
-  && "$WORK/lynx-start" add identity@0.1.0 --registry "$ROOT" >/dev/null \
-  && ! "$WORK/lynx-start" add session --registry "$ROOT" >/dev/null 2>&1) \
+  && ! "$WORK/lynx-start" add session --registry "$FIXTURE/reg" >/dev/null 2>&1 \
+  && "$WORK/lynx-start" add identity@0.1.0 --registry "$FIXTURE/reg" >/dev/null \
+  && ! "$WORK/lynx-start" add session --registry "$FIXTURE/reg" >/dev/null 2>&1) \
   || { echo "dependency check failed"; exit 1; }
 rm -rf "$WORK2"
-# 版本约束负路径：organization@0.1.0（旧 tag，载荷无 organization_name）
-# 装得进（identity 工作区 0.1.1 满足其自身约束），但 notification 要求
+# 版本约束负路径：organization@0.1.0（fixture 伪造的低版本 tag）装得进
+# （identity 已装版本满足其自身约束），但 notification 要求
 # organization>=0.1.1——安装期必须被拒（I-16 版本范围机制实战场景）。
 WORK2B="$(mktemp -d)"
 (cd "$WORK2B" \
-  && "$WORK/lynx-start" init depapp2 --module example.com/depapp2 --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" init depapp2 --module example.com/depapp2 --registry "$FIXTURE/reg" >/dev/null \
   && cd depapp2 \
-  && "$WORK/lynx-start" add identity --registry "$ROOT" >/dev/null \
-  && "$WORK/lynx-start" add organization@0.1.0 --registry "$ROOT" >/dev/null \
-  && ! "$WORK/lynx-start" add notification --registry "$ROOT" >/dev/null 2>&1) \
+  && "$WORK/lynx-start" add identity --registry "$FIXTURE/reg" >/dev/null \
+  && "$WORK/lynx-start" add organization@0.1.0 --registry "$FIXTURE/reg" >/dev/null \
+  && ! "$WORK/lynx-start" add notification --registry "$FIXTURE/reg" >/dev/null 2>&1) \
   || { echo "version constraint check failed"; exit 1; }
 rm -rf "$WORK2B"
-# update e2e：装 tag 旧版 → 本地定制 → update 到工作区新版 → 断言三方合并
-# （本地改动保留 + 上游修复进来、旧实现消失），产物经完整管线编译。
-# identity@0.1.0 是 lynx-start 时代的历史 tag（原样搬入）——本场景同时
-# 锻炼安装器双前缀兼容（.go import 与 .proto go_package 双改写路径）。
+# update e2e：装 fixture 低版本 tag → 本地定制 → update 到工作区新版 →
+# 断言三方合并（本地改动保留 + 上游修复进来、legacy 旧实现消失），产物经
+# 完整管线编译。历史上此场景用 lynx-start 时代历史 tag identity@0.1.0
+# （同时锻炼双前缀兼容改写）；module.json 更名（ADR-0008）后历史 tag 不可
+# 装，改用 fixture 伪造 tag——旧系前缀的改写覆盖由单元测试
+# TestDualPrefixCompat 钉住，e2e 不再重复。
 WORK3="$(mktemp -d)"
 (cd "$WORK3" \
-  && "$WORK/lynx-start" init updapp --module example.com/updapp --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" init updapp --module example.com/updapp --registry "$FIXTURE/reg" >/dev/null \
   && cd updapp \
-  && "$WORK/lynx-start" add identity@0.1.0 --registry "$ROOT" >/dev/null \
-  && grep -q 'const dummyHash' modules/identity/internal/app/identity.go \
+  && "$WORK/lynx-start" add identity@0.1.0 --registry "$FIXTURE/reg" >/dev/null \
+  && grep -q 'const e2eLegacyMark' modules/identity/internal/app/identity.go \
   && printf '\n// localCustomMark marks an app-side edit kept by the update merge.\nconst localCustomMark = "e2e-update"\n' >> modules/identity/internal/app/identity.go \
-  && "$WORK/lynx-start" update identity --registry "$ROOT" >/dev/null \
+  && "$WORK/lynx-start" update identity --registry "$FIXTURE/reg" >/dev/null \
   && [ ! -e proto/grpcapi ] \
   && grep -q 'localCustomMark' modules/identity/internal/app/identity.go \
   && grep -q 'password.DummyHash()' modules/identity/internal/app/identity.go \
-  && [ "$(grep -c 'const dummyHash' modules/identity/internal/app/identity.go)" = "0" ]) \
+  && [ "$(grep -c 'e2eLegacyMark' modules/identity/internal/app/identity.go)" = "0" ]) \
   || { echo "update merge check failed"; exit 1; }
 (cd "$WORK3/updapp" \
   && "$WORK/lynx-start" generate \
@@ -121,6 +147,7 @@ WORK3="$(mktemp -d)"
   && go build ./... && go vet ./...) \
   || { echo "update build check failed"; exit 1; }
 rm -rf "$WORK3"
+rm -rf "$FIXTURE"
 fi
 # init 已生成 go.mod（含 appkit v0.8.0 / contrib/bunx v0.5.0 / grpcapi v0.5.0 地板）。
 "$WORK/lynx-start" generate

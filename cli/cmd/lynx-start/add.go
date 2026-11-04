@@ -334,14 +334,16 @@ func applyByGoModEdit(appDir string, deps []string) bool {
 	return os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0o644) == nil
 }
 
-// skipModuleFile 排除模块目录里的工程/生成文件（add 与 update 共用）：
+// skipModuleFile 排除模块目录里的工程/生成/元文件（add 与 update 共用）：
 // go.mod/go.sum 是模块自身模块管理的产物（应用的由 go mod tidy 生成——
 // 尤其 go.sum，三方合并它只会产生垃圾冲突）；genproto 与 buf 配置由
-// 应用的 buf 管线生成；module.json 是 registry 元数据。
+// 应用的 buf 管线生成；module.json 是 registry 元数据；README.md 是
+// registry 元文档（面向浏览本仓的读者，不入应用树）。
 func skipModuleFile(rel string) bool {
 	return rel == "module.json" || rel == "go.mod" || rel == "go.sum" ||
 		strings.HasPrefix(rel, "genproto/") ||
-		rel == "buf.yaml" || rel == "buf.gen.yaml" || rel == "buf.lock"
+		rel == "buf.yaml" || rel == "buf.gen.yaml" || rel == "buf.lock" ||
+		rel == "README.md"
 }
 
 func goGetHint(mod *registry.ModuleManifest) string {

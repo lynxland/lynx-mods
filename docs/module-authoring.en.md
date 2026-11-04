@@ -326,6 +326,10 @@ Registering is one command (module.json skeleton / registry.json / go.work kept 
    lynx-start registry check                # consistency check (CI-friendly)
    ```
 
+   Also keep a root `README.md` (registry-facing doc: skipped by the
+   install/update pipeline, never lands in the app tree; module.json is its
+   source of truth — any built-in module serves as the template).
+
 3. Register `{ "name", "path" }` in the `items` of `registry/registry.json`;
 4. Add to the root `go.work`; `mise run lint && mise run test` green, then commit;
 5. **Releasing = pushing a git tag** `modules/<name>/v<x.y.z>` (same
