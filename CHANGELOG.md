@@ -6,6 +6,48 @@ ADR-0006）：模块分发（cli/modules/registry/scaffold）整体迁入；2026
 CHANGELOG（全仓视角）；kernel 谱系的 changelog 留在 lynx-start。条目按发布
 时间倒序。
 
+## 全模块 v0.6.0 + cli v0.7.0（2026-11-06，模块目录重组 8→6——模块=产品能力单元，ADR-0009）
+
+- **identity+session+access 合并为 account**：三模块本是「账号与访问」
+  一件事的三片（技术分层切片，非产品能力单元——8 模块中 4 个不能单独
+  装、identity 单独装不能登出）。合并后单独安装即得完整认证授权；域内
+  保持 `domain/account/{identity,session,access}` 子包边界（internal 互
+  不 import，guard_test 机器固化）。决策全文见 ADR-0009。
+- **API 面与客户端零改动**：三个 proto 包与 genproto 路径原样保留
+  （IdentityService/SessionService/AccessService 路由不变）；配置段
+  三段照旧。变化面：事件名统一 `account.*` 前缀（目录所有权）、权限
+  字符串 `access.assignment.write`→`account.assignment.write`。
+- **迁移合并零数据迁移**：account 00001 = 三模块建表逐段 IF NOT EXISTS
+  合并；表名/列不变（identity_users/session_sessions/
+  access_role_assignments）；goose 版本表 goose_account_db 从新起，旧表
+  残留无害。
+- **crud v1→v2 换装**（audit/demo/notification/organization/task）：
+  SA1019 红债清偿（lint 全 0 issues），列表统一 keyset 游标分页
+  （排序键值向量+过滤摘要绑定——audit 的四维过滤走 FilterDigest 正规
+  通道）；总数另经 COUNT 保留（粗参考）。
+- **CLI 修洞**：`update` 重放 `applyGoDependencies`（修「升级带新依赖
+  →应用 build 红」）；`doctor` 新增 goDependencies 对账（⚠ 级）。
+  **清单对齐**：moduleDependencies 统一对象形态+版本下限；demo/audit
+  补 goDependencies 与 kernelConstraint；lynx（watcher 的 lynx.Service）
+  补进 account/notification/audit 的 goDependencies；第三方版本收敛
+  单档（grpc-gateway v2.32.0、genproto 20261019 系）。
+- **notification 新增 Sender**（ADR-0004 通道③ 首落地）：domain 能力
+  接口+用例实现，应用代码直接给用户发系统通知（经模块桥接包转发，
+  见模块 README）；默认角色目录补 `audit.log.read`（audit 查询开箱
+  可用）。
+- **preset saas = account+audit+organization+notification**（4 模块，
+  原 6）；CI 组合矩阵按 6 模块重构；e2e fixture 场景主角换 account，
+  并伪造工作区版本 tag（发版前窗口自洽）。
+- **迁移表（存量应用）**：
+  1. `lynx-start remove access && lynx-start remove session && lynx-start remove identity`（DAG 序）；
+  2. 升级 CLI（`go install github.com/lynxland/lynx-start/cli/cmd/lynx-start@v0.7.0`）；
+  3. `lynx-start add account && lynx-start generate && go mod tidy && go run ./cmd/migrate`；
+  4. config.yaml 三段照旧，仅需把 `access.roles` 里的
+     `access.assignment.write` 改为 `account.assignment.write`；
+  5. **事件订阅方同版升级**：notification 必须随 account 同批升级
+     （事件名改前缀，旧 notification + 新 account 组合启动即 fail）；
+  6. 表与数据零迁移；旧 goose 版本表可手工清理。
+
 ## 未发版（Unreleased）
 
 - **模块新增 README**：8 个内置模块各加根级 `README.md`（registry 元文档，

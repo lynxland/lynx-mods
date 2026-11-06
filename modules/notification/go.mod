@@ -4,7 +4,7 @@ go 1.26.8
 
 // 模块在本仓内以真实代码形态维护（可编译、可测试、CI 覆盖）。
 // 契约库（appkit + contrib/bunx）以版本依赖消费（ADR-0006）。
-// DependsOn: identity+organization 是事件目录依赖（契约②字符串消费，
+// DependsOn: account+organization 是事件目录依赖（契约②字符串消费，
 // 不 import 其 Go 代码），故无需 replace。
 
 require (

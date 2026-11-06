@@ -13,7 +13,8 @@
   ],
   "goDependencies": [
     "github.com/lynxland/appkit@v0.8.0",
-    "github.com/lynxland/appkit/contrib/bunx@v0.5.0"
+    "github.com/lynxland/appkit/contrib/bunx@v0.5.0",
+    "github.com/lynxland/lynx@v1.21.0"
   ],
   "configFragment": "",
   "kernelConstraint": ">=0.8.0"

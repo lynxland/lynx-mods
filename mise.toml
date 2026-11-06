@@ -74,13 +74,15 @@ case " $MODULES " in
   *" account "*) ;;
   *) SKIP_ACCOUNT_SCENARIOS=1 ;;
 esac
-if [ -z "${SKIP_ACCOUNT_SCENARIOS:-}" ]; then
-# fixture registry：负路径场景所需的「低版本 tag」由临时 clone 伪造——
-# 工作区树 + 版本号改写为 0.1.0（account 另注入 e2eLegacyMark 常量，充当
-# update 场景中「将被上游移除的旧实现」），打 tag 后 revert 工作区——
-# update 场景的 upstream（工作区 0.6.0）由此就位。
+# fixture registry（全组合公共）：①doctor 的 tag 冻结解析——工作区版本
+# （0.6.0）在发版前窗口尚无真 tag，fixture 内锚 HEAD 伪造一套，e2e 不依赖
+# 发版时序；②负路径场景所需的「低版本 tag」——工作区树 + 版本号改写为
+# 0.1.0（account 另注入 e2eLegacyMark 常量，充当 update 场景中「将被上游
+# 移除的旧实现」），打 tag 后 revert 工作区——update 场景的 upstream
+# （工作区 0.6.0）由此就位。
 FIXTURE="$(mktemp -d)"
 git clone -q "$ROOT" "$FIXTURE/reg"
+if [ -z "${SKIP_ACCOUNT_SCENARIOS:-}" ]; then
 sed -i 's/"version": "0.6.0"/"version": "0.1.0"/' \
   "$FIXTURE/reg/modules/account/module.json" \
   "$FIXTURE/reg/modules/organization/module.json"
@@ -98,6 +100,13 @@ git -C "$FIXTURE/reg" commit -qam "fixture: account/organization 0.1.0（仅本�
 git -C "$FIXTURE/reg" tag -f modules/account/v0.1.0 HEAD
 git -C "$FIXTURE/reg" tag -f modules/organization/v0.1.0 HEAD
 git -C "$FIXTURE/reg" revert --no-edit HEAD >/dev/null
+fi
+# doctor 场景的工作区版本 tag：全模块锚 HEAD（0.6.0；发版后真 tag 到位，
+# fixture tag 被 -f 覆盖亦无碍——fixture 一次性）。
+for m in demo account audit organization notification task; do
+  git -C "$FIXTURE/reg" tag -f "modules/$m/v0.6.0" HEAD >/dev/null
+done
+if [ -z "${SKIP_ACCOUNT_SCENARIOS:-}" ]; then
 # DAG 负路径：organization 依赖 account，干净应用上直接装必须被拒；装
 # account（工作区新版）后 organization 可装（依赖满足）。
 WORK2="$(mktemp -d)"
@@ -127,13 +136,13 @@ WORK3="$(mktemp -d)"
   && "$WORK/lynx-start" init updapp --module example.com/updapp --registry "$FIXTURE/reg" >/dev/null \
   && cd updapp \
   && "$WORK/lynx-start" add account@0.1.0 --registry "$FIXTURE/reg" >/dev/null \
-  && grep -q 'const e2eLegacyMark' modules/account/internal/app/account/identity/identity.go \
-  && printf '\n// localCustomMark marks an app-side edit kept by the update merge.\nconst localCustomMark = "e2e-update"\n' >> modules/account/internal/app/account/identity/identity.go \
+  && grep -q 'const e2eLegacyMark' modules/account/internal/app/identity/identity.go \
+  && printf '\n// localCustomMark marks an app-side edit kept by the update merge.\nconst localCustomMark = "e2e-update"\n' >> modules/account/internal/app/identity/identity.go \
   && "$WORK/lynx-start" update account --registry "$FIXTURE/reg" >/dev/null \
   && [ ! -e proto/grpcapi ] \
-  && grep -q 'localCustomMark' modules/account/internal/app/account/identity/identity.go \
-  && grep -q 'password.DummyHash()' modules/account/internal/app/account/identity/identity.go \
-  && [ "$(grep -c 'e2eLegacyMark' modules/account/internal/app/account/identity/identity.go)" = "0" ]) \
+  && grep -q 'localCustomMark' modules/account/internal/app/identity/identity.go \
+  && grep -q 'password.DummyHash()' modules/account/internal/app/identity/identity.go \
+  && [ "$(grep -c 'e2eLegacyMark' modules/account/internal/app/identity/identity.go)" = "0" ]) \
   || { echo "update merge check failed"; exit 1; }
 (cd "$WORK3/updapp" \
   && "$WORK/lynx-start" generate \
@@ -143,7 +152,6 @@ WORK3="$(mktemp -d)"
   && go build ./... && go vet ./...) \
   || { echo "update build check failed"; exit 1; }
 rm -rf "$WORK3"
-rm -rf "$FIXTURE"
 fi
 # init 已生成 go.mod（含 appkit v0.8.0 / contrib/bunx v0.5.0 / grpcapi v0.5.0 地板）。
 "$WORK/lynx-start" generate
@@ -161,8 +169,10 @@ case " $MODULES " in
     || { echo "remove check failed"; exit 1; }
   ;;
 esac
-"$WORK/lynx-start" doctor --dir "$WORK/e2eapp" --registry "$ROOT" >/dev/null \
+# doctor 经 fixture registry（工作区版本 tag 在 fixture 内自洽，见上）。
+"$WORK/lynx-start" doctor --dir "$WORK/e2eapp" --registry "$FIXTURE/reg" >/dev/null \
   || { echo "doctor check failed"; exit 1; }
+rm -rf "$FIXTURE"
 echo "scaffold e2e: OK（init→add→generate→build→vet→test + update/remove/doctor 全绿）"
 '''
 

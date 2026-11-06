@@ -7,7 +7,7 @@
 ## 安装
 
 ```bash
-lynx-start add identity           # 先装依赖链（organization 依赖 identity）
+lynx-start add account             # 先装依赖链（organization 依赖 account）
 lynx-start add organization
 lynx-start add task
 ```
@@ -36,5 +36,5 @@ lynx-start add task
 **English**: Tasks scoped to an organization — create/list/complete/delete,
 with completion and deletion restricted to the creator. The first
 organization-scoped business resource. Install chain:
-`lynx-start add identity && lynx-start add organization && lynx-start add task`
+`lynx-start add account && lynx-start add organization && lynx-start add task`
 (organization >=0.1.0 required). Publishes `task.task.created` / `task.task.completed`.

@@ -1,13 +1,13 @@
 # notification
 
 通知模块：订阅身份/组织事件自动生成站内通知（渲染快照落库）+ 自助查询与
-已读标记，依赖 [identity](../identity/README.md) 与
+已读标记，依赖 [account](../account/README.md) 与
 [organization](../organization/README.md)——纯消费方，自身不发布事件。
 
 ## 安装
 
 ```bash
-lynx-start add identity           # 先装依赖链
+lynx-start add account             # 先装依赖链
 lynx-start add organization
 lynx-start add notification
 ```
@@ -16,7 +16,7 @@ lynx-start add notification
 
 ## 依赖
 
-- 模块依赖：identity >=0.1.1、organization >=0.1.1（已装版本需满足）
+- 模块依赖：account >=0.6.0、organization >=0.1.1（已装版本需满足）
 - kernel 地板：appkit >=0.8.0（add 时校验应用 go.mod）
 - Go 依赖（add 时自动钉版）：appkit、appkit/contrib/bunx
 
@@ -29,13 +29,13 @@ lynx-start add notification
 不发布事件。应用装配期订阅三个上游事件生成通知（联动表见
 `internal/api/module.go`）：
 
-- `identity.user.password-changed`
+- `account.user.password-changed`
 - `organization.member.added`
 - `organization.member.removed`
 
 ---
 
-**English**: In-app notifications — subscribes to identity/organization events,
+**English**: In-app notifications — subscribes to account/organization events,
 renders and persists a snapshot per notification, with self-service listing and
 read-marking. Pure consumer (publishes no events). Install chain:
-`lynx-start add identity && lynx-start add organization && lynx-start add notification`.
+`lynx-start add account && lynx-start add organization && lynx-start add notification`.

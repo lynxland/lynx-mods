@@ -122,7 +122,7 @@ func (u *UseCase) List(ctx context.Context, pageSize int32, pageToken string) (*
 }
 
 // publish 构造事件信封并发布（载荷 JSON 编码——手搓字符串会在 title 含
-// 引号/反斜杠时产生非法 JSON；与 identity/session 的 publish 同款纪律）。
+// 引号/反斜杠时产生非法 JSON；与 account 各域的 publish 同款纪律）。
 func (u *UseCase) publish(ctx context.Context, name string, payload map[string]string) error {
 	raw, err := json.Marshal(payload)
 	if err != nil {

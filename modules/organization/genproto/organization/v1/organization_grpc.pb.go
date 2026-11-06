@@ -35,7 +35,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // OrganizationService 是组织模块的 API 面：组织与成员事实（结构 + 成员，
-// 非 RBAC）。依赖 identity 模块（DependsOn）：成员是 identity 用户
+// 非 RBAC）。依赖 account 模块（DependsOn）：成员是账号（identity 域）用户
 // （只存 ID），添加成员时校验用户存在。
 type OrganizationServiceClient interface {
 	// 创建组织，创建者即 owner。要求认证。
@@ -149,7 +149,7 @@ func (c *organizationServiceClient) Leave(ctx context.Context, in *LeaveRequest,
 // for forward compatibility.
 //
 // OrganizationService 是组织模块的 API 面：组织与成员事实（结构 + 成员，
-// 非 RBAC）。依赖 identity 模块（DependsOn）：成员是 identity 用户
+// 非 RBAC）。依赖 account 模块（DependsOn）：成员是账号（identity 域）用户
 // （只存 ID），添加成员时校验用户存在。
 type OrganizationServiceServer interface {
 	// 创建组织，创建者即 owner。要求认证。

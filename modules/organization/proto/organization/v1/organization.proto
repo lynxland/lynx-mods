@@ -15,7 +15,7 @@ import "grpcapi/v1/policy.proto";
 option (grpcapi.v1.api) = { api: "public", default_exposure: EXPOSURE_PUBLIC };
 
 // OrganizationService 是组织模块的 API 面：组织与成员事实（结构 + 成员，
-// 非 RBAC）。依赖 identity 模块（DependsOn）：成员是 identity 用户
+// 非 RBAC）。依赖 account 模块（DependsOn）：成员是账号（identity 域）用户
 // （只存 ID），添加成员时校验用户存在。
 service OrganizationService {
   // 创建组织，创建者即 owner。要求认证。

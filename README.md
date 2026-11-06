@@ -43,16 +43,20 @@ lynx-start init myapp --module github.com/acme/myapp --registry <本仓库目录
 cd myapp
 lynx-start add demo --registry <本仓库目录>          # 样例：验证装配管线
 lynx-start init myapp-saas --preset saas --registry <本仓库目录>  # 一条命令装齐 SaaS 底座
-lynx-start add identity@0.2.0 --registry <本仓库目录>  # 钉版本安装（git tag）
-lynx-start add session --registry <本仓库目录>        # 会话：可吊销令牌对（依赖 identity，安装器校验）
-lynx-start add access --registry <本仓库目录>         # 授权：RBAC + claims 注入（依赖 identity）
+lynx-start add account@0.6.0 --registry <本仓库目录>  # 钉版本安装（git tag）
+lynx-start add account --registry <本仓库目录>        # 账号与访问：注册/登录 + 可吊销会话 + RBAC（零依赖，单独装即完整）
 lynx-start add audit --registry <本仓库目录>          # 审计：RPC 拦截器自动记录 + 显式记录 + 查询（零依赖）
-lynx-start add organization --registry <本仓库目录>   # 组织：组织与成员事实（依赖 identity）
+lynx-start add organization --registry <本仓库目录>   # 组织：组织与成员事实（依赖 account，自动拉齐账号底座）
+lynx-start add notification --registry <本仓库目录>   # 通知：站内通知 + 显式发送（依赖 account+organization 事件）
 lynx-start add task --registry <本仓库目录>           # 任务：第一个组织挂靠业务资源（ADR-0005 姿势）
+
+# 模块目录（6 个，ADR-0009 模块=产品能力单元）：demo / account / audit /
+# organization / notification / task——2026-11-06 起 identity+session+access
+# 合并为 account（迁移表见 CHANGELOG v0.6.0）。
 
 # registry 模块出新版时（三方合并：本地 / 安装基线 / upstream）
 git add -A && git commit -m wip    # update 写盘不可回滚，先 commit
-lynx-start update identity --registry <本仓库目录>
+lynx-start update account --registry <本仓库目录>
 
 # 体检与卸载
 lynx-start doctor --registry <本仓库目录>
