@@ -1,20 +1,20 @@
 {
-  "configFragment": "",
-  "description": "通知模块：订阅身份/组织事件自动生成站内通知（渲染快照落库）+ 自助查询与已读标记，依赖 identity+organization",
-  "goDependencies": [
-    "github.com/lynxland/appkit@v0.8.0",
-    "github.com/lynxland/appkit/contrib/bunx@v0.5.0"
-  ],
-  "kernelConstraint": ">=0.8.0",
+  "name": "notification",
+  "version": "0.6.0",
+  "description": "通知模块：订阅账号/组织事件自动生成站内通知（渲染快照落库）+ 自助查询与已读标记，依赖 account+organization",
+  "modulePath": "github.com/lynxland/lynx-start/modules/notification",
   "moduleDependencies": [
     {
-      "identity": ">=0.1.1"
+      "account": ">=0.6.0"
     },
     {
       "organization": ">=0.1.1"
     }
   ],
-  "modulePath": "github.com/lynxland/lynx-start/modules/notification",
-  "name": "notification",
-  "version": "0.5.0"
+  "goDependencies": [
+    "github.com/lynxland/appkit@v0.8.0",
+    "github.com/lynxland/appkit/contrib/bunx@v0.5.0"
+  ],
+  "configFragment": "",
+  "kernelConstraint": ">=0.8.0"
 }

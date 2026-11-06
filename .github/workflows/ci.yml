@@ -2,7 +2,7 @@
 #   lint        golangci-lint + gofmt 漂移
 #   test        全模块单测 + 真实 Postgres 门控测试（APPKIT_TEST_PG_DSN）
 #   proto-drift genproto 与 proto 必须同步入库（buf 重新生成后 diff 为空）
-#   e2e         安装管线端到端：init → add demo+identity → buf → build/vet/test
+#   e2e         安装管线端到端：init → add 组合矩阵 → buf → build/vet/test
 name: CI
 
 on:
@@ -86,18 +86,18 @@ jobs:
       matrix:
         modules:
           - "demo"
-          - "identity"
-          - "identity session"
-          - "identity access"
-          - "identity organization"
-          - "identity organization notification"
-          - "identity organization task"
-          - "demo identity session access audit organization notification task"
+          - "demo"
+          - "account"
+          - "account organization"
+          - "account audit"
+          - "account organization notification"
+          - "account organization task"
+          - "demo account audit organization notification task"
     env:
       LYNXSTART_E2E_MODULES: ${{ matrix.modules }}
     steps:
-      # fetch-depth 0：test:scaffold 的 update 场景装 identity@0.1.0，
-      # 版本解析依赖 git tag（modules/identity/v0.1.0 指向历史提交）。
+      # fetch-depth 0：test:scaffold 的 update 场景经 fixture registry 伪造
+      # 低版本 tag（modules/account/v0.1.0），依赖完整 git 历史。
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0

@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
 
 	"github.com/uptrace/bun"
@@ -45,17 +47,15 @@ func (r *Repo) Create(ctx context.Context, n *notification.Notification) error {
 	return err
 }
 
-// ListByUser 按 created_at DESC, id DESC 取一页与总数（UnreadOnly 仅未读）。
-func (r *Repo) ListByUser(ctx context.Context, userID string, q notification.Query) ([]*notification.Notification, int, error) {
+// ListByUser 按分页计划（crud v2 keyset）取一页与总数（unreadOnly 仅未读）。
+func (r *Repo) ListByUser(ctx context.Context, userID string, plan crud.PagePlan, unreadOnly bool) ([]*notification.Notification, int, error) {
 	var rows []notificationModel
 	conn := buntx.Conn(ctx, r.db)
-	listQuery := conn.NewSelect().Model(&rows).
-		Where("n.user_id = ?", userID).
-		Order("n.created_at DESC", "n.id DESC").
-		Limit(int64(q.PageSize)).Offset(int64(q.Offset))
+	listQuery := bunx.ApplyPage(conn.NewSelect().Model(&rows).
+		Where("n.user_id = ?", userID), plan)
 	countQuery := conn.NewSelect().Model((*notificationModel)(nil)).
 		Where("user_id = ?", userID)
-	if q.UnreadOnly {
+	if unreadOnly {
 		listQuery = listQuery.Where("n.read_at IS NULL")
 		countQuery = countQuery.Where("read_at IS NULL")
 	}

@@ -1,6 +1,10 @@
 package organization
 
-import "context"
+import (
+	"context"
+
+	"github.com/lynxland/appkit/crud"
+)
 
 // Repository 是 Organization 聚合与成员事实的持久化端口（infra 实现，经
 // Assemble 注入）。方法一律接收 ctx：适配器从 ctx 取事务连接
@@ -19,10 +23,12 @@ type Repository interface {
 	RemoveMember(ctx context.Context, organizationID, userID string) (removed bool, err error)
 	// Member 取单个成员事实；缺失映射 ErrNotMember。
 	Member(ctx context.Context, organizationID, userID string) (*Member, error)
-	// ListMembers 按 joined_at DESC, user_id DESC 返回一页与总数。
-	ListMembers(ctx context.Context, organizationID string, q MemberQuery) ([]*Member, int, error)
-	// ListByUser 按 joined_at DESC, organization id DESC 返回用户加入的组织一页与总数。
-	ListByUser(ctx context.Context, userID string, q OrganizationQuery) ([]*Organization, int, error)
+	// ListMembers 按分页计划（crud v2 keyset：joined_at DESC + user_id
+	// 决胜）返回组织成员一页与总数。
+	ListMembers(ctx context.Context, organizationID string, plan crud.PagePlan) ([]*Member, int, error)
+	// ListByUser 按分页计划（crud v2 keyset：joined_at DESC + id 决胜）
+	// 返回用户加入的组织一页与总数。
+	ListByUser(ctx context.Context, userID string, plan crud.PagePlan) ([]*Organization, int, error)
 	// CountOwners 统计组织 owner 数（最后一个 owner 不可离开的裁决依据）。
 	CountOwners(ctx context.Context, organizationID string) (int, error)
 }

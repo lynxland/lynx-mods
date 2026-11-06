@@ -7,7 +7,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/lynx-start/modules/demo/domain/demo"
 	"github.com/uptrace/bun"
 )
@@ -78,12 +80,10 @@ func (r *Repo) Delete(ctx context.Context, id string) error {
 }
 
 // List 按 created_at DESC, id DESC 取一页与总数。
-func (r *Repo) List(ctx context.Context, q demo.ListQuery) ([]*demo.Item, int, error) {
+func (r *Repo) List(ctx context.Context, plan crud.PagePlan) ([]*demo.Item, int, error) {
 	var rows []itemModel
 	conn := buntx.Conn(ctx, r.db)
-	err := conn.NewSelect().Model(&rows).
-		Order("d.created_at DESC", "d.id DESC").
-		Limit(int64(q.PageSize)).Offset(int64(q.Offset)).
+	err := bunx.ApplyPage(conn.NewSelect().Model(&rows), plan).
 		Scan(ctx)
 	if err != nil {
 		return nil, 0, err

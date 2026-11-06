@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/lynx-start/modules/task/domain/task"
 	"github.com/lynxland/lynx-start/modules/task/internal/infra/task/migrations"
 )
@@ -54,17 +55,45 @@ func TestRepo(t *testing.T) {
 		}
 	})
 
+	// listPlan 是与 app 层 ListSpec 解析产物同形的分页计划
+	// （createdAt DESC + id 决胜 ASC，crud v2 keyset）。
+	listPlan := crud.PagePlan{
+		Mode:  crud.ModeKeyset,
+		Limit: 10,
+		Order: []crud.OrderClause{{Expr: "t.created_at", Desc: true, RawField: "createdAt"}, {Expr: "t.id", RawField: "id"}},
+	}
+
 	t.Run("list scoped to organization", func(t *testing.T) {
-		tasks, total, err := repo.List(ctx, "o1", task.Query{PageSize: 10})
+		tasks, total, err := repo.List(ctx, "o1", listPlan)
 		if err != nil || total != 2 || len(tasks) != 2 {
 			t.Fatalf("list o1 = %d/%d err=%v", len(tasks), total, err)
 		}
-		// created_at DESC：同为 t0 时按 id DESC。
-		if tasks[0].ID != "t2" {
-			t.Errorf("order: first = %s, want t2", tasks[0].ID)
+		// created_at DESC：同为 t0 时按 id 决胜 ASC——t1 在前。
+		if tasks[0].ID != "t1" {
+			t.Errorf("order: first = %s, want t1", tasks[0].ID)
 		}
-		if tasks2, total2, _ := repo.List(ctx, "o2", task.Query{PageSize: 10}); total2 != 1 || len(tasks2) != 1 {
+		if tasks2, total2, _ := repo.List(ctx, "o2", listPlan); total2 != 1 || len(tasks2) != 1 {
 			t.Errorf("list o2 = %d/%d, want 1/1", len(tasks2), total2)
+		}
+	})
+
+	t.Run("list keyset pagination", func(t *testing.T) {
+		// 每页 1 条：首页取最新（created_at DESC），游标推进取次新。
+		page1 := listPlan
+		page1.Limit = 1
+		first, _, err := repo.List(ctx, "o1", page1)
+		if err != nil || len(first) != 1 {
+			t.Fatalf("page1 = %d err=%v", len(first), err)
+		}
+		page2 := listPlan
+		page2.Limit = 1
+		page2.CursorValues = []string{first[0].CreatedAt.UTC().Format(time.RFC3339Nano), first[0].ID}
+		second, _, err := repo.List(ctx, "o1", page2)
+		if err != nil || len(second) != 1 {
+			t.Fatalf("page2 = %d err=%v", len(second), err)
+		}
+		if second[0].ID == first[0].ID {
+			t.Errorf("page2 repeated %s", second[0].ID)
 		}
 	})
 

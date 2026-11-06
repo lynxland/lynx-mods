@@ -88,3 +88,9 @@ type Filter struct {
 	ResourceType string
 	ResourceID   string
 }
+
+// FilterDigest 实现 crud.FilterDigester：过滤摘要绑定进 keyset 游标——
+// 翻页中途换滤即自失效（跨页一致性，替代 v1 的 filterKey 通道）。
+func (f Filter) FilterDigest() string {
+	return fmt.Sprintf("actor=%s;action=%s;resource=%s/%s", f.ActorID, f.Action, f.ResourceType, f.ResourceID)
+}

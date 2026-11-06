@@ -1,6 +1,10 @@
 package demo
 
-import "context"
+import (
+	"context"
+
+	"github.com/lynxland/appkit/crud"
+)
 
 // Repository 是 Item 聚合的持久化端口（infra 实现，经 Assemble 注入）。
 // 方法一律接收 ctx：适配器从 ctx 取事务连接（appkit/uow/buntx），
@@ -12,5 +16,6 @@ type Repository interface {
 	Update(ctx context.Context, item *Item) error
 	Delete(ctx context.Context, id string) error
 	// List 按 created_at DESC, id DESC 返回一页与总数。
-	List(ctx context.Context, q ListQuery) (items []*Item, total int, err error)
+	// List 按分页计划（crud v2 keyset：created_at DESC + id 决胜）返回一页与总数。
+	List(ctx context.Context, plan crud.PagePlan) (items []*Item, total int, err error)
 }

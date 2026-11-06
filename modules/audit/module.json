@@ -1,12 +1,17 @@
 {
   "name": "audit",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "审计模块：RPC 拦截器自动记录 + 显式记录（同事务）+ 分页查询（append-only，零模块依赖）",
   "modulePath": "github.com/lynxland/lynx-start/modules/audit",
   "moduleDependencies": [],
-  "goDependencies": [],
+  "goDependencies": [
+    "github.com/lynxland/appkit@v0.8.0",
+    "github.com/lynxland/appkit/contrib/bunx@v0.5.0",
+    "github.com/lynxland/grpcapi@v0.5.0"
+  ],
   "configFragment": "",
   "publishedEvents": [
     "audit.log.recorded"
-  ]
+  ],
+  "kernelConstraint": ">=0.8.0"
 }

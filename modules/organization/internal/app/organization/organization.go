@@ -13,7 +13,7 @@ import (
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/appkit/idgen"
 	"github.com/lynxland/appkit/uow"
-	"github.com/lynxland/lynx-start/modules/identity/domain/identity"
+	"github.com/lynxland/lynx-start/modules/account/domain/account/identity"
 	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
 )
 
@@ -178,19 +178,22 @@ func (u *UseCase) ListMembers(ctx context.Context, actorID, organizationID strin
 		}
 		return nil, err
 	}
-	params, err := crud.ParseListParams(pageSize, pageToken, "", "")
+	q, err := crud.Parse[any](membersSpec, crud.RawParams{After: pageToken, Limit: pageSize, OrderBy: "joinedAt desc"}, nil)
 	if err != nil {
 		return nil, err
 	}
-	members, total, err := u.repo.ListMembers(ctx, organizationID, organization.MemberQuery{PageSize: params.PageSize, Offset: params.Offset})
+	members, total, err := u.repo.ListMembers(ctx, organizationID, q.PagePlan)
 	if err != nil {
 		return nil, err
 	}
-	page, err := crud.FinalizeOffsetPage(params, total, len(members))
-	if err != nil {
-		return nil, err
+	next := ""
+	if crud.HasMore(int32(len(members)), q.Limit) && len(members) > 0 {
+		last := members[len(members)-1]
+		if next, err = crud.Cursor(q, []string{last.JoinedAt.UTC().Format(time.RFC3339Nano), last.UserID}); err != nil {
+			return nil, err
+		}
 	}
-	return &ListMembersResult{Members: members, NextToken: page.NextToken, TotalSize: int32(total)}, nil
+	return &ListMembersResult{Members: members, NextToken: next, TotalSize: int32(total)}, nil
 }
 
 // Leave 成员自行离开（最后一个 owner 不可离开——组织不可无主）。
@@ -233,21 +236,43 @@ type ListMyOrganizationsResult struct {
 	TotalSize     int32
 }
 
-// ListMyOrganizations 列当前用户加入的组织（自助，分页）。
+// membersSpec / myOrganizationsSpec 是两个列表的分页规约（crud v2：
+// keyset 游标，joined_at DESC + 唯一列决胜；总数另经 COUNT 供粗参考）。
+var (
+	membersSpec = crud.Spec{
+		Modes:        crud.ModeSetKeyset,
+		Sortable:     map[string]string{"joinedAt": "m.joined_at", "userId": "m.user_id"},
+		Tiebreak:     "userId",
+		DefaultLimit: 20,
+		MaxLimit:     100,
+	}
+	myOrganizationsSpec = crud.Spec{
+		Modes:        crud.ModeSetKeyset,
+		Sortable:     map[string]string{"createdAt": "o.created_at", "id": "o.id"},
+		Tiebreak:     "id",
+		DefaultLimit: 20,
+		MaxLimit:     100,
+	}
+)
+
+// ListMyOrganizations 列当前用户加入的组织（自助，keyset 分页）。
 func (u *UseCase) ListMyOrganizations(ctx context.Context, userID string, pageSize int32, pageToken string) (*ListMyOrganizationsResult, error) {
-	params, err := crud.ParseListParams(pageSize, pageToken, "", "")
+	q, err := crud.Parse[any](myOrganizationsSpec, crud.RawParams{After: pageToken, Limit: pageSize, OrderBy: "createdAt desc"}, nil)
 	if err != nil {
 		return nil, err
 	}
-	organizations, total, err := u.repo.ListByUser(ctx, userID, organization.OrganizationQuery{PageSize: params.PageSize, Offset: params.Offset})
+	organizations, total, err := u.repo.ListByUser(ctx, userID, q.PagePlan)
 	if err != nil {
 		return nil, err
 	}
-	page, err := crud.FinalizeOffsetPage(params, total, len(organizations))
-	if err != nil {
-		return nil, err
+	next := ""
+	if crud.HasMore(int32(len(organizations)), q.Limit) && len(organizations) > 0 {
+		last := organizations[len(organizations)-1]
+		if next, err = crud.Cursor(q, []string{last.CreatedAt.UTC().Format(time.RFC3339Nano), last.ID}); err != nil {
+			return nil, err
+		}
 	}
-	return &ListMyOrganizationsResult{Organizations: organizations, NextToken: page.NextToken, TotalSize: int32(total)}, nil
+	return &ListMyOrganizationsResult{Organizations: organizations, NextToken: next, TotalSize: int32(total)}, nil
 }
 
 // ListMembersResult 是成员列表用例的产物。

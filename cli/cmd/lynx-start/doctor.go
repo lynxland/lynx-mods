@@ -113,6 +113,16 @@ func cmdDoctor(args []string) error {
 				check(false, "%s kernelConstraint parses: %v", mod.Name, err)
 			}
 		}
+		// goDependencies 对账（2026-11-06 修洞）：清单要求的电池版本高于
+		// 应用 go.mod 时 ⚠（编译大概率红）——update 会自动重放，此处提示
+		// 未重放/手工改坏的漂移。require 缺失或版本更低都算不满足。
+		for _, stale := range filterUpgrades(readGoModRequires(appDir), manifest.GoDependencies) {
+			if github {
+				fmt.Printf("::warning title=%s/goDependency::%s needs %s (go get manually)\n", mod.Name, mod.Name, stale)
+			} else {
+				fmt.Printf("  ⚠ %s goDependency below manifest: go get %s\n", mod.Name, stale)
+			}
+		}
 		envExample := ""
 		if raw, err := os.ReadFile(filepath.Join(appDir, ".env.example")); err == nil {
 			envExample = string(raw)

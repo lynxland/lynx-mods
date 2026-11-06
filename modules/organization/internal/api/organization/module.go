@@ -17,14 +17,14 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// Module 返回静态装配描述。DependsOn: identity——成员是 identity 用户
+// Module 返回静态装配描述。DependsOn: account（ADR-0009 合并后）——成员是账号用户
 // （只存 ID），添加成员时经 identity domain 只读端口校验用户存在
 // （安装器校验依赖已装）。v0.1 无配置段。
 func Module() appkit.Module {
 	return appkit.Module{
 		Name:        "organization",
 		Description: "组织模块：组织与成员事实（创建者即 owner，owner-only 管理），依赖 identity",
-		DependsOn:   []string{"identity"},
+		DependsOn:   []string{"account"},
 		Policies:    []protoreflect.FileDescriptor{organizationv1.File_organization_v1_organization_proto},
 		Migrations:  migrations.FS,
 		PublishedEvents: []string{
@@ -40,7 +40,7 @@ func Module() appkit.Module {
 func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
 	uc := apporganization.New(
 		infraorganization.NewRepository(bunx.MustDB(deps)),
-		infraorganization.NewUserReader(bunx.MustDB(deps)), // DependsOn: identity domain 只读消费
+		infraorganization.NewUserReader(bunx.MustDB(deps)), // DependsOn: account domain 只读消费
 		deps.Tx, deps.Events,
 	)
 	return appkit.Assembly{

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
 )
 
@@ -19,26 +20,23 @@ func (r *fakeRepo) Create(_ context.Context, n *notification.Notification) error
 	return nil
 }
 
-func (r *fakeRepo) ListByUser(_ context.Context, userID string, q notification.Query) ([]*notification.Notification, int, error) {
+func (r *fakeRepo) ListByUser(_ context.Context, userID string, plan crud.PagePlan, unreadOnly bool) ([]*notification.Notification, int, error) {
 	var matched []*notification.Notification
 	for _, n := range r.items {
 		if n.UserID != userID {
 			continue
 		}
-		if q.UnreadOnly && !n.Unread() {
+		if unreadOnly && !n.Unread() {
 			continue
 		}
 		matched = append(matched, n)
 	}
 	total := len(matched)
-	end := q.Offset + q.PageSize
+	end := int(plan.Limit)
 	if end > total {
 		end = total
 	}
-	if q.Offset > total {
-		q.Offset = total
-	}
-	return matched[q.Offset:end], total, nil
+	return matched[:end], total, nil
 }
 
 func (r *fakeRepo) CountUnread(_ context.Context, userID string) (int, error) {

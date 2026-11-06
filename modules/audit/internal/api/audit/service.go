@@ -47,16 +47,16 @@ func (s *Service) ListAuditRecords(ctx context.Context, req *auditv1.ListAuditRe
 		ResourceType: req.GetResourceType(),
 		ResourceID:   req.GetResourceId(),
 	}
-	recs, page, err := s.uc.ListRecords(ctx, f, req.GetPageSize(), req.GetPageToken())
+	res, err := s.uc.ListRecords(ctx, f, req.GetPageSize(), req.GetPageToken())
 	if err != nil {
 		return nil, toStatus(err)
 	}
 	resp := &auditv1.ListAuditRecordsResponse{
-		Records:       make([]*auditv1.AuditRecord, 0, len(recs)),
-		TotalSize:     int32(page.TotalCount),
-		NextPageToken: page.NextToken,
+		Records:       make([]*auditv1.AuditRecord, 0, len(res.Records)),
+		TotalSize:     res.TotalSize,
+		NextPageToken: res.NextToken,
 	}
-	for _, rec := range recs {
+	for _, rec := range res.Records {
 		resp.Records = append(resp.Records, toAPI(rec))
 	}
 	return resp, nil

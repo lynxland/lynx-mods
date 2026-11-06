@@ -2,12 +2,10 @@ go 1.26.8
 
 use (
 	./cli
-	./modules/access
+	./modules/account
 	./modules/audit
 	./modules/demo
-	./modules/identity
 	./modules/notification
 	./modules/organization
-	./modules/session
 	./modules/task
 )

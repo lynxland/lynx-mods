@@ -6,28 +6,20 @@
       "path": "modules/demo"
     },
     {
-      "name": "identity",
-      "path": "modules/identity"
-    },
-    {
-      "name": "session",
-      "path": "modules/session"
-    },
-    {
-      "name": "access",
-      "path": "modules/access"
+      "name": "account",
+      "path": "modules/account"
     },
     {
       "name": "audit",
       "path": "modules/audit"
     },
     {
-      "name": "notification",
-      "path": "modules/notification"
-    },
-    {
       "name": "organization",
       "path": "modules/organization"
+    },
+    {
+      "name": "notification",
+      "path": "modules/notification"
     },
     {
       "name": "task",

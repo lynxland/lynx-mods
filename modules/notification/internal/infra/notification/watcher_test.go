@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
 	appnotification "github.com/lynxland/lynx-start/modules/notification/internal/app/notification"
@@ -23,7 +24,7 @@ func (r *watcherRepo) Create(_ context.Context, n *notification.Notification) er
 	return nil
 }
 
-func (r *watcherRepo) ListByUser(context.Context, string, notification.Query) ([]*notification.Notification, int, error) {
+func (r *watcherRepo) ListByUser(context.Context, string, crud.PagePlan, bool) ([]*notification.Notification, int, error) {
 	return nil, 0, nil
 }
 
@@ -71,8 +72,8 @@ func TestWatcherDelivers(t *testing.T) {
 	}
 
 	// 三个目录事件 + 一个同 topic 干扰事件 + 一个缺字段事件。
-	mustPublish("identity.user.password-changed", "identity", map[string]string{"id": "u1"})
-	mustPublish("identity.user.created", "identity", map[string]string{"id": "u1"}) // 干扰：不产通知
+	mustPublish("account.user.password-changed", "account", map[string]string{"id": "u1"})
+	mustPublish("account.user.created", "account", map[string]string{"id": "u1"}) // 干扰：不产通知
 	mustPublish("organization.member.added", "organization",
 		map[string]string{"organization_id": "o1", "organization_name": "Acme Inc", "user_id": "u1"})
 	mustPublish("organization.member.removed", "organization",
@@ -92,8 +93,8 @@ func TestWatcherDelivers(t *testing.T) {
 	for _, n := range repo.created {
 		byType[n.Type] = n.Title
 	}
-	if byType["identity.user.password-changed"] != "密码已更改" {
-		t.Errorf("password-changed title = %q", byType["identity.user.password-changed"])
+	if byType["account.user.password-changed"] != "密码已更改" {
+		t.Errorf("password-changed title = %q", byType["account.user.password-changed"])
 	}
 	if byType["organization.member.added"] != "你已被加入组织 Acme Inc" {
 		t.Errorf("member.added title = %q", byType["organization.member.added"])

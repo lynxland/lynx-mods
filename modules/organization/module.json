@@ -1,23 +1,23 @@
 {
-  "configFragment": "",
-  "description": "组织模块：组织与成员事实（创建者即 owner，owner-only 管理；结构非 RBAC——权限语义归 access），依赖 identity",
+  "name": "organization",
+  "version": "0.6.0",
+  "description": "组织模块：组织与成员事实（创建者即 owner，owner-only 管理；结构非 RBAC——权限语义归 account 的 access 域），依赖 account（ADR-0009 合并后依赖唯一账号模块）",
+  "modulePath": "github.com/lynxland/lynx-start/modules/organization",
+  "moduleDependencies": [
+    {
+      "account": ">=0.6.0"
+    }
+  ],
   "goDependencies": [
     "github.com/lynxland/appkit@v0.8.0",
     "github.com/lynxland/appkit/contrib/bunx@v0.5.0",
     "github.com/lynxland/grpcapi@v0.5.0"
   ],
-  "kernelConstraint": ">=0.8.0",
-  "moduleDependencies": [
-    {
-      "identity": ">=0.1.1"
-    }
-  ],
-  "modulePath": "github.com/lynxland/lynx-start/modules/organization",
-  "name": "organization",
+  "configFragment": "",
   "publishedEvents": [
     "organization.organization.created",
     "organization.member.added",
     "organization.member.removed"
   ],
-  "version": "0.5.0"
+  "kernelConstraint": ">=0.8.0"
 }

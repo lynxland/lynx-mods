@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package access.v1;
+
+option go_package = "github.com/lynxland/lynx-start/modules/account/genproto/access/v1;accessv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "grpcapi/v1/policy.proto";
+
+// 公开 API 面 + 文件级默认公开曝光。管理面按 permissions 声明
+// （MATCH_ALL 精确匹配；claims 由本模块的 Enricher 在认证后注入，
+// identity/session 两种令牌皆可携带）；自助查询要求认证。
+option (grpcapi.v1.api) = { api: "public", default_exposure: EXPOSURE_PUBLIC };
+
+// AccessService 是授权模块的 API 面：角色分配管理 + 自助角色查询。
+// 依赖 identity 模块（DependsOn）：分配目标是 identity 用户。
+service AccessService {
+  // 授予角色（幂等）。需要 access.assignment.write 权限。
+  rpc GrantRole(GrantRoleRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["account.assignment.write"] } };
+    option (google.api.http) = { post: "/v1/access/users/{user_id}/roles" body: "*" };
+  }
+
+  // 回收角色（幂等）。需要 access.assignment.write 权限。
+  rpc RevokeRole(RevokeRoleRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["account.assignment.write"] } };
+    option (google.api.http) = { delete: "/v1/access/users/{user_id}/roles/{role}" };
+  }
+
+  // 查询用户角色。需要 access.assignment.write 权限。
+  rpc ListUserRoles(ListUserRolesRequest) returns (ListUserRolesResponse) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["account.assignment.write"] } };
+    option (google.api.http) = { get: "/v1/access/users/{user_id}/roles" };
+  }
+
+  // 当前认证用户的角色与权限（自助）。要求认证。
+  rpc ListMyRoles(ListMyRolesRequest) returns (ListMyRolesResponse) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { get: "/v1/access/me/roles" };
+  }
+}
+
+message GrantRoleRequest {
+  string user_id = 1;
+  string role = 2;
+}
+
+message RevokeRoleRequest {
+  string user_id = 1;
+  string role = 2;
+}
+
+message ListUserRolesRequest {
+  string user_id = 1;
+}
+
+message ListUserRolesResponse {
+  repeated string roles = 1;
+}
+
+message ListMyRolesRequest {}
+
+message ListMyRolesResponse {
+  repeated string roles = 1;
+  repeated string permissions = 2;
+}

@@ -3,14 +3,9 @@ package notification
 import (
 	"context"
 	"time"
-)
 
-// Query 是通知列表查询（分页 + 未读过滤）。
-type Query struct {
-	PageSize   int
-	Offset     int
-	UnreadOnly bool
-}
+	"github.com/lynxland/appkit/crud"
+)
 
 // Repository 是 Notification 聚合的持久化端口（infra 实现，经 Assemble
 // 注入）。方法一律接收 ctx：适配器从 ctx 取事务连接（appkit/uow/buntx），
@@ -18,9 +13,10 @@ type Query struct {
 type Repository interface {
 	// Create 插入通知（append 事实，无更新路径——已读走 MarkRead）。
 	Create(ctx context.Context, n *Notification) error
-	// ListByUser 按 created_at DESC, id DESC 返回收件人的一页与总数
-	// （UnreadOnly 时仅未读）。
-	ListByUser(ctx context.Context, userID string, q Query) ([]*Notification, int, error)
+	// ListByUser 按分页计划（crud v2 keyset：created_at DESC + id 决胜）
+	// 返回收件人的一页与总数（unreadOnly 时仅未读；游标不绑定滤——
+	// 翻页中途切换 unread_only 请重新起页）。
+	ListByUser(ctx context.Context, userID string, plan crud.PagePlan, unreadOnly bool) ([]*Notification, int, error)
 	// CountUnread 统计收件人未读数（角标）。
 	CountUnread(ctx context.Context, userID string) (int, error)
 	// MarkRead 按 ID 标记已读；userID 收敛可见性（只许标本人的，

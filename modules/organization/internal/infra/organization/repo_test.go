@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
 	"github.com/lynxland/lynx-start/modules/organization/internal/infra/organization/migrations"
 )
@@ -117,11 +118,14 @@ func TestRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		members, total, err := repo.ListMembers(ctx, "o1", organization.MemberQuery{PageSize: 2, Offset: 0})
+		membersPlan := crud.PagePlan{Mode: crud.ModeKeyset, Limit: 2, Order: []crud.OrderClause{{Expr: "m.joined_at", Desc: true, RawField: "joinedAt"}, {Expr: "m.user_id", RawField: "userId"}}}
+		members, total, err := repo.ListMembers(ctx, "o1", membersPlan)
 		if err != nil || total != 4 || len(members) != 2 {
 			t.Fatalf("page1 = %d/%d err=%v, want 2 of 4", len(members), total, err)
 		}
-		page2, total, err := repo.ListMembers(ctx, "o1", organization.MemberQuery{PageSize: 2, Offset: 2})
+		page2Plan := membersPlan
+		page2Plan.CursorValues = []string{members[len(members)-1].JoinedAt.UTC().Format(time.RFC3339Nano), members[len(members)-1].UserID}
+		page2, total, err := repo.ListMembers(ctx, "o1", page2Plan)
 		if err != nil || total != 4 || len(page2) != 2 {
 			t.Fatalf("page2 = %d/%d err=%v, want 2 of 4", len(page2), total, err)
 		}
@@ -134,7 +138,8 @@ func TestRepo(t *testing.T) {
 		if _, err := repo.AddMember(ctx, mkMember("o2", "u1", false)); err != nil {
 			t.Fatal(err)
 		}
-		list, total, err := repo.ListByUser(ctx, "u1", organization.OrganizationQuery{PageSize: 10, Offset: 0})
+		orgsPlan := crud.PagePlan{Mode: crud.ModeKeyset, Limit: 10, Order: []crud.OrderClause{{Expr: "o.created_at", Desc: true, RawField: "createdAt"}, {Expr: "o.id", RawField: "id"}}}
+		list, total, err := repo.ListByUser(ctx, "u1", orgsPlan)
 		if err != nil || total != 2 || len(list) != 2 {
 			t.Fatalf("by user = %d/%d err=%v, want 2", len(list), total, err)
 		}
@@ -145,7 +150,7 @@ func TestRepo(t *testing.T) {
 		if !saw["o1"] || !saw["o2"] {
 			t.Errorf("by user ids = %v, want o1+o2", saw)
 		}
-		if list, total, _ := repo.ListByUser(ctx, "stranger", organization.OrganizationQuery{PageSize: 10, Offset: 0}); total != 0 || len(list) != 0 {
+		if list, total, _ := repo.ListByUser(ctx, "stranger", orgsPlan); total != 0 || len(list) != 0 {
 			t.Errorf("stranger by user = %d/%d, want empty", len(list), total)
 		}
 	})

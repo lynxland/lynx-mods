@@ -2,11 +2,9 @@
   "presets": [
     {
       "name": "saas",
-      "description": "SaaS 底座：认证 + 可吊销会话 + RBAC + 审计 + 组织（成员事实）+ 站内通知",
+      "description": "SaaS 底座：账号与访问（认证/会话/RBAC）+ 审计 + 组织（成员事实）+ 站内通知",
       "modules": [
-        "identity",
-        "session",
-        "access",
+        "account",
         "audit",
         "organization",
         "notification"

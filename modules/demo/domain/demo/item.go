@@ -50,9 +50,3 @@ func (i *Item) Rename(title string, now time.Time) error {
 	i.UpdatedAt = now
 	return nil
 }
-
-// ListQuery 是列表查询参数（分页方言见 appkit/crud）。
-type ListQuery struct {
-	PageSize int32
-	Offset   int
-}

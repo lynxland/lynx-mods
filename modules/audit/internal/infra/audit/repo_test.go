@@ -21,6 +21,13 @@ func newRec(t *testing.T, id, actorID, action string, at time.Time) *domainaudit
 	return rec
 }
 
+// auditListPlan 与 app 层 listSpec 解析产物同形（occurred_at DESC + id
+// 决胜 ASC，crud v2 keyset）；auditListPlan2 是每页 2 条变体。
+var (
+	auditListPlan  = crud.PagePlan{Mode: crud.ModeKeyset, Limit: 10, Order: []crud.OrderClause{{Expr: "r.occurred_at", Desc: true, RawField: "occurredAt"}, {Expr: "r.id", RawField: "id"}}}
+	auditListPlan2 = crud.PagePlan{Mode: crud.ModeKeyset, Limit: 2, Order: []crud.OrderClause{{Expr: "r.occurred_at", Desc: true, RawField: "occurredAt"}, {Expr: "r.id", RawField: "id"}}}
+)
+
 func TestRepo(t *testing.T) {
 	testutil.SkipUnlessPg(t)
 	db := testutil.NewDB(t, testutil.Chain{Module: "audit", FS: migrations.FS})
@@ -39,7 +46,7 @@ func TestRepo(t *testing.T) {
 	}
 
 	t.Run("list ordered desc", func(t *testing.T) {
-		recs, total, err := repo.List(ctx, domainaudit.Filter{}, crud.ListParams{PageSize: 10})
+		recs, total, err := repo.List(ctx, domainaudit.Filter{}, auditListPlan)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -57,26 +64,29 @@ func TestRepo(t *testing.T) {
 	})
 
 	t.Run("list filter actor/action", func(t *testing.T) {
-		recs, total, err := repo.List(ctx, domainaudit.Filter{ActorID: "u1"}, crud.ListParams{PageSize: 10})
+		recs, total, err := repo.List(ctx, domainaudit.Filter{ActorID: "u1"}, auditListPlan)
 		if err != nil || total != 2 || len(recs) != 2 {
 			t.Fatalf("actor filter: total=%d len=%d err=%v", total, len(recs), err)
 		}
-		recs, total, err = repo.List(ctx, domainaudit.Filter{ActorID: "u1", Action: "order.cancelled"}, crud.ListParams{PageSize: 10})
+		recs, total, err = repo.List(ctx, domainaudit.Filter{ActorID: "u1", Action: "order.cancelled"}, auditListPlan)
 		if err != nil || total != 1 || recs[0].ID != "a2" {
 			t.Fatalf("actor+action filter: total=%d err=%v", total, err)
 		}
-		recs, total, err = repo.List(ctx, domainaudit.Filter{ResourceType: "order", ResourceID: "o-a1"}, crud.ListParams{PageSize: 10})
+		recs, total, err = repo.List(ctx, domainaudit.Filter{ResourceType: "order", ResourceID: "o-a1"}, auditListPlan)
 		if err != nil || total != 1 || recs[0].ID != "a1" {
 			t.Fatalf("resource filter: total=%d err=%v", total, err)
 		}
 	})
 
 	t.Run("list paging", func(t *testing.T) {
-		recs, total, err := repo.List(ctx, domainaudit.Filter{}, crud.ListParams{PageSize: 2})
+		recs, total, err := repo.List(ctx, domainaudit.Filter{}, auditListPlan2)
 		if err != nil || total != 3 || len(recs) != 2 || recs[0].ID != "a3" {
 			t.Fatalf("page1: len=%d total=%d err=%v", len(recs), total, err)
 		}
-		recs, _, err = repo.List(ctx, domainaudit.Filter{}, crud.ListParams{PageSize: 2, Offset: 2})
+		// keyset 第二页：以上页末行（a2）的排序键向量为游标。
+		page2 := auditListPlan2
+		page2.CursorValues = []string{recs[len(recs)-1].OccurredAt.UTC().Format(time.RFC3339Nano), recs[len(recs)-1].ID}
+		recs, _, err = repo.List(ctx, domainaudit.Filter{}, page2)
 		if err != nil || len(recs) != 1 || recs[0].ID != "a1" {
 			t.Fatalf("page2: len=%d err=%v", len(recs), err)
 		}
@@ -93,7 +103,7 @@ func TestRepo(t *testing.T) {
 		if err := repo.AppendBatch(ctx, nil); err != nil {
 			t.Fatal("empty batch must be a no-op")
 		}
-		_, total, err := repo.List(ctx, domainaudit.Filter{ActorID: "u9"}, crud.ListParams{PageSize: 10})
+		_, total, err := repo.List(ctx, domainaudit.Filter{ActorID: "u9"}, auditListPlan)
 		if err != nil || total != 2 {
 			t.Fatalf("batch visible: total=%d err=%v", total, err)
 		}

@@ -1,14 +1,19 @@
 {
   "name": "demo",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "样例模块：单实体 CRUD，验证装配管线（不承载业务语义）",
   "modulePath": "github.com/lynxland/lynx-start/modules/demo",
   "moduleDependencies": [],
-  "goDependencies": [],
+  "goDependencies": [
+    "github.com/lynxland/appkit@v0.8.0",
+    "github.com/lynxland/appkit/contrib/bunx@v0.5.0",
+    "github.com/lynxland/grpcapi@v0.5.0"
+  ],
   "configFragment": "",
   "publishedEvents": [
     "demo.item.created",
     "demo.item.renamed",
     "demo.item.deleted"
-  ]
+  ],
+  "kernelConstraint": ">=0.8.0"
 }

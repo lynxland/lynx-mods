@@ -33,28 +33,39 @@ type ListResult struct {
 	UnreadSize    int32
 }
 
-// List 列收件人通知（分页；unreadOnly 仅未读），附带整户未读计数。
+// listSpec 是通知列表的分页规约（crud v2：keyset 游标，created_at DESC +
+// id 决胜；总数另经 COUNT 供粗参考）。
+var listSpec = crud.Spec{
+	Modes:        crud.ModeSetKeyset,
+	Sortable:     map[string]string{"createdAt": "n.created_at", "id": "n.id"},
+	Tiebreak:     "id",
+	DefaultLimit: 20,
+	MaxLimit:     100,
+}
+
+// List 列收件人通知（keyset 分页；unreadOnly 仅未读），附带整户未读计数。
 func (u *UseCase) List(ctx context.Context, userID string, unreadOnly bool, pageSize int32, pageToken string) (*ListResult, error) {
-	params, err := crud.ParseListParams(pageSize, pageToken, "", "")
+	q, err := crud.Parse[any](listSpec, crud.RawParams{After: pageToken, Limit: pageSize, OrderBy: "createdAt desc"}, nil)
 	if err != nil {
 		return nil, err
 	}
-	items, total, err := u.repo.ListByUser(ctx, userID, notification.Query{
-		PageSize: int(params.PageSize), Offset: params.Offset, UnreadOnly: unreadOnly,
-	})
+	items, total, err := u.repo.ListByUser(ctx, userID, q.PagePlan, unreadOnly)
 	if err != nil {
 		return nil, err
 	}
-	page, err := crud.FinalizeOffsetPage(params, total, len(items))
-	if err != nil {
-		return nil, err
+	next := ""
+	if crud.HasMore(int32(len(items)), q.Limit) && len(items) > 0 {
+		last := items[len(items)-1]
+		if next, err = crud.Cursor(q, []string{last.CreatedAt.UTC().Format(time.RFC3339Nano), last.ID}); err != nil {
+			return nil, err
+		}
 	}
 	unread, err := u.repo.CountUnread(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 	return &ListResult{
-		Notifications: items, NextToken: page.NextToken,
+		Notifications: items, NextToken: next,
 		TotalSize: int32(total), UnreadSize: int32(unread),
 	}, nil
 }
@@ -72,6 +83,19 @@ func (u *UseCase) MarkRead(ctx context.Context, userID, id string) error {
 func (u *UseCase) MarkAllRead(ctx context.Context, userID string) (int64, error) {
 	return u.repo.MarkAllRead(ctx, userID, u.now().UTC())
 }
+
+// Send 显式发送（domain.Sender 通道③ 能力的用例实现）：应用代码直接
+// 给用户发系统通知（Type 空则 notification.custom；复用事件的快照语义
+// ——文案在发送时刻定格）。
+func (u *UseCase) Send(ctx context.Context, input notification.SendInput) error {
+	if input.Type == "" {
+		input.Type = notification.TypeCustom
+	}
+	return u.create(ctx, input.UserID, input.Type, input.Title, input.Body, input.Payload)
+}
+
+// 编译期断言：用例实现 domain.Sender。
+var _ notification.Sender = (*UseCase)(nil)
 
 // OnPasswordChanged 生成改密安全提醒（收件人 = 事件载荷里的用户）。
 func (u *UseCase) OnPasswordChanged(ctx context.Context, userID string) error {

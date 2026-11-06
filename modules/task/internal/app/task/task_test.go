@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
 	"github.com/lynxland/lynx-start/modules/task/domain/task"
 )
@@ -30,7 +31,7 @@ func (r *fakeRepo) Get(_ context.Context, organizationID, id string) (*task.Task
 	return nil, task.ErrTaskNotFound
 }
 
-func (r *fakeRepo) List(_ context.Context, organizationID string, q task.Query) ([]*task.Task, int, error) {
+func (r *fakeRepo) List(_ context.Context, organizationID string, plan crud.PagePlan) ([]*task.Task, int, error) {
 	var matched []*task.Task
 	for _, t := range r.items {
 		if t.OrganizationID == organizationID {
@@ -38,14 +39,10 @@ func (r *fakeRepo) List(_ context.Context, organizationID string, q task.Query) 
 		}
 	}
 	total := len(matched)
-	end := q.Offset + q.PageSize
-	if end > total {
-		end = total
+	if int(plan.Limit) < total {
+		matched = matched[:plan.Limit]
 	}
-	if q.Offset > total {
-		q.Offset = total
-	}
-	return matched[q.Offset:end], total, nil
+	return matched, total, nil
 }
 
 func (r *fakeRepo) Update(_ context.Context, t *task.Task) error {
@@ -90,10 +87,10 @@ func (f *fakeOrgRepo) AddMember(context.Context, *organization.Member) (bool, er
 func (f *fakeOrgRepo) RemoveMember(context.Context, string, string) (bool, error) {
 	panic("unused")
 }
-func (f *fakeOrgRepo) ListMembers(context.Context, string, organization.MemberQuery) ([]*organization.Member, int, error) {
+func (f *fakeOrgRepo) ListMembers(context.Context, string, crud.PagePlan) ([]*organization.Member, int, error) {
 	panic("unused")
 }
-func (f *fakeOrgRepo) ListByUser(context.Context, string, organization.OrganizationQuery) ([]*organization.Organization, int, error) {
+func (f *fakeOrgRepo) ListByUser(context.Context, string, crud.PagePlan) ([]*organization.Organization, int, error) {
 	panic("unused")
 }
 func (f *fakeOrgRepo) CountOwners(context.Context, string) (int, error) { panic("unused") }

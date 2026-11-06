@@ -7,9 +7,18 @@ import (
 	"time"
 
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
 	"github.com/lynxland/lynx-start/modules/notification/internal/infra/notification/migrations"
 )
+
+// listPlan 是与 app 层 listSpec 解析产物同形的分页计划
+// （createdAt DESC + id 决胜 ASC，crud v2 keyset）。
+var listPlan = crud.PagePlan{
+	Mode:  crud.ModeKeyset,
+	Limit: 10,
+	Order: []crud.OrderClause{{Expr: "n.created_at", Desc: true, RawField: "createdAt"}, {Expr: "n.id", RawField: "id"}},
+}
 
 func TestRepo(t *testing.T) {
 	testutil.SkipUnlessPg(t)
@@ -26,7 +35,7 @@ func TestRepo(t *testing.T) {
 		return n
 	}
 
-	if err := repo.Create(ctx, mk("n1", "u1", "identity.user.password-changed", "密码已更改")); err != nil {
+	if err := repo.Create(ctx, mk("n1", "u1", "account.user.password-changed", "密码已更改")); err != nil {
 		t.Fatalf("create: %v", err)
 	}
 	if err := repo.Create(ctx, mk("n2", "u1", "organization.member.added", "你已被加入组织 Acme Inc")); err != nil {
@@ -37,7 +46,7 @@ func TestRepo(t *testing.T) {
 	}
 
 	t.Run("list by user with unread filter", func(t *testing.T) {
-		items, total, err := repo.ListByUser(ctx, "u1", notification.Query{PageSize: 10})
+		items, total, err := repo.ListByUser(ctx, "u1", listPlan, false)
 		if err != nil || total != 2 || len(items) != 2 {
 			t.Fatalf("list u1 = %d/%d err=%v", len(items), total, err)
 		}
@@ -74,7 +83,7 @@ func TestRepo(t *testing.T) {
 		if n != 1 {
 			t.Errorf("unread after mark = %d, want 1", n)
 		}
-		items, _, _ := repo.ListByUser(ctx, "u1", notification.Query{PageSize: 10, UnreadOnly: true})
+		items, _, _ := repo.ListByUser(ctx, "u1", listPlan, true)
 		if len(items) != 1 || items[0].ID != "n2" {
 			t.Errorf("unread-only list = %v", items)
 		}

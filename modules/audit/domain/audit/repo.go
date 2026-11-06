@@ -16,7 +16,7 @@ type Repository interface {
 	// AppendBatch 批量写入（异步 writer 的 flush 通道）。
 	AppendBatch(ctx context.Context, recs []*Record) error
 
-	// List 按 occurred_at 降序分页；params 来自 crud.ParseListParams，
-	// 返回 (记录, 总数, 错误)，下一页 token 由用例层 FinalizeOffsetPage 收尾。
-	List(ctx context.Context, f Filter, params crud.ListParams) ([]*Record, int, error)
+	// List 按分页计划（crud v2 keyset：occurred_at DESC + id 决胜）返回
+	// 一页与总数；过滤经 Filter.FilterDigest 绑定游标。
+	List(ctx context.Context, f Filter, plan crud.PagePlan) ([]*Record, int, error)
 }

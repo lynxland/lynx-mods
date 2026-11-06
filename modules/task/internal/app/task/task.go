@@ -72,24 +72,37 @@ type ListTasksResult struct {
 	TotalSize int32
 }
 
-// List 组织任务列表（成员可见，分页）。
+// listSpec 是任务列表的分页规约（crud v2：keyset 游标——翻页以
+// created_at+id 复合游标推进，插入并发稳定；总数另经 COUNT 供粗参考）。
+var listSpec = crud.Spec{
+	Modes:        crud.ModeSetKeyset,
+	Sortable:     map[string]string{"createdAt": "t.created_at", "id": "t.id"},
+	Tiebreak:     "id",
+	DefaultLimit: 20,
+	MaxLimit:     100,
+}
+
+// List 组织任务列表（成员可见，keyset 分页）。
 func (u *UseCase) List(ctx context.Context, actorID, organizationID string, pageSize int32, pageToken string) (*ListTasksResult, error) {
 	if err := u.requireMember(ctx, organizationID, actorID); err != nil {
 		return nil, err
 	}
-	params, err := crud.ParseListParams(pageSize, pageToken, "", "")
+	q, err := crud.Parse[any](listSpec, crud.RawParams{After: pageToken, Limit: pageSize, OrderBy: "createdAt desc"}, nil)
 	if err != nil {
 		return nil, err
 	}
-	tasks, total, err := u.repo.List(ctx, organizationID, task.Query{PageSize: int(params.PageSize), Offset: params.Offset})
+	tasks, total, err := u.repo.List(ctx, organizationID, q.PagePlan)
 	if err != nil {
 		return nil, err
 	}
-	page, err := crud.FinalizeOffsetPage(params, total, len(tasks))
-	if err != nil {
-		return nil, err
+	next := ""
+	if crud.HasMore(int32(len(tasks)), q.Limit) && len(tasks) > 0 {
+		last := tasks[len(tasks)-1]
+		if next, err = crud.Cursor(q, []string{last.CreatedAt.UTC().Format(time.RFC3339Nano), last.ID}); err != nil {
+			return nil, err
+		}
 	}
-	return &ListTasksResult{Tasks: tasks, NextToken: page.NextToken, TotalSize: int32(total)}, nil
+	return &ListTasksResult{Tasks: tasks, NextToken: next, TotalSize: int32(total)}, nil
 }
 
 // Complete 标记完成（限创建者；幂等——已完成为 no-op 不重复发事件）。

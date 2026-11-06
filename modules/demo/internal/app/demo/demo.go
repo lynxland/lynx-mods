@@ -91,21 +91,34 @@ type ListResult struct {
 	TotalSize int32
 }
 
-// List 分页列表（AIP-158 offset 方言）。
+// listSpec 是列表的分页规约（crud v2：keyset 游标，created_at DESC + id
+// 决胜；总数另经 COUNT 供粗参考）。
+var listSpec = crud.Spec{
+	Modes:        crud.ModeSetKeyset,
+	Sortable:     map[string]string{"createdAt": "d.created_at", "id": "d.id"},
+	Tiebreak:     "id",
+	DefaultLimit: 20,
+	MaxLimit:     100,
+}
+
+// List 分页列表（keyset 游标）。
 func (u *UseCase) List(ctx context.Context, pageSize int32, pageToken string) (*ListResult, error) {
-	params, err := crud.ParseListParams(pageSize, pageToken, "", "")
+	q, err := crud.Parse[any](listSpec, crud.RawParams{After: pageToken, Limit: pageSize, OrderBy: "createdAt desc"}, nil)
 	if err != nil {
 		return nil, err
 	}
-	items, total, err := u.repo.List(ctx, demo.ListQuery{PageSize: params.PageSize, Offset: params.Offset})
+	items, total, err := u.repo.List(ctx, q.PagePlan)
 	if err != nil {
 		return nil, err
 	}
-	page, err := crud.FinalizeOffsetPage(params, total, len(items))
-	if err != nil {
-		return nil, err
+	next := ""
+	if crud.HasMore(int32(len(items)), q.Limit) && len(items) > 0 {
+		last := items[len(items)-1]
+		if next, err = crud.Cursor(q, []string{last.CreatedAt.UTC().Format(time.RFC3339Nano), last.ID}); err != nil {
+			return nil, err
+		}
 	}
-	return &ListResult{Items: items, NextToken: page.NextToken, TotalSize: int32(total)}, nil
+	return &ListResult{Items: items, NextToken: next, TotalSize: int32(total)}, nil
 }
 
 // publish 构造事件信封并发布（载荷 JSON 编码——手搓字符串会在 title 含

@@ -30,7 +30,7 @@ func (f *fakeRepo) Append(_ context.Context, rec *domainaudit.Record) error {
 
 func (f *fakeRepo) AppendBatch(context.Context, []*domainaudit.Record) error { return nil }
 
-func (f *fakeRepo) List(context.Context, domainaudit.Filter, crud.ListParams) ([]*domainaudit.Record, int, error) {
+func (f *fakeRepo) List(context.Context, domainaudit.Filter, crud.PagePlan) ([]*domainaudit.Record, int, error) {
 	return f.snapshot(), 1, nil
 }
 

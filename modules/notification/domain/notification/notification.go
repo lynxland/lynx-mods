@@ -12,6 +12,7 @@
 package notification
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -30,10 +31,34 @@ var (
 // 与 Module().ConsumedEvents 声明漂移），不 import 发布方代码。
 // organization>=0.1.1 起 member.* 载荷含 organization_name。
 const (
-	IdentityUserPasswordChanged = "identity.user.password-changed"
+	IdentityUserPasswordChanged = "account.user.password-changed"
 	OrganizationMemberAdded     = "organization.member.added"
 	OrganizationMemberRemoved   = "organization.member.removed"
 )
+
+// TypeCustom 是显式发送（Sender）在未指定 Type 时的默认通知类型。
+const TypeCustom = "notification.custom"
+
+// Sender 是模块对外导出的显式发送能力（ADR-0004 通道③：供给方 domain
+// 能力接口）：应用代码（后台任务、启动期引导、业务流程）不经事件目录
+// 直接给用户发系统通知。方法不染驱动类型；ctx 携带事务时落库与业务
+// 同事务（仓储经 buntx.Conn 取连接）。
+//
+// 实现归模块 internal，构造经模块桥接包转发（Go internal 可见性下
+// modules/<notification>/module.go 是应用唯一入口；转发写法见模块
+// README「显式发送」一节）。
+type Sender interface {
+	Send(ctx context.Context, input SendInput) error
+}
+
+// SendInput 是一次显式发送的输入（Type 空则 TypeCustom）。
+type SendInput struct {
+	UserID  string
+	Type    string
+	Title   string
+	Body    string
+	Payload map[string]string
+}
 
 // Notification 是一条站内通知（不变量：userID/type/title 非空；
 // ReadAt 空表示未读）。

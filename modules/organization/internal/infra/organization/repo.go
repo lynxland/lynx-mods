@@ -8,11 +8,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/lynxland/lynx-start/modules/identity/domain/identity"
+	"github.com/lynxland/lynx-start/modules/account/domain/account/identity"
 	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
 
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/row"
 	"github.com/lynxland/appkit/storeerr"
 	"github.com/uptrace/bun"
@@ -135,13 +136,11 @@ func (r *Repo) Member(ctx context.Context, organizationID, userID string) (*orga
 }
 
 // ListMembers 按 joined_at DESC, user_id DESC 取一页与总数。
-func (r *Repo) ListMembers(ctx context.Context, organizationID string, q organization.MemberQuery) ([]*organization.Member, int, error) {
+func (r *Repo) ListMembers(ctx context.Context, organizationID string, plan crud.PagePlan) ([]*organization.Member, int, error) {
 	var rows []memberModel
 	conn := buntx.Conn(ctx, r.db)
-	err := conn.NewSelect().Model(&rows).
-		Where("m.organization_id = ?", organizationID).
-		Order("m.joined_at DESC", "m.user_id DESC").
-		Limit(int64(q.PageSize)).Offset(int64(q.Offset)).
+	err := bunx.ApplyPage(conn.NewSelect().Model(&rows).
+		Where("m.organization_id = ?", organizationID), plan).
 		Scan(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -159,14 +158,12 @@ func (r *Repo) ListMembers(ctx context.Context, organizationID string, q organiz
 }
 
 // ListByUser 按 joined_at DESC, organization id DESC 取用户加入的组织一页与总数。
-func (r *Repo) ListByUser(ctx context.Context, userID string, q organization.OrganizationQuery) ([]*organization.Organization, int, error) {
+func (r *Repo) ListByUser(ctx context.Context, userID string, plan crud.PagePlan) ([]*organization.Organization, int, error) {
 	var rows []organizationModel
 	conn := buntx.Conn(ctx, r.db)
-	err := conn.NewSelect().Model(&rows).
+	err := bunx.ApplyPage(conn.NewSelect().Model(&rows).
 		Join("JOIN organization_members AS jm ON jm.organization_id = o.id").
-		Where("jm.user_id = ?", userID).
-		Order("jm.joined_at DESC", "o.id DESC").
-		Limit(int64(q.PageSize)).Offset(int64(q.Offset)).
+		Where("jm.user_id = ?", userID), plan).
 		Scan(ctx)
 	if err != nil {
 		return nil, 0, err

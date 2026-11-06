@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
-	"github.com/lynxland/lynx-start/modules/identity/domain/identity"
+	"github.com/lynxland/appkit/crud"
+	"github.com/lynxland/lynx-start/modules/account/domain/account/identity"
 	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
 )
 
@@ -98,7 +99,7 @@ func (r *fakeRepo) Member(_ context.Context, organizationID, userID string) (*or
 	return nil, organization.ErrNotMember
 }
 
-func (r *fakeRepo) ListMembers(_ context.Context, organizationID string, q organization.MemberQuery) ([]*organization.Member, int, error) {
+func (r *fakeRepo) ListMembers(_ context.Context, organizationID string, plan crud.PagePlan) ([]*organization.Member, int, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var all []*organization.Member
@@ -107,31 +108,25 @@ func (r *fakeRepo) ListMembers(_ context.Context, organizationID string, q organ
 			all = append(all, r.members[k])
 		}
 	}
-	end := q.Offset + int(q.PageSize)
-	if end > len(all) || q.PageSize == 0 {
+	end := int(plan.Limit)
+	if end > len(all) || plan.Limit == 0 {
 		end = len(all)
 	}
-	if q.Offset > len(all) {
-		return nil, len(all), nil
-	}
-	return all[q.Offset:end], len(all), nil
+	return all[:end], len(all), nil
 }
 
-func (r *fakeRepo) ListByUser(_ context.Context, userID string, q organization.OrganizationQuery) ([]*organization.Organization, int, error) {
+func (r *fakeRepo) ListByUser(_ context.Context, userID string, plan crud.PagePlan) ([]*organization.Organization, int, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var all []*organization.Organization
 	for _, organizationID := range r.joins[userID] {
 		all = append(all, r.organizations[organizationID])
 	}
-	end := q.Offset + int(q.PageSize)
-	if end > len(all) || q.PageSize == 0 {
+	end := int(plan.Limit)
+	if end > len(all) || plan.Limit == 0 {
 		end = len(all)
 	}
-	if q.Offset > len(all) {
-		return nil, len(all), nil
-	}
-	return all[q.Offset:end], len(all), nil
+	return all[:end], len(all), nil
 }
 
 func (r *fakeRepo) CountOwners(_ context.Context, organizationID string) (int, error) {

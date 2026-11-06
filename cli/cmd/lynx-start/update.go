@@ -215,6 +215,13 @@ func cmdUpdate(args []string) error {
 		fmt.Printf("warn: config fragment skipped: %v\n", err)
 	}
 
+	// goDependencies 重放：add 是唯一写入点的旧洞（2026-11-06 修）——
+	// update 到的新版可能携带抬升的电池版本，不重放则应用升级后直接
+	// build 红。applyGoDependencies 只升不降，幂等安全。
+	if hint := applyGoDependencies(appDir, mod); hint != "" {
+		fmt.Printf("warn: run manually after update:%s\n", hint)
+	}
+
 	files := make([]string, 0, len(other))
 	for rel := range other {
 		files = append(files, rel)

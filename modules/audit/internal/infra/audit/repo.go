@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
 	"github.com/lynxland/appkit/crud"
 	domainaudit "github.com/lynxland/lynx-start/modules/audit/domain/audit"
@@ -88,7 +89,7 @@ func (r *Repo) AppendBatch(ctx context.Context, recs []*domainaudit.Record) erro
 }
 
 // List 按 occurred_at 降序 + 结构化过滤 + offset 分页，返回 (记录, 总数)。
-func (r *Repo) List(ctx context.Context, f domainaudit.Filter, params crud.ListParams) ([]*domainaudit.Record, int, error) {
+func (r *Repo) List(ctx context.Context, f domainaudit.Filter, plan crud.PagePlan) ([]*domainaudit.Record, int, error) {
 	conn := buntx.Conn(ctx, r.db)
 	apply := func(q *bun.SelectQuery) *bun.SelectQuery {
 		if f.ActorID != "" {
@@ -103,11 +104,10 @@ func (r *Repo) List(ctx context.Context, f domainaudit.Filter, params crud.ListP
 		if f.ResourceID != "" {
 			q = q.Where("r.resource_id = ?", f.ResourceID)
 		}
-		return q.Order("r.occurred_at DESC", "r.id DESC")
+		return q
 	}
 	var rows []recordModel
-	err := apply(conn.NewSelect().Model(&rows)).
-		Limit(int64(params.PageSize)).Offset(int64(params.Offset)).
+	err := bunx.ApplyPage(apply(conn.NewSelect().Model(&rows)), plan).
 		Scan(ctx)
 	if err != nil {
 		return nil, 0, err

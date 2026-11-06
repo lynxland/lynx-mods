@@ -8,7 +8,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/lynx-start/modules/organization/domain/organization"
 	"github.com/lynxland/lynx-start/modules/task/domain/task"
 
@@ -63,13 +65,11 @@ func (r *Repo) Get(ctx context.Context, organizationID, id string) (*task.Task, 
 }
 
 // List 按 created_at DESC, id DESC 取组织内一页与总数。
-func (r *Repo) List(ctx context.Context, organizationID string, q task.Query) ([]*task.Task, int, error) {
+func (r *Repo) List(ctx context.Context, organizationID string, plan crud.PagePlan) ([]*task.Task, int, error) {
 	var rows []taskModel
 	conn := buntx.Conn(ctx, r.db)
-	err := conn.NewSelect().Model(&rows).
-		Where("t.organization_id = ?", organizationID).
-		Order("t.created_at DESC", "t.id DESC").
-		Limit(int64(q.PageSize)).Offset(int64(q.Offset)).
+	err := bunx.ApplyPage(conn.NewSelect().Model(&rows).
+		Where("t.organization_id = ?", organizationID), plan).
 		Scan(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -190,11 +190,11 @@ func (r *organizationReader) RemoveMember(context.Context, string, string) (bool
 	return false, errors.New("task: organizationReader is read-only (RemoveMember belongs to organization)")
 }
 
-func (r *organizationReader) ListMembers(context.Context, string, organization.MemberQuery) ([]*organization.Member, int, error) {
+func (r *organizationReader) ListMembers(context.Context, string, crud.PagePlan) ([]*organization.Member, int, error) {
 	return nil, 0, errors.New("task: organizationReader is read-only (ListMembers belongs to organization)")
 }
 
-func (r *organizationReader) ListByUser(context.Context, string, organization.OrganizationQuery) ([]*organization.Organization, int, error) {
+func (r *organizationReader) ListByUser(context.Context, string, crud.PagePlan) ([]*organization.Organization, int, error) {
 	return nil, 0, errors.New("task: organizationReader is read-only (ListByUser belongs to organization)")
 }
 

@@ -6,7 +6,7 @@
 // 归 access 模块（后续可经其角色目录表达组织级角色），本域不与其重叠。
 //
 // 契约：不 import infra/app/api；跨模块只允许 import 他模块 domain 包。
-// 本模块声明 DependsOn: identity——成员是 identity 用户（UserID 只存 ID，
+// 本模块声明 DependsOn: account——成员是账号用户（UserID 只存 ID，
 // 契约④；不设跨模块外键），添加成员时经 identity 的 domain 端口校验
 // 用户存在。
 package organization
@@ -98,16 +98,4 @@ func NewMember(organizationID, userID string, isOwner bool, now time.Time) (*Mem
 		return nil, fmt.Errorf("organization: empty organizationID/userID")
 	}
 	return &Member{OrganizationID: organizationID, UserID: userID, IsOwner: isOwner, JoinedAt: now}, nil
-}
-
-// MemberQuery 是成员列表查询参数（分页方言见 appkit/crud）。
-type MemberQuery struct {
-	PageSize int32
-	Offset   int
-}
-
-// OrganizationQuery 是组织列表查询参数（ListMyOrganizations 用）。
-type OrganizationQuery struct {
-	PageSize int32
-	Offset   int
 }

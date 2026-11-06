@@ -19,7 +19,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// Module 返回静态装配描述。DependsOn: identity+organization——本模块消费
+// Module 返回静态装配描述。DependsOn: account+organization——本模块消费
 // 其事件目录（ConsumedEvents 启动期交叉校验发布者在装；安装器校验依赖
 // 已装）。Go 代码不 import 两者的包（契约②字符串目录消费）。v0.1 无
 // 配置段、不发布事件。
@@ -27,7 +27,7 @@ func Module() appkit.Module {
 	return appkit.Module{
 		Name:        "notification",
 		Description: "通知模块：订阅身份/组织事件生成站内通知（渲染快照落库）+ 自助查询与已读标记，依赖 identity+organization",
-		DependsOn:   []string{"identity", "organization"},
+		DependsOn:   []string{"account", "organization"},
 		Policies:    []protoreflect.FileDescriptor{notificationv1.File_notification_v1_notification_proto},
 		Migrations:  migrations.FS,
 		ConsumedEvents: []string{

@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/errcode"
 )
 
@@ -75,12 +76,6 @@ func (t *Task) Complete(now time.Time) {
 // Completed 报告完成状态。
 func (t *Task) Completed() bool { return t.CompletedAt != nil }
 
-// Query 是任务列表查询（组织内分页；v1 无过滤维度）。
-type Query struct {
-	PageSize int
-	Offset   int
-}
-
 // Repository 是 Task 聚合的持久化端口（infra 实现，经 Assemble 注入）。
 // 租户语境进端口签名：Get/List/Delete 一律携带 organizationID——
 // ID 泄露也跨组织取不到（ADR-0008 防漏的端口级表达）。
@@ -89,8 +84,9 @@ type Repository interface {
 	Create(ctx context.Context, t *Task) error
 	// Get 按组织 + ID 取；缺失或跨组织映射 ErrTaskNotFound。
 	Get(ctx context.Context, organizationID, id string) (*Task, error)
-	// List 按 created_at DESC, id DESC 返回组织内一页与总数。
-	List(ctx context.Context, organizationID string, q Query) ([]*Task, int, error)
+	// List 按分页计划（crud v2：keyset 游标，默认 created_at DESC + id
+	// 决胜）返回组织内一页与总数（总数经独立 COUNT，粗粒度参考值）。
+	List(ctx context.Context, organizationID string, plan crud.PagePlan) ([]*Task, int, error)
 	// Update 只写 completed_at/updated_at 白名单列（bun 显式列护栏）。
 	Update(ctx context.Context, t *Task) error
 	// Delete 按组织 + ID 删除，返回是否发生删除（幂等裁决依据）。

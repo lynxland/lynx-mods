@@ -4,7 +4,7 @@ package audit
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"time"
 
 	"github.com/lynxland/appkit/clock"
 	"github.com/lynxland/appkit/crud"
@@ -60,26 +60,39 @@ func (u *UseCase) Record(ctx context.Context, actorID, actorEmail, action, resou
 	return rec, nil
 }
 
-// ListRecords 查询审计（occurred_at 降序）；过滤经 filter 摘要绑定进分页
-// token（跨页一致性），收尾由 crud.FinalizeOffsetPage 完成。
-func (u *UseCase) ListRecords(ctx context.Context, f domainaudit.Filter, pageSize int32, pageToken string) ([]*domainaudit.Record, crud.OffsetPage, error) {
-	params, err := crud.ParseListParams(pageSize, pageToken, filterKey(f), "occurred_at desc")
-	if err != nil {
-		return nil, crud.OffsetPage{}, err
-	}
-	recs, total, err := u.repo.List(ctx, f, params)
-	if err != nil {
-		return nil, crud.OffsetPage{}, err
-	}
-	page, err := crud.FinalizeOffsetPage(params, total, len(recs))
-	if err != nil {
-		return nil, crud.OffsetPage{}, err
-	}
-	return recs, page, nil
+// listSpec 是审计列表的分页规约（crud v2：keyset 游标，occurred_at DESC +
+// id 决胜；过滤经 Filter.FilterDigest 绑定游标——翻页中途换滤自失效）。
+var listSpec = crud.Spec{
+	Modes:        crud.ModeSetKeyset,
+	Sortable:     map[string]string{"occurredAt": "r.occurred_at", "id": "r.id"},
+	Tiebreak:     "id",
+	DefaultLimit: 50,
+	MaxLimit:     200,
 }
 
-// filterKey 把结构化过滤拼成确定性串（crud token 的 filter 绑定通道；
-// 换页时过滤不同会直接拒绝——分页语义安全）。
-func filterKey(f domainaudit.Filter) string {
-	return fmt.Sprintf("actor=%s;action=%s;resource=%s/%s", f.ActorID, f.Action, f.ResourceType, f.ResourceID)
+// ListRecordsResult 是审计列表用例的产物。
+type ListRecordsResult struct {
+	Records   []*domainaudit.Record
+	NextToken string
+	TotalSize int32
+}
+
+// ListRecords 查询审计（occurred_at 降序，keyset 分页）。
+func (u *UseCase) ListRecords(ctx context.Context, f domainaudit.Filter, pageSize int32, pageToken string) (*ListRecordsResult, error) {
+	q, err := crud.Parse[domainaudit.Filter](listSpec, crud.RawParams{After: pageToken, Limit: pageSize, OrderBy: "occurredAt desc"}, f)
+	if err != nil {
+		return nil, err
+	}
+	recs, total, err := u.repo.List(ctx, f, q.PagePlan)
+	if err != nil {
+		return nil, err
+	}
+	next := ""
+	if crud.HasMore(int32(len(recs)), q.Limit) && len(recs) > 0 {
+		last := recs[len(recs)-1]
+		if next, err = crud.Cursor(q, []string{last.OccurredAt.UTC().Format(time.RFC3339Nano), last.ID}); err != nil {
+			return nil, err
+		}
+	}
+	return &ListRecordsResult{Records: recs, NextToken: next, TotalSize: int32(total)}, nil
 }

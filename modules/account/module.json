@@ -1,0 +1,35 @@
+{
+  "name": "account",
+  "version": "0.6.0",
+  "description": "账号与访问模块（ADR-0009：identity+session+access 合并）：注册/登录（Argon2id + HS256 JWT）/可吊销会话（刷新令牌轮换）/RBAC（配置角色目录 + DB 分配），单独安装即得完整认证授权，贡献 Bearer 认证器与 claims 增强器",
+  "modulePath": "github.com/lynxland/lynx-start/modules/account",
+  "moduleDependencies": [],
+  "goDependencies": [
+    "github.com/lynxland/appkit@v0.8.0",
+    "github.com/lynxland/appkit/contrib/bunx@v0.5.0",
+    "github.com/lynxland/grpcapi@v0.5.0"
+  ],
+  "configFragment": "identity:\n  secret: \"dev-only-identity-secret-change-me\"  # 令牌主密钥，生产必须更换\n  token_ttl: 30m   # 令牌时效（无 session 域时无吊销机制，保持短时效）\n  issuer: lynx-start\nsession:\n  secret: \"dev-only-session-secret-change-me\"  # 令牌主密钥（与 identity 独立），生产必须更换\n  access_ttl: 15m   # 访问令牌（无状态，吊销生效粒度的上界）\n  refresh_ttl: 720h # 会话绝对时长（轮换不续期）\n  issuer: lynx-start\naccess:\n  roles:                      # 角色目录（可审计可改；精确匹配无通配符）\n    admin: [\"account.assignment.write\", \"audit.log.read\"]\n    editor: []\n  bootstrap_admins:           # 启动期自动授予 admin 的邮箱（未注册则告警跳过，注册后重启生效）\n    - \"admin@example.com\"",
+  "publishedEvents": [
+    "account.user.created",
+    "account.user.password-changed",
+    "account.session.created",
+    "account.session.refreshed",
+    "account.session.revoked",
+    "account.assignment.granted",
+    "account.assignment.revoked"
+  ],
+  "env": [
+    {
+      "key": "IDENTITY_SECRET",
+      "description": "身份令牌签发主密钥",
+      "secret": true
+    },
+    {
+      "key": "SESSION_SECRET",
+      "description": "会话令牌主密钥（与 identity 独立）",
+      "secret": true
+    }
+  ],
+  "kernelConstraint": ">=0.8.0"
+}
