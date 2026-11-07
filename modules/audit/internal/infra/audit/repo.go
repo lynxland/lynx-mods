@@ -18,42 +18,48 @@ import (
 type recordModel struct {
 	bun.BaseModel `bun:"table:audit_records,alias:r"`
 
-	ID           string          `bun:"id,pk"`
-	ActorID      string          `bun:"actor_id,notnull"`
-	ActorEmail   string          `bun:"actor_email,notnull"`
-	Action       string          `bun:"action,notnull"`
-	ResourceType string          `bun:"resource_type,notnull"`
-	ResourceID   string          `bun:"resource_id,notnull"`
-	Payload      json.RawMessage `bun:"payload,type:jsonb"`
-	Source       string          `bun:"source,notnull"`
-	OccurredAt   time.Time       `bun:"occurred_at,notnull"`
+	ID            string          `bun:"id,pk"`
+	ActorID       string          `bun:"actor_id,notnull"`
+	ActorEmail    string          `bun:"actor_email,notnull"`
+	Action        string          `bun:"action,notnull"`
+	ResourceType  string          `bun:"resource_type,notnull"`
+	ResourceID    string          `bun:"resource_id,notnull"`
+	Payload       json.RawMessage `bun:"payload,type:jsonb"`
+	Source        string          `bun:"source,notnull"`
+	StatusCode    string          `bun:"status_code,notnull"`
+	LatencyMillis int64           `bun:"latency_millis,notnull"`
+	OccurredAt    time.Time       `bun:"occurred_at,notnull"`
 }
 
 func toModel(rec *domainaudit.Record) *recordModel {
 	return &recordModel{
-		ID:           rec.ID,
-		ActorID:      rec.ActorID,
-		ActorEmail:   rec.ActorEmail,
-		Action:       rec.Action,
-		ResourceType: rec.ResourceType,
-		ResourceID:   rec.ResourceID,
-		Payload:      rec.Payload,
-		Source:       rec.Source,
-		OccurredAt:   rec.OccurredAt,
+		ID:            rec.ID,
+		ActorID:       rec.ActorID,
+		ActorEmail:    rec.ActorEmail,
+		Action:        rec.Action,
+		ResourceType:  rec.ResourceType,
+		ResourceID:    rec.ResourceID,
+		Payload:       rec.Payload,
+		Source:        rec.Source,
+		StatusCode:    rec.StatusCode,
+		LatencyMillis: rec.LatencyMillis,
+		OccurredAt:    rec.OccurredAt,
 	}
 }
 
 func fromModel(m *recordModel) *domainaudit.Record {
 	return &domainaudit.Record{
-		ID:           m.ID,
-		ActorID:      m.ActorID,
-		ActorEmail:   m.ActorEmail,
-		Action:       m.Action,
-		ResourceType: m.ResourceType,
-		ResourceID:   m.ResourceID,
-		Payload:      m.Payload,
-		Source:       m.Source,
-		OccurredAt:   m.OccurredAt,
+		ID:            m.ID,
+		ActorID:       m.ActorID,
+		ActorEmail:    m.ActorEmail,
+		Action:        m.Action,
+		ResourceType:  m.ResourceType,
+		ResourceID:    m.ResourceID,
+		Payload:       m.Payload,
+		Source:        m.Source,
+		StatusCode:    m.StatusCode,
+		LatencyMillis: m.LatencyMillis,
+		OccurredAt:    m.OccurredAt,
 	}
 }
 
@@ -121,4 +127,17 @@ func (r *Repo) List(ctx context.Context, f domainaudit.Filter, plan crud.PagePla
 		recs = append(recs, fromModel(&rows[i]))
 	}
 	return recs, int(total), nil
+}
+
+// DeleteBefore 删除 cutoff 之前的记录（保留期清理任务用）。
+func (r *Repo) DeleteBefore(ctx context.Context, cutoff time.Time) (int64, error) {
+	res, err := buntx.Conn(ctx, r.db).NewDelete().
+		Model((*recordModel)(nil)).
+		Where("occurred_at < ?", cutoff).
+		Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := res.RowsAffected()
+	return n, err
 }

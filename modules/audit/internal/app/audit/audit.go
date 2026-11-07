@@ -96,3 +96,20 @@ func (u *UseCase) ListRecords(ctx context.Context, f domainaudit.Filter, pageSiz
 	}
 	return &ListRecordsResult{Records: recs, NextToken: next, TotalSize: int32(total)}, nil
 }
+
+// Config 是 audit 模块的配置段（v0.7.0 起有配置——此前零配置开箱即用，
+// 默认值与 v0.6.0 硬编码一致，零配置语义不变）。
+type Config struct {
+	// RetentionDays 是保留期（每 6h 清理 retention_days 天前记录；0=禁用）。
+	RetentionDays int `mapstructure:"retention_days"`
+	// WriterBuffer/WriterFlushEvery/WriterBatchSize 是异步写入器参数
+	// （零值取 infra 默认）。
+	WriterBuffer     int           `mapstructure:"writer_buffer"`
+	WriterFlushEvery time.Duration `mapstructure:"writer_flush_every"`
+	WriterBatchSize  int           `mapstructure:"writer_batch_size"`
+}
+
+// ApplyDefaults 落默认值（LoadSection 的 defaults 钩子）。
+func (c *Config) ApplyDefaults() {
+	c.RetentionDays = 90
+}

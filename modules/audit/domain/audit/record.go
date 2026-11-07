@@ -40,15 +40,17 @@ const MaxPayloadBytes = 4 * 1024
 // Record 是审计记录聚合（单实体，无生命周期状态机：创建即终态）。
 // json tag 供事件载荷与 API 层序列化（audit.log.recorded 的载荷即本形态）。
 type Record struct {
-	ID           string          `json:"id"`
-	ActorID      string          `json:"actor_id,omitempty"`
-	ActorEmail   string          `json:"actor_email,omitempty"`
-	Action       string          `json:"action"`
-	ResourceType string          `json:"resource_type,omitempty"`
-	ResourceID   string          `json:"resource_id,omitempty"`
-	Payload      json.RawMessage `json:"payload,omitempty"`
-	Source       string          `json:"source"`
-	OccurredAt   time.Time       `json:"occurred_at"`
+	ID            string          `json:"id"`
+	ActorID       string          `json:"actor_id,omitempty"`
+	ActorEmail    string          `json:"actor_email,omitempty"`
+	Action        string          `json:"action"`
+	ResourceType  string          `json:"resource_type,omitempty"`
+	ResourceID    string          `json:"resource_id,omitempty"`
+	Payload       json.RawMessage `json:"payload,omitempty"`
+	Source        string          `json:"source"`
+	StatusCode    string          `json:"status_code,omitempty"`    // v0.7.0：gRPC 状态码（OK/NotFound/…；空=非 RPC 来源）
+	LatencyMillis int64           `json:"latency_millis,omitempty"` // v0.7.0：调用耗时
+	OccurredAt    time.Time       `json:"occurred_at"`
 }
 
 // NewRecord 构造并校验（action 必填；载荷合法 JSON 且不超限；source 缺省

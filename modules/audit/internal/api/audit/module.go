@@ -13,6 +13,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/configkit"
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/grpcapi/interceptor"
 	"github.com/lynxland/grpcapi/server"
@@ -35,15 +36,27 @@ func Module() appkit.Module {
 	}
 }
 
-// Assemble 构造动态装配产物：仓储 → 用例 → 处理器 + 异步写入器（拦截器
-// 路径的落库 Service）+ RPC 审计拦截器（Order=OrderAudit，appkit 预留槽位）。
+// Assemble 构造动态装配产物：配置 → 仓储 → 用例 → 处理器 + 异步写入器
+// （拦截器路径的落库 Service；参数配置化）+ RPC 审计拦截器（Order=
+// OrderAudit，appkit 预留槽位；记录 status/latency）+ 保留期清理任务
+// （retention_days > 0 时贡献 periodic Service）。
 func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
+	var cfg appaudit.Config
+	if err := configkit.LoadSection(deps.Config, "audit", cfg.ApplyDefaults, &cfg); err != nil {
+		return appkit.Assembly{}, err
+	}
 	repo := infraaudit.NewRepository(bunx.MustDB(deps))
 	uc := appaudit.New(repo, deps.Tx, deps.Events, nil)
-	writer := infraaudit.NewWriter(repo, deps.Logger)
+	writer := infraaudit.NewWriter(repo, deps.Logger, infraaudit.WriterOptions{
+		Buffer: cfg.WriterBuffer, FlushEvery: cfg.WriterFlushEvery, BatchSize: cfg.WriterBatchSize,
+	})
+	services := []lynx.Service{writer}
+	if retention := infraaudit.NewRetention(repo, cfg.RetentionDays, deps.Logger); retention != nil {
+		services = append(services, retention)
+	}
 	return appkit.Assembly{
 		Registrations: []server.Registration{newRegistration(NewService(uc))},
-		Services:      []lynx.Service{writer},
+		Services:      services,
 		Stages:        []interceptor.Stage{NewRPCStage(writer, deps.Logger)},
 	}, nil
 }

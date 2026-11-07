@@ -1,7 +1,7 @@
 {
   "name": "audit",
-  "version": "0.6.0",
-  "description": "审计模块：RPC 拦截器自动记录 + 显式记录（同事务）+ 分页查询（append-only，零模块依赖）",
+  "version": "0.7.0",
+  "description": "审计模块:RPC 拦截器自动记录(状态码/耗时)+显式记录(同事务)+分页查询(四维过滤)+保留期清理,零模块依赖",
   "modulePath": "github.com/lynxland/lynx-start/modules/audit",
   "moduleDependencies": [],
   "goDependencies": [
@@ -10,7 +10,7 @@
     "github.com/lynxland/grpcapi@v0.5.0",
     "github.com/lynxland/lynx@v1.21.0"
   ],
-  "configFragment": "",
+  "configFragment": "audit:\n  retention_days: 90       # 保留期(每 6h 清理;0=禁用)\n  writer_buffer: 1024      # 异步写入缓冲\n  writer_flush_every: 500ms\n  writer_batch_size: 64",
   "publishedEvents": [
     "audit.log.recorded"
   ],
