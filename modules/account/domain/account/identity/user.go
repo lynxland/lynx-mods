@@ -20,6 +20,7 @@ var (
 	ErrEmailTaken         = space.New("EMAIL_ALREADY_EXISTS", "email is already registered")
 	ErrWeakPassword       = space.New("WEAK_PASSWORD", "password must be 8-512 characters")
 	ErrInvalidCredentials = space.New("INVALID_CREDENTIALS", "email or password is incorrect")
+	ErrInvalidToken       = space.New("INVALID_TOKEN", "one-shot token is invalid or expired")
 	ErrUserNotFound       = space.New("USER_NOT_FOUND", "user not found")
 	ErrUserDisabled       = space.New("USER_DISABLED", "user is disabled")
 	ErrTokenInvalid       = space.New("TOKEN_INVALID", "access token is invalid")
@@ -29,8 +30,12 @@ var (
 // 事件目录（契约②）：app 层发布与 Module().PublishedEvents 共用同一常量
 // （杜绝声明与实发漂移），module.json 的 publishedEvents 与此同步。
 const (
-	EventUserCreated         = "account.user.created"
-	EventUserPasswordChanged = "account.user.password-changed"
+	EventUserCreated               = "account.user.created"
+	EventUserPasswordChanged       = "account.user.password-changed"
+	EventUserDisabled              = "account.user.disabled"
+	EventUserEnabled               = "account.user.enabled"
+	EventUserVerificationRequested = "account.user.verification-requested"
+	EventUserResetRequested        = "account.user.reset-requested"
 )
 
 // 账号状态（v0.1 只有 active 参与流转；disabled 为停用保留位）。
@@ -53,13 +58,39 @@ var emailRe = regexp.MustCompile(`^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$`)
 // PasswordHash 是 appkit/password 的 Argon2id PHC 串；领域只见散列，
 // 明文口令不越过用例层。
 type User struct {
-	ID           string
-	Email        string
-	PasswordHash string
-	DisplayName  string
-	Status       string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID            string
+	Email         string
+	PasswordHash  string
+	DisplayName   string
+	Status        string
+	EmailVerified bool
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+// Disable 停用（active → disabled；其余状态为不可达终态，报错）。
+func (u *User) Disable(now time.Time) error {
+	if u.Status != StatusActive {
+		return fmt.Errorf("identity: disable requires active user, got %s", u.Status)
+	}
+	u.Status, u.UpdatedAt = StatusDisabled, now
+	return nil
+}
+
+// Enable 启用（disabled → active）。
+func (u *User) Enable(now time.Time) error {
+	if u.Status != StatusDisabled {
+		return fmt.Errorf("identity: enable requires disabled user, got %s", u.Status)
+	}
+	u.Status, u.UpdatedAt = StatusActive, now
+	return nil
+}
+
+// MarkEmailVerified 置邮箱已验证（幂等——重复验证为 no-op）。
+func (u *User) MarkEmailVerified(now time.Time) {
+	if !u.EmailVerified {
+		u.EmailVerified, u.UpdatedAt = true, now
+	}
 }
 
 // NormalizeEmail 规范化邮箱：去首尾空白 + 小写。

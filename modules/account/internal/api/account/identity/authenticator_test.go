@@ -10,6 +10,7 @@ import (
 	appidentity "github.com/lynxland/lynx-start/modules/account/internal/app/account/identity"
 
 	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/appkit/jwt"
 	"github.com/lynxland/grpcapi/authn"
@@ -41,6 +42,13 @@ func (r *miniRepo) GetByEmail(_ context.Context, _ string) (*identity.User, erro
 	return nil, identity.ErrUserNotFound
 }
 
+func (r *miniRepo) UpdateStatus(context.Context, string, string, time.Time) error { return nil }
+func (r *miniRepo) UpdateEmailVerified(context.Context, string, bool, time.Time) error {
+	return nil
+}
+func (r *miniRepo) List(context.Context, crud.PagePlan) ([]*identity.User, int, error) {
+	return nil, 0, nil
+}
 func (r *miniRepo) UpdatePassword(_ context.Context, _ *identity.User) error { return nil }
 
 type miniTx struct{}
@@ -60,7 +68,7 @@ func newAuthn(t *testing.T) (*BearerAuthenticator, *jwt.Signer, *clock.Fake) {
 	verifier := jwt.NewVerifier("m", appidentity.PurposeAccessToken, "iss")
 	uc := appidentity.New(&miniRepo{users: map[string]*identity.User{
 		"u1": {ID: "u1", Email: "a@example.com", DisplayName: "A", Status: identity.StatusActive},
-	}}, miniTx{}, miniPub{}, signer, verifier, fake)
+	}}, miniTx{}, miniPub{}, signer, verifier, signer, verifier, nil, fake)
 	return NewBearerAuthenticator(uc, verifier, fake), signer, fake
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/occ"
 	"github.com/lynxland/lynx-start/modules/account/domain/account/session"
 	"github.com/uptrace/bun"
@@ -29,6 +30,7 @@ type sessionModel struct {
 	ExpiresAt       time.Time `bun:"expires_at,notnull"`
 	RevokedAt       time.Time `bun:"revoked_at,nullzero"`
 	RevokeReason    string    `bun:"revoke_reason,nullzero"`
+	UserAgent       string    `bun:"user_agent,notnull"`
 }
 
 // Repo 实现 session.Repository。
@@ -67,19 +69,22 @@ func (r *Repo) Get(ctx context.Context, id string) (*session.Session, error) {
 	return toDomain(m), nil
 }
 
-// Rotate 只写 refresh_jti/last_refreshed_at 白名单列（bun 显式 Set 护栏）。
-func (r *Repo) Rotate(ctx context.Context, s *session.Session) error {
+// Rotate 条件更新（v0.7.0 竞态修复）：WHERE 携带**旧** refresh_jti 期望
+// 值——两个并发 Refresh 同 sid 时只有一个 CAS 成功，另一个影响 0 行
+// （app 层按「旧 jti 重放」处理：吊销整个会话，rotation 防重放闭环）。
+// oldJTI 是本次轮换前的 jti（= 聚合 Rotate 前的值，由 app 传入）。
+func (r *Repo) Rotate(ctx context.Context, s *session.Session, oldJTI string) error {
 	res, err := buntx.Conn(ctx, r.db).NewUpdate().
 		Model((*sessionModel)(nil)).
 		Set("refresh_jti = ?", s.RefreshJTI).
 		Set("last_refreshed_at = ?", s.LastRefreshedAt).
-		Where("id = ? AND status = ?", s.ID, session.StatusActive).
+		Where("id = ? AND status = ? AND refresh_jti = ?", s.ID, session.StatusActive, oldJTI).
 		Exec(ctx)
 	if err != nil {
 		return err
 	}
 	if n, err := res.RowsAffected(); err == nil && n == 0 {
-		return session.ErrSessionRevoked
+		return session.ErrRotateConflict
 	}
 	return nil
 }
@@ -115,7 +120,7 @@ func toModel(s *session.Session) sessionModel {
 	return sessionModel{
 		ID: s.ID, UserID: s.UserID, RefreshJTI: s.RefreshJTI, Status: s.Status,
 		CreatedAt: s.CreatedAt, LastRefreshedAt: s.LastRefreshedAt, ExpiresAt: s.ExpiresAt,
-		RevokedAt: s.RevokedAt, RevokeReason: s.RevokeReason,
+		RevokedAt: s.RevokedAt, RevokeReason: s.RevokeReason, UserAgent: s.UserAgent,
 	}
 }
 
@@ -123,6 +128,56 @@ func toDomain(m *sessionModel) *session.Session {
 	return &session.Session{
 		ID: m.ID, UserID: m.UserID, RefreshJTI: m.RefreshJTI, Status: m.Status,
 		CreatedAt: m.CreatedAt, LastRefreshedAt: m.LastRefreshedAt, ExpiresAt: m.ExpiresAt,
-		RevokedAt: m.RevokedAt, RevokeReason: m.RevokeReason,
+		RevokedAt: m.RevokedAt, RevokeReason: m.RevokeReason, UserAgent: m.UserAgent,
 	}
+}
+
+// ListByUser 列用户会话（keyset：created_at DESC + id 决胜——设备管理）。
+func (r *Repo) ListByUser(ctx context.Context, userID string, plan crud.PagePlan) ([]*session.Session, int, error) {
+	var rows []sessionModel
+	if err := bunx.ApplyPage(buntx.Conn(ctx, r.db).NewSelect().Model(&rows).
+		Where("s.user_id = ?", userID), plan).Scan(ctx); err != nil {
+		return nil, 0, err
+	}
+	count, err := buntx.Conn(ctx, r.db).NewSelect().Model((*sessionModel)(nil)).
+		Where("user_id = ?", userID).Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]*session.Session, 0, len(rows))
+	for i := range rows {
+		out = append(out, toDomain(&rows[i]))
+	}
+	return out, int(count), nil
+}
+
+// RevokeOwned 吊销本人的指定会话（自助踢设备）：收敛可见性——他人
+// 会话与不存在统一 ErrSessionNotFound（不泄露存在性差异），幂等。
+func (r *Repo) RevokeOwned(ctx context.Context, id, userID, reason string, at time.Time) error {
+	res, err := buntx.Conn(ctx, r.db).NewUpdate().
+		Model((*sessionModel)(nil)).
+		Set("status = ?", session.StatusRevoked).
+		Set("revoked_at = ?", at).
+		Set("revoke_reason = ?", reason).
+		Where("id = ? AND user_id = ? AND status = ?", id, userID, session.StatusActive).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		if _, gerr := r.Get(ctx, id); gerr != nil || r.ownerOf(ctx, id) != userID {
+			return session.ErrSessionNotFound
+		}
+		// 存在且是本人的——已吊销/过期，幂等成功。
+	}
+	return nil
+}
+
+func (r *Repo) ownerOf(ctx context.Context, id string) string {
+	m := new(sessionModel)
+	if err := buntx.Conn(ctx, r.db).NewSelect().Model(m).
+		Column("s.user_id").Where("s.id = ?", id).Scan(ctx); err != nil {
+		return ""
+	}
+	return m.UserID
 }

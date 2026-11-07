@@ -1,6 +1,11 @@
 package identity
 
-import "context"
+import (
+	"context"
+	"time"
+
+	"github.com/lynxland/appkit/crud"
+)
 
 // Repository 是 User 聚合的持久化端口（infra 实现，经 Assemble 注入）。
 // 方法一律接收 ctx：适配器从 ctx 取事务连接（appkit/uow/buntx），
@@ -13,4 +18,11 @@ type Repository interface {
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	// UpdatePassword 只写 password_hash/updated_at 白名单列（bun 显式列护栏）。
 	UpdatePassword(ctx context.Context, user *User) error
+	// UpdateStatus 只写 status/updated_at（Disable/Enable 用；影响 0 行
+	// 映射 ErrUserNotFound）。
+	UpdateStatus(ctx context.Context, id, status string, now time.Time) error
+	// UpdateEmailVerified 只写 email_verified/updated_at（幂等）。
+	UpdateEmailVerified(ctx context.Context, id string, verified bool, now time.Time) error
+	// List 用户分页（keyset：created_at DESC + id 决胜），返回一页与总数。
+	List(ctx context.Context, plan crud.PagePlan) ([]*User, int, error)
 }

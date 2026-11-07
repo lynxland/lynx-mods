@@ -9,6 +9,7 @@ import (
 
 	"github.com/lynxland/appkit/clock"
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/jwt"
 	"github.com/lynxland/lynx-start/modules/account/domain/account/identity"
 	"github.com/lynxland/lynx-start/modules/account/domain/account/session"
@@ -42,7 +43,7 @@ func (r *fakeSessionRepo) Get(_ context.Context, id string) (*session.Session, e
 	return nil, session.ErrSessionNotFound
 }
 
-func (r *fakeSessionRepo) Rotate(_ context.Context, s *session.Session) error {
+func (r *fakeSessionRepo) Rotate(_ context.Context, s *session.Session, _ string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	cur, ok := r.rows[s.ID]
@@ -113,6 +114,13 @@ func (r *fakeUserRepo) GetByEmail(_ context.Context, email string) (*identity.Us
 	return nil, identity.ErrUserNotFound
 }
 
+func (r *fakeUserRepo) UpdateStatus(context.Context, string, string, time.Time) error { return nil }
+func (r *fakeUserRepo) UpdateEmailVerified(context.Context, string, bool, time.Time) error {
+	return nil
+}
+func (r *fakeUserRepo) List(context.Context, crud.PagePlan) ([]*identity.User, int, error) {
+	return nil, 0, nil
+}
 func (r *fakeUserRepo) UpdatePassword(_ context.Context, _ *identity.User) error { return nil }
 
 const (
@@ -152,7 +160,7 @@ func TestCreateSession(t *testing.T) {
 	ctx := context.Background()
 	seedUser(t, urepo, "u1", "alice@example.com")
 
-	pair, err := uc.CreateSession(ctx, "u1", "alice@example.com")
+	pair, err := uc.CreateSession(ctx, "u1", "alice@example.com", "ua-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +180,7 @@ func TestRefreshRotationAndReuse(t *testing.T) {
 	ctx := context.Background()
 	seedUser(t, urepo, "u1", "alice@example.com")
 
-	pair, err := uc.CreateSession(ctx, "u1", "alice@example.com")
+	pair, err := uc.CreateSession(ctx, "u1", "alice@example.com", "ua-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +211,7 @@ func TestRefreshExpiry(t *testing.T) {
 	uc, _, urepo, _, fake := newTestUseCase(t)
 	ctx := context.Background()
 	seedUser(t, urepo, "u1", "alice@example.com")
-	pair, err := uc.CreateSession(ctx, "u1", "alice@example.com")
+	pair, err := uc.CreateSession(ctx, "u1", "alice@example.com", "ua-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +225,7 @@ func TestResolveSessionAndLogout(t *testing.T) {
 	uc, _, urepo, _, _ := newTestUseCase(t)
 	ctx := context.Background()
 	seedUser(t, urepo, "u1", "alice@example.com")
-	pair, err := uc.CreateSession(ctx, "u1", "alice@example.com")
+	pair, err := uc.CreateSession(ctx, "u1", "alice@example.com", "ua-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,11 +250,11 @@ func TestLogoutAllAndPasswordChanged(t *testing.T) {
 	uc, _, urepo, pub, _ := newTestUseCase(t)
 	ctx := context.Background()
 	seedUser(t, urepo, "u1", "alice@example.com")
-	a, err := uc.CreateSession(ctx, "u1", "alice@example.com")
+	a, err := uc.CreateSession(ctx, "u1", "alice@example.com", "ua-test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := uc.CreateSession(ctx, "u1", "alice@example.com")
+	b, err := uc.CreateSession(ctx, "u1", "alice@example.com", "ua-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +265,7 @@ func TestLogoutAllAndPasswordChanged(t *testing.T) {
 	}
 
 	// 改密联动走 OnPasswordChanged（事件订阅器的入口）。
-	c, err := uc.CreateSession(ctx, "u1", "alice@example.com")
+	c, err := uc.CreateSession(ctx, "u1", "alice@example.com", "ua-test")
 	if err != nil {
 		t.Fatal(err)
 	}

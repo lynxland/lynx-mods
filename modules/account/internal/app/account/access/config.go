@@ -23,7 +23,7 @@ func (c *Config) ApplyDefaults() {
 		c.Roles = map[string][]string{
 			// admin 开箱即得本模块管理权与审计查询权（audit 模块的读取注解）；
 			// 应用按需在 config.yaml 扩充。
-			"admin": {"account.assignment.write", "audit.log.read"},
+			"admin": {"account.assignment.write", "audit.log.read", "account.user.write", "account.user.read"},
 		}
 	}
 }

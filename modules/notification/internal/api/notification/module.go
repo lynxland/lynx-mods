@@ -32,6 +32,9 @@ func Module() appkit.Module {
 		Policies:    []protoreflect.FileDescriptor{notificationv1.File_notification_v1_notification_proto},
 		Migrations:  migrations.FS,
 		ConsumedEvents: []string{
+			// account 的一次性令牌流（v0.7.0）：验证/重置令牌经邮件投递。
+			domainnotification.AccountUserVerificationRequested,
+			domainnotification.AccountUserResetRequested,
 			domainnotification.IdentityUserPasswordChanged,
 			domainnotification.OrganizationMemberAdded,
 			domainnotification.OrganizationMemberRemoved,

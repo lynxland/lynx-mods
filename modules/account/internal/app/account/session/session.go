@@ -9,9 +9,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lynxland/appkit/clock"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/events"
 	"github.com/lynxland/appkit/idgen"
 	"github.com/lynxland/appkit/jwt"
@@ -64,15 +66,15 @@ type TokenPair struct {
 }
 
 // CreateSession 把已认证主体升级为可吊销会话（凭证核验归 identity，
-// 本模块只消费 principal 事实）。
-func (u *UseCase) CreateSession(ctx context.Context, userID, email string) (*TokenPair, error) {
+// 本模块只消费 principal 事实）。userAgent 是客户端自报的设备元数据。
+func (u *UseCase) CreateSession(ctx context.Context, userID, email, userAgent string) (*TokenPair, error) {
 	now := u.now.Now()
 	sid := idgen.New()
 	refresh, err := u.tokens.Refresh.Sign(sid, map[string]string{"uid": userID, "email": email})
 	if err != nil {
 		return nil, err
 	}
-	s, err := session.NewSession(sid, userID, refresh.Claims.ID, now, now.Add(u.tokens.RefreshTTL))
+	s, err := session.NewSession(sid, userID, refresh.Claims.ID, userAgent, now, now.Add(u.tokens.RefreshTTL))
 	if err != nil {
 		return nil, err
 	}
@@ -141,11 +143,20 @@ func (u *UseCase) Refresh(ctx context.Context, refreshToken string) (*TokenPair,
 	if err != nil {
 		return nil, err
 	}
+	oldJTI := s.RefreshJTI
 	if err := s.Rotate(refresh.Claims.ID, now); err != nil {
 		return nil, err
 	}
 	err = u.tx.Run(ctx, func(ctx context.Context) error {
-		if err := u.repo.Rotate(ctx, s); err != nil {
+		if err := u.repo.Rotate(ctx, s, oldJTI); err != nil {
+			// CAS 冲突 = 并发 Refresh 已先行（旧 jti 被换）——与本方法
+			// 开头的「旧 jti 重放」同款盗用信号：吊销整个会话。
+			if errors.Is(err, session.ErrRotateConflict) {
+				if rerr := u.revoke(ctx, s, session.RevokeRefreshReuse); rerr != nil {
+					return rerr
+				}
+				return session.ErrRefreshRejected
+			}
 			return err
 		}
 		return u.publish(ctx, session.EventSessionRefreshed, map[string]string{"id": s.ID, "user_id": s.UserID})
@@ -239,4 +250,67 @@ func (u *UseCase) publish(ctx context.Context, name string, payload map[string]s
 		OccurredAt: u.now.Now(),
 		Payload:    raw,
 	})
+}
+
+// ---- 设备管理（v0.7.0）----
+
+// deviceRepository 是设备管理扩展端口（infra Repo 一并实现；与 domain 的
+// RepositoryDeviceManagement 同形——app 侧持有窄视图）。
+type deviceRepository interface {
+	ListByUser(ctx context.Context, userID string, plan crud.PagePlan) ([]*session.Session, int, error)
+	RevokeOwned(ctx context.Context, id, userID, reason string, at time.Time) error
+}
+
+// sessionsSpec 是会话列表的分页规约（keyset：created_at DESC + id 决胜）。
+var sessionsSpec = crud.Spec{
+	Modes:        crud.ModeSetKeyset,
+	Sortable:     map[string]string{"createdAt": "s.created_at", "id": "s.id"},
+	Tiebreak:     "id",
+	DefaultLimit: 20,
+	MaxLimit:     100,
+}
+
+// ListSessionsResult 是会话列表用例的产物。
+type ListSessionsResult struct {
+	Sessions  []*session.Session
+	NextToken string
+	TotalSize int32
+}
+
+// ListMySessions 列当前用户会话（自助——设备管理；含已吊销尾巴）。
+func (u *UseCase) ListMySessions(ctx context.Context, userID string, pageSize int32, pageToken string) (*ListSessionsResult, error) {
+	q, err := crud.Parse[any](sessionsSpec, crud.RawParams{After: pageToken, Limit: pageSize, OrderBy: "createdAt desc"}, nil)
+	if err != nil {
+		return nil, err
+	}
+	dr, ok := u.repo.(deviceRepository)
+	if !ok {
+		return nil, fmt.Errorf("session: repository lacks device management support")
+	}
+	items, total, err := dr.ListByUser(ctx, userID, q.PagePlan)
+	if err != nil {
+		return nil, err
+	}
+	next := ""
+	if crud.HasMore(int32(len(items)), q.Limit) && len(items) > 0 {
+		last := items[len(items)-1]
+		if next, err = crud.Cursor(q, []string{last.CreatedAt.UTC().Format(time.RFC3339Nano), last.ID}); err != nil {
+			return nil, err
+		}
+	}
+	return &ListSessionsResult{Sessions: items, NextToken: next, TotalSize: int32(total)}, nil
+}
+
+// RevokeMySession 踢出自己的指定会话（幂等；他人会话不可见不可踢）。
+func (u *UseCase) RevokeMySession(ctx context.Context, userID, sessionID string) error {
+	dr, ok := u.repo.(deviceRepository)
+	if !ok {
+		return fmt.Errorf("session: repository lacks device management support")
+	}
+	return dr.RevokeOwned(ctx, sessionID, userID, session.RevokeLogout, u.now.Now())
+}
+
+// OnUserDisabled 停用联动：吊销该用户全部会话（订阅 account.user.disabled）。
+func (u *UseCase) OnUserDisabled(ctx context.Context, userID string) error {
+	return u.OnPasswordChanged(ctx, userID)
 }

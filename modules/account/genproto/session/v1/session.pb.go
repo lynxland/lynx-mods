@@ -26,7 +26,10 @@ const (
 )
 
 type CreateSessionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// user_agent 是创建会话的客户端自报（产品显示用——设备列表的「在哪
+	// 台设备上登录」；非安全边界，不作为鉴权依据）。
+	UserAgent     string `protobuf:"bytes,1,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -59,6 +62,13 @@ func (x *CreateSessionRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateSessionRequest.ProtoReflect.Descriptor instead.
 func (*CreateSessionRequest) Descriptor() ([]byte, []int) {
 	return file_session_v1_session_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *CreateSessionRequest) GetUserAgent() string {
+	if x != nil {
+		return x.UserAgent
+	}
+	return ""
 }
 
 type CreateSessionResponse struct {
@@ -405,13 +415,264 @@ func (x *LogoutAllResponse) GetRevokedCount() int32 {
 	return 0
 }
 
+type ListMySessionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PageSize      int32                  `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMySessionsRequest) Reset() {
+	*x = ListMySessionsRequest{}
+	mi := &file_session_v1_session_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMySessionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMySessionsRequest) ProtoMessage() {}
+
+func (x *ListMySessionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_session_v1_session_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMySessionsRequest.ProtoReflect.Descriptor instead.
+func (*ListMySessionsRequest) Descriptor() ([]byte, []int) {
+	return file_session_v1_session_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ListMySessionsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListMySessionsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListMySessionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Sessions      []*SessionInfo         `protobuf:"bytes,1,rep,name=sessions,proto3" json:"sessions,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	TotalSize     int32                  `protobuf:"varint,3,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMySessionsResponse) Reset() {
+	*x = ListMySessionsResponse{}
+	mi := &file_session_v1_session_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMySessionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMySessionsResponse) ProtoMessage() {}
+
+func (x *ListMySessionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_session_v1_session_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMySessionsResponse.ProtoReflect.Descriptor instead.
+func (*ListMySessionsResponse) Descriptor() ([]byte, []int) {
+	return file_session_v1_session_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ListMySessionsResponse) GetSessions() []*SessionInfo {
+	if x != nil {
+		return x.Sessions
+	}
+	return nil
+}
+
+func (x *ListMySessionsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+func (x *ListMySessionsResponse) GetTotalSize() int32 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
+// SessionInfo 是会话的自助可见形态（设备管理）。
+type SessionInfo struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserAgent       string                 `protobuf:"bytes,2,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty"`
+	Status          string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"` // active / revoked
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LastRefreshedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_refreshed_at,json=lastRefreshedAt,proto3" json:"last_refreshed_at,omitempty"`
+	ExpiresAt       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	RevokedAt       *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=revoked_at,json=revokedAt,proto3" json:"revoked_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *SessionInfo) Reset() {
+	*x = SessionInfo{}
+	mi := &file_session_v1_session_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SessionInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SessionInfo) ProtoMessage() {}
+
+func (x *SessionInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_session_v1_session_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SessionInfo.ProtoReflect.Descriptor instead.
+func (*SessionInfo) Descriptor() ([]byte, []int) {
+	return file_session_v1_session_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SessionInfo) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SessionInfo) GetUserAgent() string {
+	if x != nil {
+		return x.UserAgent
+	}
+	return ""
+}
+
+func (x *SessionInfo) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *SessionInfo) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *SessionInfo) GetLastRefreshedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastRefreshedAt
+	}
+	return nil
+}
+
+func (x *SessionInfo) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *SessionInfo) GetRevokedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RevokedAt
+	}
+	return nil
+}
+
+type RevokeSessionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeSessionRequest) Reset() {
+	*x = RevokeSessionRequest{}
+	mi := &file_session_v1_session_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeSessionRequest) ProtoMessage() {}
+
+func (x *RevokeSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_session_v1_session_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeSessionRequest.ProtoReflect.Descriptor instead.
+func (*RevokeSessionRequest) Descriptor() ([]byte, []int) {
+	return file_session_v1_session_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RevokeSessionRequest) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
 var File_session_v1_session_proto protoreflect.FileDescriptor
 
 const file_session_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"\x18session/v1/session.proto\x12\n" +
-	"session.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17grpcapi/v1/policy.proto\"\x16\n" +
-	"\x14CreateSessionRequest\"\xc8\x02\n" +
+	"session.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17grpcapi/v1/policy.proto\"5\n" +
+	"\x14CreateSessionRequest\x12\x1d\n" +
+	"\n" +
+	"user_agent\x18\x01 \x01(\tR\tuserAgent\"\xc8\x02\n" +
 	"\x15CreateSessionResponse\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x17\n" +
@@ -437,7 +698,31 @@ const file_session_v1_session_proto_rawDesc = "" +
 	"\rLogoutRequest\"\x12\n" +
 	"\x10LogoutAllRequest\"8\n" +
 	"\x11LogoutAllResponse\x12#\n" +
-	"\rrevoked_count\x18\x01 \x01(\x05R\frevokedCount2\xcb\x03\n" +
+	"\rrevoked_count\x18\x01 \x01(\x05R\frevokedCount\"S\n" +
+	"\x15ListMySessionsRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\"\x94\x01\n" +
+	"\x16ListMySessionsResponse\x123\n" +
+	"\bsessions\x18\x01 \x03(\v2\x17.session.v1.SessionInfoR\bsessions\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\x03 \x01(\x05R\ttotalSize\"\xcd\x02\n" +
+	"\vSessionInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"user_agent\x18\x02 \x01(\tR\tuserAgent\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x129\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12F\n" +
+	"\x11last_refreshed_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x0flastRefreshedAt\x129\n" +
+	"\n" +
+	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x129\n" +
+	"\n" +
+	"revoked_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\trevokedAt\"5\n" +
+	"\x14RevokeSessionRequest\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId2\xbe\x05\n" +
 	"\x0eSessionService\x12t\n" +
 	"\rCreateSession\x12 .session.v1.CreateSessionRequest\x1a!.session.v1.CreateSessionResponse\"\x1e\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02\x10:\x01*\"\v/v1/session\x12j\n" +
@@ -446,7 +731,11 @@ const file_session_v1_session_proto_rawDesc = "" +
 	"\x06Logout\x12\x19.session.v1.LogoutRequest\x1a\x16.google.protobuf.Empty\"%\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/session:logout\x12s\n" +
 	"\tLogoutAll\x12\x1c.session.v1.LogoutAllRequest\x1a\x1d.session.v1.LogoutAllResponse\")\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/session:logout-allB\\\xca\xf0\x19\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/session:logout-all\x12x\n" +
+	"\x0eListMySessions\x12!.session.v1.ListMySessionsRequest\x1a\".session.v1.ListMySessionsResponse\"\x1f\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/my/sessions\x12w\n" +
+	"\rRevokeSession\x12 .session.v1.RevokeSessionRequest\x1a\x16.google.protobuf.Empty\",\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02\x1e*\x1c/v1/my/sessions/{session_id}B\\\xca\xf0\x19\n" +
 	"\n" +
 	"\x06public \x02ZLgithub.com/lynxland/lynx-start/modules/account/genproto/session/v1;sessionv1b\x06proto3"
 
@@ -462,36 +751,49 @@ func file_session_v1_session_proto_rawDescGZIP() []byte {
 	return file_session_v1_session_proto_rawDescData
 }
 
-var file_session_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_session_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_session_v1_session_proto_goTypes = []any{
-	(*CreateSessionRequest)(nil),  // 0: session.v1.CreateSessionRequest
-	(*CreateSessionResponse)(nil), // 1: session.v1.CreateSessionResponse
-	(*RefreshRequest)(nil),        // 2: session.v1.RefreshRequest
-	(*RefreshResponse)(nil),       // 3: session.v1.RefreshResponse
-	(*LogoutRequest)(nil),         // 4: session.v1.LogoutRequest
-	(*LogoutAllRequest)(nil),      // 5: session.v1.LogoutAllRequest
-	(*LogoutAllResponse)(nil),     // 6: session.v1.LogoutAllResponse
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),         // 8: google.protobuf.Empty
+	(*CreateSessionRequest)(nil),   // 0: session.v1.CreateSessionRequest
+	(*CreateSessionResponse)(nil),  // 1: session.v1.CreateSessionResponse
+	(*RefreshRequest)(nil),         // 2: session.v1.RefreshRequest
+	(*RefreshResponse)(nil),        // 3: session.v1.RefreshResponse
+	(*LogoutRequest)(nil),          // 4: session.v1.LogoutRequest
+	(*LogoutAllRequest)(nil),       // 5: session.v1.LogoutAllRequest
+	(*LogoutAllResponse)(nil),      // 6: session.v1.LogoutAllResponse
+	(*ListMySessionsRequest)(nil),  // 7: session.v1.ListMySessionsRequest
+	(*ListMySessionsResponse)(nil), // 8: session.v1.ListMySessionsResponse
+	(*SessionInfo)(nil),            // 9: session.v1.SessionInfo
+	(*RevokeSessionRequest)(nil),   // 10: session.v1.RevokeSessionRequest
+	(*timestamppb.Timestamp)(nil),  // 11: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),          // 12: google.protobuf.Empty
 }
 var file_session_v1_session_proto_depIdxs = []int32{
-	7, // 0: session.v1.CreateSessionResponse.access_expires_at:type_name -> google.protobuf.Timestamp
-	7, // 1: session.v1.CreateSessionResponse.session_expires_at:type_name -> google.protobuf.Timestamp
-	7, // 2: session.v1.RefreshResponse.access_expires_at:type_name -> google.protobuf.Timestamp
-	7, // 3: session.v1.RefreshResponse.session_expires_at:type_name -> google.protobuf.Timestamp
-	0, // 4: session.v1.SessionService.CreateSession:input_type -> session.v1.CreateSessionRequest
-	2, // 5: session.v1.SessionService.Refresh:input_type -> session.v1.RefreshRequest
-	4, // 6: session.v1.SessionService.Logout:input_type -> session.v1.LogoutRequest
-	5, // 7: session.v1.SessionService.LogoutAll:input_type -> session.v1.LogoutAllRequest
-	1, // 8: session.v1.SessionService.CreateSession:output_type -> session.v1.CreateSessionResponse
-	3, // 9: session.v1.SessionService.Refresh:output_type -> session.v1.RefreshResponse
-	8, // 10: session.v1.SessionService.Logout:output_type -> google.protobuf.Empty
-	6, // 11: session.v1.SessionService.LogoutAll:output_type -> session.v1.LogoutAllResponse
-	8, // [8:12] is the sub-list for method output_type
-	4, // [4:8] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	11, // 0: session.v1.CreateSessionResponse.access_expires_at:type_name -> google.protobuf.Timestamp
+	11, // 1: session.v1.CreateSessionResponse.session_expires_at:type_name -> google.protobuf.Timestamp
+	11, // 2: session.v1.RefreshResponse.access_expires_at:type_name -> google.protobuf.Timestamp
+	11, // 3: session.v1.RefreshResponse.session_expires_at:type_name -> google.protobuf.Timestamp
+	9,  // 4: session.v1.ListMySessionsResponse.sessions:type_name -> session.v1.SessionInfo
+	11, // 5: session.v1.SessionInfo.created_at:type_name -> google.protobuf.Timestamp
+	11, // 6: session.v1.SessionInfo.last_refreshed_at:type_name -> google.protobuf.Timestamp
+	11, // 7: session.v1.SessionInfo.expires_at:type_name -> google.protobuf.Timestamp
+	11, // 8: session.v1.SessionInfo.revoked_at:type_name -> google.protobuf.Timestamp
+	0,  // 9: session.v1.SessionService.CreateSession:input_type -> session.v1.CreateSessionRequest
+	2,  // 10: session.v1.SessionService.Refresh:input_type -> session.v1.RefreshRequest
+	4,  // 11: session.v1.SessionService.Logout:input_type -> session.v1.LogoutRequest
+	5,  // 12: session.v1.SessionService.LogoutAll:input_type -> session.v1.LogoutAllRequest
+	7,  // 13: session.v1.SessionService.ListMySessions:input_type -> session.v1.ListMySessionsRequest
+	10, // 14: session.v1.SessionService.RevokeSession:input_type -> session.v1.RevokeSessionRequest
+	1,  // 15: session.v1.SessionService.CreateSession:output_type -> session.v1.CreateSessionResponse
+	3,  // 16: session.v1.SessionService.Refresh:output_type -> session.v1.RefreshResponse
+	12, // 17: session.v1.SessionService.Logout:output_type -> google.protobuf.Empty
+	6,  // 18: session.v1.SessionService.LogoutAll:output_type -> session.v1.LogoutAllResponse
+	8,  // 19: session.v1.SessionService.ListMySessions:output_type -> session.v1.ListMySessionsResponse
+	12, // 20: session.v1.SessionService.RevokeSession:output_type -> google.protobuf.Empty
+	15, // [15:21] is the sub-list for method output_type
+	9,  // [9:15] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_session_v1_session_proto_init() }
@@ -505,7 +807,7 @@ func file_session_v1_session_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_session_v1_session_proto_rawDesc), len(file_session_v1_session_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

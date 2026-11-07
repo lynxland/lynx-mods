@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/lynxland/lynx-start/modules/account/domain/account/identity"
 
+	"github.com/lynxland/appkit/crud"
 	"github.com/uptrace/bun"
 )
 
@@ -54,4 +56,16 @@ func (r *userReader) Create(context.Context, *identity.User) error {
 
 func (r *userReader) UpdatePassword(context.Context, *identity.User) error {
 	return errors.New("notification: userReader is read-only (UpdatePassword belongs to account)")
+}
+
+func (r *userReader) UpdateStatus(context.Context, string, string, time.Time) error {
+	return errors.New("notification: userReader is read-only (UpdateStatus belongs to account)")
+}
+
+func (r *userReader) UpdateEmailVerified(context.Context, string, bool, time.Time) error {
+	return errors.New("notification: userReader is read-only (UpdateEmailVerified belongs to account)")
+}
+
+func (r *userReader) List(context.Context, crud.PagePlan) ([]*identity.User, int, error) {
+	return nil, 0, errors.New("notification: userReader is read-only (List belongs to account)")
 }

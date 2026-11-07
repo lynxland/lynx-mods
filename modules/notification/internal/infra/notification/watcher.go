@@ -86,6 +86,26 @@ func (w *Watcher) handle(ctx context.Context, e *eventbus.RawEvent) error {
 			return err
 		}
 		return nil
+	case notification.AccountUserVerificationRequested, notification.AccountUserResetRequested:
+		var payload struct {
+			ID    string `json:"id"`
+			Token string `json:"token"`
+		}
+		if err := json.Unmarshal(env.Payload, &payload); err != nil || payload.ID == "" || payload.Token == "" {
+			w.logger.Warn("notification watcher: payload missing id/token, drop", "event", env.Name)
+			return nil
+		}
+		var err error
+		if env.Name == notification.AccountUserVerificationRequested {
+			err = w.uc.OnVerificationRequested(ctx, payload.ID, payload.Token)
+		} else {
+			err = w.uc.OnResetRequested(ctx, payload.ID, payload.Token)
+		}
+		if err != nil {
+			w.logger.Error("notification watcher: deliver failed, will retry", "event", env.Name, "error", err)
+			return err
+		}
+		return nil
 	case notification.OrganizationMemberAdded:
 		return w.onMembership(ctx, env, w.uc.OnMemberAdded)
 	case notification.OrganizationMemberRemoved:

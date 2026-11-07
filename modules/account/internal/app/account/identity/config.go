@@ -20,6 +20,11 @@ type Config struct {
 	TokenTTL time.Duration `mapstructure:"token_ttl"`
 	// Issuer 是令牌 iss 声明（跨服务互验时对齐）。
 	Issuer string `mapstructure:"issuer"`
+	// LoginMaxFails 是登录失败锁定阈值（滑动窗口内累计 N 次失败后拒绝；
+	// 0 = 关闭限流）。
+	LoginMaxFails int `mapstructure:"login_max_fails"`
+	// LoginLockWindow 是失败计数的滑动窗口（窗口滑出即解锁）。
+	LoginLockWindow time.Duration `mapstructure:"login_lock_window"`
 }
 
 // ApplyDefaults 落默认值（LoadSection 的 defaults 钩子）。
@@ -27,6 +32,8 @@ func (c *Config) ApplyDefaults() {
 	c.Secret = DefaultDevSecret
 	c.TokenTTL = 30 * time.Minute
 	c.Issuer = "lynx-start"
+	c.LoginMaxFails = 5
+	c.LoginLockWindow = 15 * time.Minute
 }
 
 // Validate fail-fast 校验（组合根调用）。

@@ -97,7 +97,7 @@ func TestPasswordChangedWatcherIgnoresOthers(t *testing.T) {
 
 func mustSession(t *testing.T, id, userID string) *session.Session {
 	t.Helper()
-	s, err := session.NewSession(id, userID, "jti", time.Now().UTC(), time.Now().UTC().Add(time.Hour))
+	s, err := session.NewSession(id, userID, "jti", "ua", time.Now().UTC(), time.Now().UTC().Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func (r *watcherRepo) Get(_ context.Context, id string) (*session.Session, error
 	return nil, session.ErrSessionNotFound
 }
 
-func (r *watcherRepo) Rotate(_ context.Context, s *session.Session) error { return nil }
+func (r *watcherRepo) Rotate(_ context.Context, s *session.Session, _ string) error { return nil }
 
 func (r *watcherRepo) Revoke(_ context.Context, id, reason string, at time.Time) error {
 	r.mu.Lock()

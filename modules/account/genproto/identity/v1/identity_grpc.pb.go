@@ -20,10 +20,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	IdentityService_Register_FullMethodName       = "/identity.v1.IdentityService/Register"
-	IdentityService_Login_FullMethodName          = "/identity.v1.IdentityService/Login"
-	IdentityService_GetMe_FullMethodName          = "/identity.v1.IdentityService/GetMe"
-	IdentityService_ChangePassword_FullMethodName = "/identity.v1.IdentityService/ChangePassword"
+	IdentityService_Register_FullMethodName                 = "/identity.v1.IdentityService/Register"
+	IdentityService_Login_FullMethodName                    = "/identity.v1.IdentityService/Login"
+	IdentityService_GetMe_FullMethodName                    = "/identity.v1.IdentityService/GetMe"
+	IdentityService_ChangePassword_FullMethodName           = "/identity.v1.IdentityService/ChangePassword"
+	IdentityService_RequestEmailVerification_FullMethodName = "/identity.v1.IdentityService/RequestEmailVerification"
+	IdentityService_VerifyEmail_FullMethodName              = "/identity.v1.IdentityService/VerifyEmail"
+	IdentityService_RequestPasswordReset_FullMethodName     = "/identity.v1.IdentityService/RequestPasswordReset"
+	IdentityService_ConfirmPasswordReset_FullMethodName     = "/identity.v1.IdentityService/ConfirmPasswordReset"
+	IdentityService_DisableUser_FullMethodName              = "/identity.v1.IdentityService/DisableUser"
+	IdentityService_EnableUser_FullMethodName               = "/identity.v1.IdentityService/EnableUser"
+	IdentityService_ListUsers_FullMethodName                = "/identity.v1.IdentityService/ListUsers"
 )
 
 // IdentityServiceClient is the client API for IdentityService service.
@@ -40,6 +47,27 @@ type IdentityServiceClient interface {
 	GetMe(ctx context.Context, in *GetMeRequest, opts ...grpc.CallOption) (*GetMeResponse, error)
 	// 自助改密。要求认证（显式声明，fail-closed）。
 	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 请求邮箱验证（认证）：向账号邮箱发送验证令牌（经
+	// account.user.verification-requested 事件——通知渠道投递）；幂等。
+	RequestEmailVerification(ctx context.Context, in *RequestEmailVerificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 验证邮箱（认证——令牌即凭证，也可由邮件链接带令牌经匿名面调用，
+	// 此处保守要求认证 + 令牌双凭证）。
+	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*User, error)
+	// 请求密码重置（匿名）：**恒返回成功**（邮箱枚举防护，OWASP——存在
+	// 与否响应无差异）；令牌经 account.user.reset-requested 事件投递到
+	// 账号邮箱（不存在的邮箱只发事件到无收件人处，无泄露）。
+	RequestPasswordReset(ctx context.Context, in *RequestPasswordResetRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 确认密码重置（匿名——令牌即凭证）：改密并全局吊销会话（单次性由
+	// 改密生效达成——令牌用后密码已换，重放无效）。
+	ConfirmPasswordReset(ctx context.Context, in *ConfirmPasswordResetRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 禁用用户（admin）：登录/刷新拒绝（identity 已有状态检查）；已发
+	// 访问令牌在 TTL 内残留（无 session 的部署上界=令牌时效，装 session
+	// 时经 account.user.disabled 事件即时吊销——README 已知限制）。
+	DisableUser(ctx context.Context, in *DisableUserRequest, opts ...grpc.CallOption) (*User, error)
+	// 启用用户（admin）。
+	EnableUser(ctx context.Context, in *EnableUserRequest, opts ...grpc.CallOption) (*User, error)
+	// 列用户（admin，keyset 分页，created_at 降序）。
+	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 }
 
 type identityServiceClient struct {
@@ -90,6 +118,76 @@ func (c *identityServiceClient) ChangePassword(ctx context.Context, in *ChangePa
 	return out, nil
 }
 
+func (c *identityServiceClient) RequestEmailVerification(ctx context.Context, in *RequestEmailVerificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, IdentityService_RequestEmailVerification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*User, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(User)
+	err := c.cc.Invoke(ctx, IdentityService_VerifyEmail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) RequestPasswordReset(ctx context.Context, in *RequestPasswordResetRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, IdentityService_RequestPasswordReset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) ConfirmPasswordReset(ctx context.Context, in *ConfirmPasswordResetRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, IdentityService_ConfirmPasswordReset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) DisableUser(ctx context.Context, in *DisableUserRequest, opts ...grpc.CallOption) (*User, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(User)
+	err := c.cc.Invoke(ctx, IdentityService_DisableUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) EnableUser(ctx context.Context, in *EnableUserRequest, opts ...grpc.CallOption) (*User, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(User)
+	err := c.cc.Invoke(ctx, IdentityService_EnableUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUsersResponse)
+	err := c.cc.Invoke(ctx, IdentityService_ListUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IdentityServiceServer is the server API for IdentityService service.
 // All implementations must embed UnimplementedIdentityServiceServer
 // for forward compatibility.
@@ -104,6 +202,27 @@ type IdentityServiceServer interface {
 	GetMe(context.Context, *GetMeRequest) (*GetMeResponse, error)
 	// 自助改密。要求认证（显式声明，fail-closed）。
 	ChangePassword(context.Context, *ChangePasswordRequest) (*emptypb.Empty, error)
+	// 请求邮箱验证（认证）：向账号邮箱发送验证令牌（经
+	// account.user.verification-requested 事件——通知渠道投递）；幂等。
+	RequestEmailVerification(context.Context, *RequestEmailVerificationRequest) (*emptypb.Empty, error)
+	// 验证邮箱（认证——令牌即凭证，也可由邮件链接带令牌经匿名面调用，
+	// 此处保守要求认证 + 令牌双凭证）。
+	VerifyEmail(context.Context, *VerifyEmailRequest) (*User, error)
+	// 请求密码重置（匿名）：**恒返回成功**（邮箱枚举防护，OWASP——存在
+	// 与否响应无差异）；令牌经 account.user.reset-requested 事件投递到
+	// 账号邮箱（不存在的邮箱只发事件到无收件人处，无泄露）。
+	RequestPasswordReset(context.Context, *RequestPasswordResetRequest) (*emptypb.Empty, error)
+	// 确认密码重置（匿名——令牌即凭证）：改密并全局吊销会话（单次性由
+	// 改密生效达成——令牌用后密码已换，重放无效）。
+	ConfirmPasswordReset(context.Context, *ConfirmPasswordResetRequest) (*emptypb.Empty, error)
+	// 禁用用户（admin）：登录/刷新拒绝（identity 已有状态检查）；已发
+	// 访问令牌在 TTL 内残留（无 session 的部署上界=令牌时效，装 session
+	// 时经 account.user.disabled 事件即时吊销——README 已知限制）。
+	DisableUser(context.Context, *DisableUserRequest) (*User, error)
+	// 启用用户（admin）。
+	EnableUser(context.Context, *EnableUserRequest) (*User, error)
+	// 列用户（admin，keyset 分页，created_at 降序）。
+	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
 	mustEmbedUnimplementedIdentityServiceServer()
 }
 
@@ -125,6 +244,27 @@ func (UnimplementedIdentityServiceServer) GetMe(context.Context, *GetMeRequest) 
 }
 func (UnimplementedIdentityServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ChangePassword not implemented")
+}
+func (UnimplementedIdentityServiceServer) RequestEmailVerification(context.Context, *RequestEmailVerificationRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestEmailVerification not implemented")
+}
+func (UnimplementedIdentityServiceServer) VerifyEmail(context.Context, *VerifyEmailRequest) (*User, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyEmail not implemented")
+}
+func (UnimplementedIdentityServiceServer) RequestPasswordReset(context.Context, *RequestPasswordResetRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestPasswordReset not implemented")
+}
+func (UnimplementedIdentityServiceServer) ConfirmPasswordReset(context.Context, *ConfirmPasswordResetRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConfirmPasswordReset not implemented")
+}
+func (UnimplementedIdentityServiceServer) DisableUser(context.Context, *DisableUserRequest) (*User, error) {
+	return nil, status.Error(codes.Unimplemented, "method DisableUser not implemented")
+}
+func (UnimplementedIdentityServiceServer) EnableUser(context.Context, *EnableUserRequest) (*User, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnableUser not implemented")
+}
+func (UnimplementedIdentityServiceServer) ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUsers not implemented")
 }
 func (UnimplementedIdentityServiceServer) mustEmbedUnimplementedIdentityServiceServer() {}
 func (UnimplementedIdentityServiceServer) testEmbeddedByValue()                         {}
@@ -219,6 +359,132 @@ func _IdentityService_ChangePassword_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IdentityService_RequestEmailVerification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestEmailVerificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).RequestEmailVerification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_RequestEmailVerification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).RequestEmailVerification(ctx, req.(*RequestEmailVerificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_VerifyEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).VerifyEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_VerifyEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).VerifyEmail(ctx, req.(*VerifyEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_RequestPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestPasswordResetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).RequestPasswordReset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_RequestPasswordReset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).RequestPasswordReset(ctx, req.(*RequestPasswordResetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_ConfirmPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmPasswordResetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).ConfirmPasswordReset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_ConfirmPasswordReset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).ConfirmPasswordReset(ctx, req.(*ConfirmPasswordResetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_DisableUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisableUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).DisableUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_DisableUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).DisableUser(ctx, req.(*DisableUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_EnableUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnableUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).EnableUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_EnableUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).EnableUser(ctx, req.(*EnableUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_ListUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).ListUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_ListUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).ListUsers(ctx, req.(*ListUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IdentityService_ServiceDesc is the grpc.ServiceDesc for IdentityService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -241,6 +507,34 @@ var IdentityService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ChangePassword",
 			Handler:    _IdentityService_ChangePassword_Handler,
+		},
+		{
+			MethodName: "RequestEmailVerification",
+			Handler:    _IdentityService_RequestEmailVerification_Handler,
+		},
+		{
+			MethodName: "VerifyEmail",
+			Handler:    _IdentityService_VerifyEmail_Handler,
+		},
+		{
+			MethodName: "RequestPasswordReset",
+			Handler:    _IdentityService_RequestPasswordReset_Handler,
+		},
+		{
+			MethodName: "ConfirmPasswordReset",
+			Handler:    _IdentityService_ConfirmPasswordReset_Handler,
+		},
+		{
+			MethodName: "DisableUser",
+			Handler:    _IdentityService_DisableUser_Handler,
+		},
+		{
+			MethodName: "EnableUser",
+			Handler:    _IdentityService_EnableUser_Handler,
+		},
+		{
+			MethodName: "ListUsers",
+			Handler:    _IdentityService_ListUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

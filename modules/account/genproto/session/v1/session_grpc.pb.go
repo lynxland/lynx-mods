@@ -20,10 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SessionService_CreateSession_FullMethodName = "/session.v1.SessionService/CreateSession"
-	SessionService_Refresh_FullMethodName       = "/session.v1.SessionService/Refresh"
-	SessionService_Logout_FullMethodName        = "/session.v1.SessionService/Logout"
-	SessionService_LogoutAll_FullMethodName     = "/session.v1.SessionService/LogoutAll"
+	SessionService_CreateSession_FullMethodName  = "/session.v1.SessionService/CreateSession"
+	SessionService_Refresh_FullMethodName        = "/session.v1.SessionService/Refresh"
+	SessionService_Logout_FullMethodName         = "/session.v1.SessionService/Logout"
+	SessionService_LogoutAll_FullMethodName      = "/session.v1.SessionService/LogoutAll"
+	SessionService_ListMySessions_FullMethodName = "/session.v1.SessionService/ListMySessions"
+	SessionService_RevokeSession_FullMethodName  = "/session.v1.SessionService/RevokeSession"
 )
 
 // SessionServiceClient is the client API for SessionService service.
@@ -44,6 +46,11 @@ type SessionServiceClient interface {
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 全端下线：吊销当前用户全部活跃会话。要求认证。
 	LogoutAll(ctx context.Context, in *LogoutAllRequest, opts ...grpc.CallOption) (*LogoutAllResponse, error)
+	// 列当前用户的会话（自助——设备管理；含已吊销/过期尾巴，按创建时间
+	// 降序分页）。
+	ListMySessions(ctx context.Context, in *ListMySessionsRequest, opts ...grpc.CallOption) (*ListMySessionsResponse, error)
+	// 吊销当前用户的指定会话（自助——踢设备；幂等）。
+	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type sessionServiceClient struct {
@@ -94,6 +101,26 @@ func (c *sessionServiceClient) LogoutAll(ctx context.Context, in *LogoutAllReque
 	return out, nil
 }
 
+func (c *sessionServiceClient) ListMySessions(ctx context.Context, in *ListMySessionsRequest, opts ...grpc.CallOption) (*ListMySessionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMySessionsResponse)
+	err := c.cc.Invoke(ctx, SessionService_ListMySessions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sessionServiceClient) RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, SessionService_RevokeSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SessionServiceServer is the server API for SessionService service.
 // All implementations must embed UnimplementedSessionServiceServer
 // for forward compatibility.
@@ -112,6 +139,11 @@ type SessionServiceServer interface {
 	Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error)
 	// 全端下线：吊销当前用户全部活跃会话。要求认证。
 	LogoutAll(context.Context, *LogoutAllRequest) (*LogoutAllResponse, error)
+	// 列当前用户的会话（自助——设备管理；含已吊销/过期尾巴，按创建时间
+	// 降序分页）。
+	ListMySessions(context.Context, *ListMySessionsRequest) (*ListMySessionsResponse, error)
+	// 吊销当前用户的指定会话（自助——踢设备；幂等）。
+	RevokeSession(context.Context, *RevokeSessionRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSessionServiceServer()
 }
 
@@ -133,6 +165,12 @@ func (UnimplementedSessionServiceServer) Logout(context.Context, *LogoutRequest)
 }
 func (UnimplementedSessionServiceServer) LogoutAll(context.Context, *LogoutAllRequest) (*LogoutAllResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method LogoutAll not implemented")
+}
+func (UnimplementedSessionServiceServer) ListMySessions(context.Context, *ListMySessionsRequest) (*ListMySessionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMySessions not implemented")
+}
+func (UnimplementedSessionServiceServer) RevokeSession(context.Context, *RevokeSessionRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeSession not implemented")
 }
 func (UnimplementedSessionServiceServer) mustEmbedUnimplementedSessionServiceServer() {}
 func (UnimplementedSessionServiceServer) testEmbeddedByValue()                        {}
@@ -227,6 +265,42 @@ func _SessionService_LogoutAll_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SessionService_ListMySessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMySessionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).ListMySessions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_ListMySessions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).ListMySessions(ctx, req.(*ListMySessionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SessionService_RevokeSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SessionServiceServer).RevokeSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SessionService_RevokeSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SessionServiceServer).RevokeSession(ctx, req.(*RevokeSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SessionService_ServiceDesc is the grpc.ServiceDesc for SessionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -249,6 +323,14 @@ var SessionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LogoutAll",
 			Handler:    _SessionService_LogoutAll_Handler,
+		},
+		{
+			MethodName: "ListMySessions",
+			Handler:    _SessionService_ListMySessions_Handler,
+		},
+		{
+			MethodName: "RevokeSession",
+			Handler:    _SessionService_RevokeSession_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

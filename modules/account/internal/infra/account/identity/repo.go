@@ -9,6 +9,7 @@ import (
 
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/contrib/bunx/buntx"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/storeerr"
 	"github.com/lynxland/lynx-start/modules/account/domain/account/identity"
 	"github.com/uptrace/bun"
@@ -18,13 +19,14 @@ import (
 type userModel struct {
 	bun.BaseModel `bun:"table:identity_users,alias:u"`
 
-	ID           string    `bun:"id,pk"`
-	Email        string    `bun:"email,notnull,unique"`
-	PasswordHash string    `bun:"password_hash,notnull"`
-	DisplayName  string    `bun:"display_name,notnull"`
-	Status       string    `bun:"status,notnull"`
-	CreatedAt    time.Time `bun:"created_at,notnull"`
-	UpdatedAt    time.Time `bun:"updated_at,notnull"`
+	ID            string    `bun:"id,pk"`
+	Email         string    `bun:"email,notnull,unique"`
+	PasswordHash  string    `bun:"password_hash,notnull"`
+	DisplayName   string    `bun:"display_name,notnull"`
+	Status        string    `bun:"status,notnull"`
+	EmailVerified bool      `bun:"email_verified,notnull"`
+	CreatedAt     time.Time `bun:"created_at,notnull"`
+	UpdatedAt     time.Time `bun:"updated_at,notnull"`
 }
 
 // Repo 实现 identity.Repository。
@@ -101,7 +103,7 @@ func isUniqueViolation(err error) bool {
 func toModel(u *identity.User) userModel {
 	return userModel{
 		ID: u.ID, Email: u.Email, PasswordHash: u.PasswordHash,
-		DisplayName: u.DisplayName, Status: u.Status,
+		DisplayName: u.DisplayName, Status: u.Status, EmailVerified: u.EmailVerified,
 		CreatedAt: u.CreatedAt, UpdatedAt: u.UpdatedAt,
 	}
 }
@@ -109,7 +111,58 @@ func toModel(u *identity.User) userModel {
 func toDomain(m *userModel) *identity.User {
 	return &identity.User{
 		ID: m.ID, Email: m.Email, PasswordHash: m.PasswordHash,
-		DisplayName: m.DisplayName, Status: m.Status,
+		DisplayName: m.DisplayName, Status: m.Status, EmailVerified: m.EmailVerified,
 		CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
 	}
+}
+
+// UpdateStatus 只写 status/updated_at（Disable/Enable）。
+func (r *Repo) UpdateStatus(ctx context.Context, id, status string, now time.Time) error {
+	res, err := buntx.Conn(ctx, r.db).NewUpdate().
+		Model((*userModel)(nil)).
+		Set("status = ?", status).
+		Set("updated_at = ?", now).
+		Where("id = ?", id).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return identity.ErrUserNotFound
+	}
+	return nil
+}
+
+// UpdateEmailVerified 只写 email_verified/updated_at（幂等）。
+func (r *Repo) UpdateEmailVerified(ctx context.Context, id string, verified bool, now time.Time) error {
+	res, err := buntx.Conn(ctx, r.db).NewUpdate().
+		Model((*userModel)(nil)).
+		Set("email_verified = ?", verified).
+		Set("updated_at = ?", now).
+		Where("id = ?", id).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return identity.ErrUserNotFound
+	}
+	return nil
+}
+
+// List 用户分页（keyset：created_at DESC + id 决胜）。
+func (r *Repo) List(ctx context.Context, plan crud.PagePlan) ([]*identity.User, int, error) {
+	var rows []userModel
+	if err := bunx.ApplyPage(buntx.Conn(ctx, r.db).NewSelect().Model(&rows), plan).Scan(ctx); err != nil {
+		return nil, 0, err
+	}
+	count, err := buntx.Conn(ctx, r.db).NewSelect().Model((*userModel)(nil)).Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	users := make([]*identity.User, 0, len(rows))
+	for i := range rows {
+		users = append(users, toDomain(&rows[i]))
+	}
+	return users, int(count), nil
 }

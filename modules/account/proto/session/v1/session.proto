@@ -44,9 +44,27 @@ service SessionService {
     option (grpcapi.v1.method) = { policy: { authenticated: true } };
     option (google.api.http) = { post: "/v1/session:logout-all" body: "*" };
   }
+
+  // 列当前用户的会话（自助——设备管理；含已吊销/过期尾巴，按创建时间
+  // 降序分页）。
+  rpc ListMySessions(ListMySessionsRequest) returns (ListMySessionsResponse) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { get: "/v1/my/sessions" };
+  }
+
+  // 吊销当前用户的指定会话（自助——踢设备；幂等）。
+  rpc RevokeSession(RevokeSessionRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { delete: "/v1/my/sessions/{session_id}" };
+  }
+
 }
 
-message CreateSessionRequest {}
+message CreateSessionRequest {
+  // user_agent 是创建会话的客户端自报（产品显示用——设备列表的「在哪
+  // 台设备上登录」；非安全边界，不作为鉴权依据）。
+  string user_agent = 1;
+}
 
 message CreateSessionResponse {
   string session_id = 1;
@@ -79,3 +97,27 @@ message LogoutAllRequest {}
 message LogoutAllResponse {
   int32 revoked_count = 1;
 }
+
+message ListMySessionsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListMySessionsResponse {
+  repeated SessionInfo sessions = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+// SessionInfo 是会话的自助可见形态（设备管理）。
+message SessionInfo {
+  string id = 1;
+  string user_agent = 2;
+  string status = 3;               // active / revoked
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp last_refreshed_at = 5;
+  google.protobuf.Timestamp expires_at = 6;
+  google.protobuf.Timestamp revoked_at = 7;
+}
+
+message RevokeSessionRequest { string session_id = 1; }

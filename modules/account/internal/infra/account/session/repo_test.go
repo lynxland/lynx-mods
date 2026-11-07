@@ -19,7 +19,7 @@ func TestRepo(t *testing.T) {
 	ctx := context.Background()
 
 	mk := func(id, jti string) *session.Session {
-		s, err := session.NewSession(id, "u1", jti, t0, t0.Add(time.Hour))
+		s, err := session.NewSession(id, "u1", jti, "ua-test", t0, t0.Add(time.Hour))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -46,13 +46,17 @@ func TestRepo(t *testing.T) {
 		}
 	})
 
-	t.Run("rotate whitelist", func(t *testing.T) {
+	t.Run("rotate whitelist and CAS", func(t *testing.T) {
 		s, _ := repo.Get(ctx, "s1")
 		if err := s.Rotate("jti-1b", t0.Add(time.Minute)); err != nil {
 			t.Fatal(err)
 		}
-		if err := repo.Rotate(ctx, s); err != nil {
+		// CAS 旧值 = 轮换前的 jti-1；不匹配（并发已换）→ ErrRotateConflict。
+		if err := repo.Rotate(ctx, s, "jti-1"); err != nil {
 			t.Fatal(err)
+		}
+		if err := repo.Rotate(ctx, s, "jti-1"); err != session.ErrRotateConflict {
+			t.Errorf("rotate replay: err = %v, want ErrRotateConflict", err)
 		}
 		got, _ := repo.Get(ctx, "s1")
 		if got.RefreshJTI != "jti-1b" {
@@ -76,9 +80,9 @@ func TestRepo(t *testing.T) {
 		if n, _ := repo.RevokeByUser(ctx, "u1", session.RevokePassword, t0.Add(4*time.Minute)); n != 0 {
 			t.Errorf("second pass n=%d, want 0", n)
 		}
-		// 已吊销会话轮换被拒。
+		// 已吊销会话轮换被拒（CAS 不中同款冲突错误）。
 		s2, _ := repo.Get(ctx, "s2")
-		if err := repo.Rotate(ctx, s2); err != session.ErrSessionRevoked {
+		if err := repo.Rotate(ctx, s2, "stale-jti"); err != session.ErrRotateConflict {
 			t.Errorf("rotate revoked: err = %v, want ErrSessionRevoked", err)
 		}
 	})

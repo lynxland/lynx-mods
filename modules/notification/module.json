@@ -5,7 +5,7 @@
   "modulePath": "github.com/lynxland/lynx-start/modules/notification",
   "moduleDependencies": [
     {
-      "account": ">=0.6.0"
+      "account": ">=0.7.0"
     },
     {
       "organization": ">=0.1.1"

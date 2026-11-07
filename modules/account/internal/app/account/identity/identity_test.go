@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sync"
 	"testing"
@@ -9,7 +10,9 @@ import (
 
 	"github.com/lynxland/appkit/clock"
 	"github.com/lynxland/appkit/contrib/bunx/testutil"
+	"github.com/lynxland/appkit/crud"
 	"github.com/lynxland/appkit/jwt"
+	"github.com/lynxland/appkit/ratelimit"
 	"github.com/lynxland/lynx-start/modules/account/domain/account/identity"
 )
 
@@ -54,6 +57,16 @@ func (r *fakeRepo) GetByEmail(_ context.Context, email string) (*identity.User, 
 	return nil, identity.ErrUserNotFound
 }
 
+func (r *fakeRepo) UpdateStatus(context.Context, string, string, time.Time) error { return nil }
+func (r *fakeRepo) UpdateEmailVerified(_ context.Context, id string, v bool, _ time.Time) error {
+	if u, ok := r.users[id]; ok {
+		u.EmailVerified = v
+	}
+	return nil
+}
+func (r *fakeRepo) List(context.Context, crud.PagePlan) ([]*identity.User, int, error) {
+	return nil, 0, nil
+}
 func (r *fakeRepo) UpdatePassword(_ context.Context, user *identity.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -97,7 +110,7 @@ func newTestUseCase(t *testing.T) (*UseCase, *fakeRepo, *testutil.CapturePublish
 	fake := clock.NewFake(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
 	signer := jwt.NewSigner(testMaster, PurposeAccessToken, testIssuer, 30*time.Minute, fake)
 	verifier := jwt.NewVerifier(testMaster, PurposeAccessToken, testIssuer)
-	return New(repo, testutil.InlineRunner{}, pub, signer, verifier, fake), repo, pub, fake
+	return New(repo, testutil.InlineRunner{}, pub, signer, verifier, signer, verifier, nil, fake), repo, pub, fake
 }
 
 func TestRegister(t *testing.T) {
@@ -243,5 +256,107 @@ func TestChangePassword(t *testing.T) {
 	}
 	if got := pub.Names(); len(got) != 2 || got[1] != "account.user.password-changed" {
 		t.Errorf("events = %v, want identity.user.password-changed as second", got)
+	}
+}
+
+// TestLoginRateLimit 锁定语义：阈值内失败→仍可尝试；达阈值→拒绝（与
+// 密码错误同响应——锁定态不可探测）；窗口滑动（fake clock）后解锁。
+func TestLoginRateLimit(t *testing.T) {
+	uc, repo, _, clk := newTestUseCase(t)
+	uc.loginFails = ratelimit.NewSlidingWindow(3, 10*time.Minute)
+	if _, _, err := uc.Register(context.Background(), "rl@example.com", "password123", "RL"); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 3; i++ {
+		if _, _, err := uc.Login(context.Background(), "rl@example.com", "wrong-password"); err != identity.ErrInvalidCredentials {
+			t.Fatalf("fail %d: err = %v", i, err)
+		}
+	}
+	// 第 4 次：正确密码也被拒（锁定）。
+	if _, _, err := uc.Login(context.Background(), "rl@example.com", "password123"); err != identity.ErrInvalidCredentials {
+		t.Fatalf("locked login err = %v, want ErrInvalidCredentials", err)
+	}
+	// 窗口滑出（失败记录退出）→ 解锁。
+	clk.Advance(11 * time.Minute)
+	if _, _, err := uc.Login(context.Background(), "rl@example.com", "password123"); err != nil {
+		t.Fatalf("unlocked login err = %v", err)
+	}
+	_ = repo
+}
+
+// TestPasswordResetEnumerationSafety 枚举防护：不存在邮箱与存在邮箱的
+// 响应完全一致（都成功、无差异）。
+func TestPasswordResetEnumerationSafety(t *testing.T) {
+	uc, _, pub, _ := newTestUseCase(t)
+	if err := uc.RequestPasswordReset(context.Background(), "ghost@example.com"); err != nil {
+		t.Fatalf("ghost reset err = %v, want nil", err)
+	}
+	// ghost 不产生事件（不泄露存在性）。
+	for _, e := range pub.Envelopes() {
+		if e.Name == identity.EventUserResetRequested {
+			t.Fatal("ghost reset published event (enumeration leak)")
+		}
+	}
+	if _, _, err := uc.Register(context.Background(), "real@example.com", "password123", "R"); err != nil {
+		t.Fatal(err)
+	}
+	if err := uc.RequestPasswordReset(context.Background(), "real@example.com"); err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, e := range pub.Envelopes() {
+		if e.Name == identity.EventUserResetRequested {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("real reset did not publish event")
+	}
+}
+
+// TestPasswordResetFlow 全流：请求→确认（令牌改密）→旧密码失效+会话
+// 吊销事件发出。
+func TestPasswordResetFlow(t *testing.T) {
+	uc, _, pub, _ := newTestUseCase(t)
+	if _, _, err := uc.Register(context.Background(), "reset@example.com", "password123", "R"); err != nil {
+		t.Fatal(err)
+	}
+	if err := uc.RequestPasswordReset(context.Background(), "reset@example.com"); err != nil {
+		t.Fatal(err)
+	}
+	// 从事件载荷截取令牌（邮件通道在 e2e 验证）。
+	var token string
+	for _, e := range pub.Envelopes() {
+		var payload struct {
+			Token string `json:"token"`
+		}
+		_ = json.Unmarshal(e.Payload, &payload)
+		if payload.Token != "" {
+			token = payload.Token
+		}
+	}
+	if token == "" {
+		t.Fatal("reset token not published")
+	}
+	if err := uc.ConfirmPasswordReset(context.Background(), token, "new-password-456"); err != nil {
+		t.Fatalf("confirm reset: %v", err)
+	}
+	// 旧密码失效。
+	if _, _, err := uc.Login(context.Background(), "reset@example.com", "password123"); err != identity.ErrInvalidCredentials {
+		t.Fatalf("old password err = %v, want ErrInvalidCredentials", err)
+	}
+	// 新密码可登录。
+	if _, _, err := uc.Login(context.Background(), "reset@example.com", "new-password-456"); err != nil {
+		t.Fatalf("new password login: %v", err)
+	}
+	// 改密事件已发（session 联动的驱动源）。
+	sawChanged := false
+	for _, e := range pub.Envelopes() {
+		if e.Name == identity.EventUserPasswordChanged {
+			sawChanged = true
+		}
+	}
+	if !sawChanged {
+		t.Fatal("password-changed event missing after reset")
 	}
 }

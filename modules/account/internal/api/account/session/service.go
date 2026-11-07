@@ -31,12 +31,12 @@ type Service struct {
 func NewService(uc *appsession.UseCase) *Service { return &Service{uc: uc} }
 
 // CreateSession 处理「已认证主体升级为可吊销会话」。
-func (s *Service) CreateSession(ctx context.Context, _ *sessionv1.CreateSessionRequest) (*sessionv1.CreateSessionResponse, error) {
+func (s *Service) CreateSession(ctx context.Context, req *sessionv1.CreateSessionRequest) (*sessionv1.CreateSessionResponse, error) {
 	p, ok := principal.From(ctx)
 	if !ok || p.ID == "" {
 		return nil, status.Error(codes.Unauthenticated, "authentication required")
 	}
-	pair, err := s.uc.CreateSession(ctx, p.ID, p.Attrs["email"])
+	pair, err := s.uc.CreateSession(ctx, p.ID, p.Attrs["email"], req.GetUserAgent())
 	if err != nil {
 		return nil, toStatus(err)
 	}

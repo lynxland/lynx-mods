@@ -31,11 +31,20 @@ func TestPolicyBuildable(t *testing.T) {
 		"/identity.v1.IdentityService/Login",
 		"/identity.v1.IdentityService/GetMe",
 		"/identity.v1.IdentityService/ChangePassword",
+		"/identity.v1.IdentityService/RequestEmailVerification",
+		"/identity.v1.IdentityService/VerifyEmail",
+		"/identity.v1.IdentityService/RequestPasswordReset",
+		"/identity.v1.IdentityService/ConfirmPasswordReset",
+		"/identity.v1.IdentityService/DisableUser",
+		"/identity.v1.IdentityService/EnableUser",
+		"/identity.v1.IdentityService/ListUsers",
 		// session 域
 		"/session.v1.SessionService/CreateSession",
 		"/session.v1.SessionService/Refresh",
 		"/session.v1.SessionService/Logout",
 		"/session.v1.SessionService/LogoutAll",
+		"/session.v1.SessionService/ListMySessions",
+		"/session.v1.SessionService/RevokeSession",
 		// access 域
 		"/access.v1.AccessService/GrantRole",
 		"/access.v1.AccessService/RevokeRole",
@@ -47,18 +56,27 @@ func TestPolicyBuildable(t *testing.T) {
 		}
 	}
 	anonymous := map[string]bool{
-		"/identity.v1.IdentityService/Register":       true,
-		"/identity.v1.IdentityService/Login":          true,
-		"/identity.v1.IdentityService/GetMe":          false,
-		"/identity.v1.IdentityService/ChangePassword": false,
-		"/session.v1.SessionService/CreateSession":    false,
-		"/session.v1.SessionService/Refresh":          true,
-		"/session.v1.SessionService/Logout":           false,
-		"/session.v1.SessionService/LogoutAll":        false,
-		"/access.v1.AccessService/GrantRole":          false,
-		"/access.v1.AccessService/RevokeRole":         false,
-		"/access.v1.AccessService/ListUserRoles":      false,
-		"/access.v1.AccessService/ListMyRoles":        false,
+		"/identity.v1.IdentityService/Register":                 true,
+		"/identity.v1.IdentityService/Login":                    true,
+		"/identity.v1.IdentityService/GetMe":                    false,
+		"/identity.v1.IdentityService/ChangePassword":           false,
+		"/identity.v1.IdentityService/RequestEmailVerification": false,
+		"/identity.v1.IdentityService/VerifyEmail":              false,
+		"/identity.v1.IdentityService/RequestPasswordReset":     true, // 匿名（枚举防护：恒成功）
+		"/identity.v1.IdentityService/ConfirmPasswordReset":     true, // 匿名（令牌即凭证）
+		"/identity.v1.IdentityService/DisableUser":              false,
+		"/identity.v1.IdentityService/EnableUser":               false,
+		"/identity.v1.IdentityService/ListUsers":                false,
+		"/session.v1.SessionService/CreateSession":              false,
+		"/session.v1.SessionService/Refresh":                    true,
+		"/session.v1.SessionService/Logout":                     false,
+		"/session.v1.SessionService/LogoutAll":                  false,
+		"/session.v1.SessionService/ListMySessions":             false,
+		"/session.v1.SessionService/RevokeSession":              false,
+		"/access.v1.AccessService/GrantRole":                    false,
+		"/access.v1.AccessService/RevokeRole":                   false,
+		"/access.v1.AccessService/ListUserRoles":                false,
+		"/access.v1.AccessService/ListMyRoles":                  false,
 	}
 	for m, want := range anonymous {
 		if got := set.IsAnonymous(m); got != want {

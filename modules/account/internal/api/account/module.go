@@ -31,6 +31,7 @@ import (
 	"github.com/lynxland/appkit/configkit"
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/jwt"
+	"github.com/lynxland/appkit/ratelimit"
 	"github.com/lynxland/grpcapi/authn"
 	"github.com/lynxland/grpcapi/server"
 	"github.com/lynxland/lynx"
@@ -55,6 +56,10 @@ func Module() appkit.Module {
 		PublishedEvents: []string{
 			domainidentity.EventUserCreated,
 			domainidentity.EventUserPasswordChanged,
+			domainidentity.EventUserDisabled,
+			domainidentity.EventUserEnabled,
+			domainidentity.EventUserVerificationRequested,
+			domainidentity.EventUserResetRequested,
 			domainsession.EventSessionCreated,
 			domainsession.EventSessionRefreshed,
 			domainsession.EventSessionRevoked,
@@ -63,8 +68,9 @@ func Module() appkit.Module {
 		},
 		ConsumedEvents: []string{
 			// 模块内联动（合并前的跨模块订阅随 ADR-0009 内化）：
-			// identity 改密 → session 全局吊销该用户会话。
+			// 改密 → session 全局吊销；停用（v0.7.0）→ 同款全吊销。
 			domainidentity.EventUserPasswordChanged,
+			domainidentity.EventUserDisabled,
 		},
 		Config: appkit.ConfigSpec{
 			Defaults: map[string]any{
@@ -112,8 +118,17 @@ func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
 	// purpose 域隔离：访问令牌的派生用途固定，其他用途的令牌不可通过验证。
 	identitySigner := jwt.NewSigner(idcfg.Secret, appidentity.PurposeAccessToken, idcfg.Issuer, idcfg.TokenTTL, clock.System{})
 	identityVerifier := jwt.NewVerifier(idcfg.Secret, appidentity.PurposeAccessToken, idcfg.Issuer)
+	// 一次性令牌（邮箱验证/密码重置共用签发器，用途写在 claims 里互斥
+	// 校验；15 分钟短时效，单次性由状态变化达成——见 app 层注释）。
+	oneShotSigner := jwt.NewSigner(idcfg.Secret, "identity-one-shot", idcfg.Issuer, appidentity.OneShotTokenTTL, clock.System{})
+	oneShotVerifier := jwt.NewVerifier(idcfg.Secret, "identity-one-shot", idcfg.Issuer)
+	// 登录失败滑窗限流（login_max_fails=0 关闭；进程内实现，单进程语义）。
+	var loginFails ratelimit.Limiter
+	if idcfg.LoginMaxFails > 0 {
+		loginFails = ratelimit.NewSlidingWindow(int64(idcfg.LoginMaxFails), idcfg.LoginLockWindow)
+	}
 	identityRepo := infraindentity.NewRepository(db)
-	identityUC := appidentity.New(identityRepo, deps.Tx, deps.Events, identitySigner, identityVerifier, clock.System{})
+	identityUC := appidentity.New(identityRepo, deps.Tx, deps.Events, identitySigner, identityVerifier, oneShotSigner, oneShotVerifier, loginFails, clock.System{})
 
 	// —— session 域 ——
 	var sescfg appsession.Config

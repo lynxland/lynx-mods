@@ -160,6 +160,13 @@ func (r *fakeUserRepo) GetByEmail(_ context.Context, email string) (*identity.Us
 	return nil, identity.ErrUserNotFound
 }
 
+func (r *fakeUserRepo) UpdateStatus(context.Context, string, string, time.Time) error { return nil }
+func (r *fakeUserRepo) UpdateEmailVerified(context.Context, string, bool, time.Time) error {
+	return nil
+}
+func (r *fakeUserRepo) List(context.Context, crud.PagePlan) ([]*identity.User, int, error) {
+	return nil, 0, nil
+}
 func (r *fakeUserRepo) UpdatePassword(_ context.Context, _ *identity.User) error { return nil }
 
 // newUC 装配被测用例（共享 fake：InlineRunner/CapturePublisher，ADR-0005）。

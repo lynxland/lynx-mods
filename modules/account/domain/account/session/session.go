@@ -25,6 +25,7 @@ var (
 	ErrSessionNotFound = space.New("SESSION_NOT_FOUND", "session not found")
 	ErrSessionRevoked  = space.New("SESSION_REVOKED", "session is revoked")
 	ErrSessionExpired  = space.New("SESSION_EXPIRED", "session is expired")
+	ErrRotateConflict  = space.New("ROTATE_CONFLICT", "rotate raced with a concurrent refresh (treated as replay)")
 	ErrRefreshRejected = space.New("REFRESH_REJECTED", "refresh token is rejected")
 )
 
@@ -65,15 +66,17 @@ type Session struct {
 	ExpiresAt       time.Time // 绝对过期（自创建起算，轮换不续期——滑动窗口留给后续）
 	RevokedAt       time.Time
 	RevokeReason    string
+	UserAgent       string // 创建时客户端自报（设备管理的展示元数据，非鉴权依据）
 }
 
-// NewSession 构造新会话（refreshJTI 是首个刷新令牌的 jti）。
-func NewSession(id, userID, refreshJTI string, now, expiresAt time.Time) (*Session, error) {
+// NewSession 构造新会话（refreshJTI 是首个刷新令牌的 jti；userAgent
+// 是创建时客户端自报，仅作设备列表展示）。
+func NewSession(id, userID, refreshJTI, userAgent string, now, expiresAt time.Time) (*Session, error) {
 	if id == "" || userID == "" || refreshJTI == "" {
 		return nil, fmt.Errorf("session: empty id/userID/refreshJTI")
 	}
 	return &Session{
-		ID: id, UserID: userID, RefreshJTI: refreshJTI,
+		ID: id, UserID: userID, RefreshJTI: refreshJTI, UserAgent: userAgent,
 		Status:          StatusActive,
 		CreatedAt:       now,
 		LastRefreshedAt: now,

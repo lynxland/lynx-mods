@@ -31,9 +31,11 @@ var (
 // 与 Module().ConsumedEvents 声明漂移），不 import 发布方代码。
 // organization>=0.1.1 起 member.* 载荷含 organization_name。
 const (
-	IdentityUserPasswordChanged = "account.user.password-changed"
-	OrganizationMemberAdded     = "organization.member.added"
-	OrganizationMemberRemoved   = "organization.member.removed"
+	IdentityUserPasswordChanged      = "account.user.password-changed"
+	OrganizationMemberAdded          = "organization.member.added"
+	OrganizationMemberRemoved        = "organization.member.removed"
+	AccountUserVerificationRequested = "account.user.verification-requested"
+	AccountUserResetRequested        = "account.user.reset-requested"
 )
 
 // TypeCustom 是显式发送（Sender）在未指定 Type 时的默认通知类型。

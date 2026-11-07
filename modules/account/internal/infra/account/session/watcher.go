@@ -56,7 +56,7 @@ func (w *PasswordChangedWatcher) handle(ctx context.Context, e *eventbus.RawEven
 		w.logger.Warn("account session watcher: malformed envelope, drop", "topic", e.Topic, "error", err)
 		return nil
 	}
-	if env.Name != domainidentity.EventUserPasswordChanged {
+	if env.Name != domainidentity.EventUserPasswordChanged && env.Name != domainidentity.EventUserDisabled {
 		return nil
 	}
 	var payload struct {
@@ -66,6 +66,7 @@ func (w *PasswordChangedWatcher) handle(ctx context.Context, e *eventbus.RawEven
 		w.logger.Warn("account session watcher: payload missing user id, drop", "event", env.Name)
 		return nil
 	}
+	// 改密与停用（v0.7.0）同款联动：吊销该用户全部会话。
 	if err := w.uc.OnPasswordChanged(ctx, payload.ID); err != nil {
 		w.logger.Error("account session watcher: revoke on password change failed, will retry", "user_id", payload.ID, "error", err)
 		return err

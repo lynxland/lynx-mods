@@ -57,6 +57,16 @@ func defaultTemplates() map[string]Template {
 			Title: "{{.title}}",
 			Body:  "{{.body}}",
 		},
+		// account 的一次性令牌流（v0.7.0）：令牌在载荷——邮件模板应渲染
+		// 成带链接的正文（应用在 config.yaml 覆盖为自家前端地址）。
+		notification.AccountUserVerificationRequested: {
+			Title: "验证你的邮箱",
+			Body:  "请使用以下验证令牌完成邮箱验证（15 分钟内有效）：{{.token}}",
+		},
+		notification.AccountUserResetRequested: {
+			Title: "重置你的密码",
+			Body:  "请使用以下重置令牌重置密码（15 分钟内有效）：{{.token}}",
+		},
 	}
 }
 
@@ -264,4 +274,16 @@ func (u *UseCase) MarkRead(ctx context.Context, userID, id string) error {
 // MarkAllRead 全部未读置已读，返回标记条数。
 func (u *UseCase) MarkAllRead(ctx context.Context, userID string) (int64, error) {
 	return u.repo.MarkAllRead(ctx, userID, u.now().UTC())
+}
+
+// OnVerificationRequested 投递邮箱验证令牌（account 的事件）。
+func (u *UseCase) OnVerificationRequested(ctx context.Context, userID, token string) error {
+	return u.dispatch(ctx, userID, notification.AccountUserVerificationRequested,
+		map[string]string{"id": userID, "token": token})
+}
+
+// OnResetRequested 投递密码重置令牌（account 的事件）。
+func (u *UseCase) OnResetRequested(ctx context.Context, userID, token string) error {
+	return u.dispatch(ctx, userID, notification.AccountUserResetRequested,
+		map[string]string{"id": userID, "token": token})
 }

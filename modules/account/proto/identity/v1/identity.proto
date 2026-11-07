@@ -39,6 +39,55 @@ service IdentityService {
     option (grpcapi.v1.method) = { policy: { authenticated: true } };
     option (google.api.http) = { patch: "/v1/identity/me/password" body: "*" };
   }
+
+  // 请求邮箱验证（认证）：向账号邮箱发送验证令牌（经
+  // account.user.verification-requested 事件——通知渠道投递）；幂等。
+  rpc RequestEmailVerification(RequestEmailVerificationRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { post: "/v1/identity:request-email-verification" body: "*" };
+  }
+
+  // 验证邮箱（认证——令牌即凭证，也可由邮件链接带令牌经匿名面调用，
+  // 此处保守要求认证 + 令牌双凭证）。
+  rpc VerifyEmail(VerifyEmailRequest) returns (User) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { post: "/v1/identity:verify-email" body: "*" };
+  }
+
+  // 请求密码重置（匿名）：**恒返回成功**（邮箱枚举防护，OWASP——存在
+  // 与否响应无差异）；令牌经 account.user.reset-requested 事件投递到
+  // 账号邮箱（不存在的邮箱只发事件到无收件人处，无泄露）。
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { anonymous: true } };
+    option (google.api.http) = { post: "/v1/identity:request-password-reset" body: "*" };
+  }
+
+  // 确认密码重置（匿名——令牌即凭证）：改密并全局吊销会话（单次性由
+  // 改密生效达成——令牌用后密码已换，重放无效）。
+  rpc ConfirmPasswordReset(ConfirmPasswordResetRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { anonymous: true } };
+    option (google.api.http) = { post: "/v1/identity:confirm-password-reset" body: "*" };
+  }
+
+  // 禁用用户（admin）：登录/刷新拒绝（identity 已有状态检查）；已发
+  // 访问令牌在 TTL 内残留（无 session 的部署上界=令牌时效，装 session
+  // 时经 account.user.disabled 事件即时吊销——README 已知限制）。
+  rpc DisableUser(DisableUserRequest) returns (User) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["account.user.write"] } };
+    option (google.api.http) = { post: "/v1/users/{user_id}:disable" body: "*" };
+  }
+
+  // 启用用户（admin）。
+  rpc EnableUser(EnableUserRequest) returns (User) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["account.user.write"] } };
+    option (google.api.http) = { post: "/v1/users/{user_id}:enable" body: "*" };
+  }
+
+  // 列用户（admin，keyset 分页，created_at 降序）。
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["account.user.read"] } };
+    option (google.api.http) = { get: "/v1/users" };
+  }
 }
 
 // User 是用户资源（不含口令散列；status 为保留位，v0.1 恒 active）。
@@ -85,4 +134,37 @@ message GetMeResponse {
 message ChangePasswordRequest {
   string old_password = 1;
   string new_password = 2;
+}
+
+// RequestEmailVerificationRequest 是邮箱验证请求（幂等；令牌发往认证
+// 主体的邮箱）。
+message RequestEmailVerificationRequest {}
+
+// RequestPasswordResetRequest 是密码重置请求（匿名面；**恒成功**——
+// 邮箱枚举防护）。
+message RequestPasswordResetRequest {
+  string email = 1;
+}
+
+message VerifyEmailRequest {
+  string token = 1; // 邮件投递的验证令牌
+}
+
+message ConfirmPasswordResetRequest {
+  string token = 1;     // 邮件投递的重置令牌
+  string new_password = 2;
+}
+
+message DisableUserRequest { string user_id = 1; }
+message EnableUserRequest { string user_id = 1; }
+
+message ListUsersRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
 }

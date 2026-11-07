@@ -8,7 +8,7 @@ import (
 var t0 = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
 func TestSessionLifecycle(t *testing.T) {
-	s, err := NewSession("s1", "u1", "jti-1", t0, t0.Add(24*time.Hour))
+	s, err := NewSession("s1", "u1", "jti-1", "ua", t0, t0.Add(24*time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestSessionLifecycle(t *testing.T) {
 
 func TestNewSessionGuards(t *testing.T) {
 	for _, args := range [][3]string{{"", "u", "j"}, {"s", "", "j"}, {"s", "u", ""}} {
-		if _, err := NewSession(args[0], args[1], args[2], t0, t0); err == nil {
+		if _, err := NewSession(args[0], args[1], args[2], "ua", t0, t0); err == nil {
 			t.Errorf("NewSession(%v): want error", args)
 		}
 	}

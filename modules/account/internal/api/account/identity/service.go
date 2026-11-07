@@ -129,3 +129,77 @@ func toAPI(u *identity.User) *identityv1.User {
 		UpdatedAt:   timestamppb.New(u.UpdatedAt),
 	}
 }
+
+// ---- P0 流（v0.7.0）----
+
+// RequestEmailVerification 向认证主体邮箱发送验证令牌（幂等）。
+func (s *Service) RequestEmailVerification(ctx context.Context, _ *identityv1.RequestEmailVerificationRequest) (*emptypb.Empty, error) {
+	who, err := requirePrincipal(ctx)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	if err := s.uc.RequestEmailVerification(ctx, who); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// VerifyEmail 验证邮箱令牌。
+func (s *Service) VerifyEmail(ctx context.Context, req *identityv1.VerifyEmailRequest) (*identityv1.User, error) {
+	user, err := s.uc.VerifyEmail(ctx, req.GetToken())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return toAPI(user), nil
+}
+
+// RequestPasswordReset 恒成功（枚举防护）。
+func (s *Service) RequestPasswordReset(ctx context.Context, req *identityv1.RequestPasswordResetRequest) (*emptypb.Empty, error) {
+	if err := s.uc.RequestPasswordReset(ctx, req.GetEmail()); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// ConfirmPasswordReset 验令牌改密（联动会话全局吊销）。
+func (s *Service) ConfirmPasswordReset(ctx context.Context, req *identityv1.ConfirmPasswordResetRequest) (*emptypb.Empty, error) {
+	if err := s.uc.ConfirmPasswordReset(ctx, req.GetToken(), req.GetNewPassword()); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// DisableUser 停用用户（admin）。
+func (s *Service) DisableUser(ctx context.Context, req *identityv1.DisableUserRequest) (*identityv1.User, error) {
+	user, err := s.uc.DisableUser(ctx, req.GetUserId())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return toAPI(user), nil
+}
+
+// EnableUser 启用用户（admin）。
+func (s *Service) EnableUser(ctx context.Context, req *identityv1.EnableUserRequest) (*identityv1.User, error) {
+	user, err := s.uc.EnableUser(ctx, req.GetUserId())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return toAPI(user), nil
+}
+
+// ListUsers 列用户（admin，keyset 分页）。
+func (s *Service) ListUsers(ctx context.Context, req *identityv1.ListUsersRequest) (*identityv1.ListUsersResponse, error) {
+	res, err := s.uc.ListUsers(ctx, req.GetPageSize(), req.GetPageToken())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	resp := &identityv1.ListUsersResponse{
+		Users:         make([]*identityv1.User, 0, len(res.Users)),
+		NextPageToken: res.NextToken,
+		TotalSize:     res.TotalSize,
+	}
+	for _, u := range res.Users {
+		resp.Users = append(resp.Users, toAPI(u))
+	}
+	return resp, nil
+}
