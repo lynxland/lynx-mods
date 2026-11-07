@@ -48,6 +48,9 @@ type Writer struct {
 // NewWriter 构造写入器。
 func NewWriter(repo domainaudit.Repository, logger *slog.Logger, opts WriterOptions) *Writer {
 	opts.applyDefaults()
+	if logger == nil {
+		logger = slog.Default()
+	}
 	return &Writer{
 		ch:     make(chan *domainaudit.Record, opts.Buffer),
 		repo:   repo,
