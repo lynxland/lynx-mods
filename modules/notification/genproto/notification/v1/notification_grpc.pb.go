@@ -20,9 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NotificationService_ListNotifications_FullMethodName        = "/notification.v1.NotificationService/ListNotifications"
-	NotificationService_MarkNotificationRead_FullMethodName     = "/notification.v1.NotificationService/MarkNotificationRead"
-	NotificationService_MarkAllNotificationsRead_FullMethodName = "/notification.v1.NotificationService/MarkAllNotificationsRead"
+	NotificationService_ListNotifications_FullMethodName          = "/notification.v1.NotificationService/ListNotifications"
+	NotificationService_MarkNotificationRead_FullMethodName       = "/notification.v1.NotificationService/MarkNotificationRead"
+	NotificationService_GetNotificationPreferences_FullMethodName = "/notification.v1.NotificationService/GetNotificationPreferences"
+	NotificationService_SetNotificationPreference_FullMethodName  = "/notification.v1.NotificationService/SetNotificationPreference"
+	NotificationService_MarkAllNotificationsRead_FullMethodName   = "/notification.v1.NotificationService/MarkAllNotificationsRead"
 )
 
 // NotificationServiceClient is the client API for NotificationService service.
@@ -39,6 +41,8 @@ type NotificationServiceClient interface {
 	// 标记单条已读（仅本人的通知；幂等）。要求认证。
 	MarkNotificationRead(ctx context.Context, in *MarkNotificationReadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 标记全部未读为已读，返回标记条数。要求认证。
+	GetNotificationPreferences(ctx context.Context, in *GetNotificationPreferencesRequest, opts ...grpc.CallOption) (*NotificationPreferencesResponse, error)
+	SetNotificationPreference(ctx context.Context, in *SetNotificationPreferenceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	MarkAllNotificationsRead(ctx context.Context, in *MarkAllNotificationsReadRequest, opts ...grpc.CallOption) (*MarkAllNotificationsReadResponse, error)
 }
 
@@ -70,6 +74,26 @@ func (c *notificationServiceClient) MarkNotificationRead(ctx context.Context, in
 	return out, nil
 }
 
+func (c *notificationServiceClient) GetNotificationPreferences(ctx context.Context, in *GetNotificationPreferencesRequest, opts ...grpc.CallOption) (*NotificationPreferencesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NotificationPreferencesResponse)
+	err := c.cc.Invoke(ctx, NotificationService_GetNotificationPreferences_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *notificationServiceClient) SetNotificationPreference(ctx context.Context, in *SetNotificationPreferenceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, NotificationService_SetNotificationPreference_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *notificationServiceClient) MarkAllNotificationsRead(ctx context.Context, in *MarkAllNotificationsReadRequest, opts ...grpc.CallOption) (*MarkAllNotificationsReadResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MarkAllNotificationsReadResponse)
@@ -94,6 +118,8 @@ type NotificationServiceServer interface {
 	// 标记单条已读（仅本人的通知；幂等）。要求认证。
 	MarkNotificationRead(context.Context, *MarkNotificationReadRequest) (*emptypb.Empty, error)
 	// 标记全部未读为已读，返回标记条数。要求认证。
+	GetNotificationPreferences(context.Context, *GetNotificationPreferencesRequest) (*NotificationPreferencesResponse, error)
+	SetNotificationPreference(context.Context, *SetNotificationPreferenceRequest) (*emptypb.Empty, error)
 	MarkAllNotificationsRead(context.Context, *MarkAllNotificationsReadRequest) (*MarkAllNotificationsReadResponse, error)
 	mustEmbedUnimplementedNotificationServiceServer()
 }
@@ -110,6 +136,12 @@ func (UnimplementedNotificationServiceServer) ListNotifications(context.Context,
 }
 func (UnimplementedNotificationServiceServer) MarkNotificationRead(context.Context, *MarkNotificationReadRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarkNotificationRead not implemented")
+}
+func (UnimplementedNotificationServiceServer) GetNotificationPreferences(context.Context, *GetNotificationPreferencesRequest) (*NotificationPreferencesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetNotificationPreferences not implemented")
+}
+func (UnimplementedNotificationServiceServer) SetNotificationPreference(context.Context, *SetNotificationPreferenceRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetNotificationPreference not implemented")
 }
 func (UnimplementedNotificationServiceServer) MarkAllNotificationsRead(context.Context, *MarkAllNotificationsReadRequest) (*MarkAllNotificationsReadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarkAllNotificationsRead not implemented")
@@ -171,6 +203,42 @@ func _NotificationService_MarkNotificationRead_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NotificationService_GetNotificationPreferences_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNotificationPreferencesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).GetNotificationPreferences(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_GetNotificationPreferences_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).GetNotificationPreferences(ctx, req.(*GetNotificationPreferencesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NotificationService_SetNotificationPreference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetNotificationPreferenceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).SetNotificationPreference(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_SetNotificationPreference_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).SetNotificationPreference(ctx, req.(*SetNotificationPreferenceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _NotificationService_MarkAllNotificationsRead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MarkAllNotificationsReadRequest)
 	if err := dec(in); err != nil {
@@ -203,6 +271,14 @@ var NotificationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarkNotificationRead",
 			Handler:    _NotificationService_MarkNotificationRead_Handler,
+		},
+		{
+			MethodName: "GetNotificationPreferences",
+			Handler:    _NotificationService_GetNotificationPreferences_Handler,
+		},
+		{
+			MethodName: "SetNotificationPreference",
+			Handler:    _NotificationService_SetNotificationPreference_Handler,
 		},
 		{
 			MethodName: "MarkAllNotificationsRead",

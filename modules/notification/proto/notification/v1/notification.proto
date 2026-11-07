@@ -31,6 +31,16 @@ service NotificationService {
   }
 
   // 标记全部未读为已读，返回标记条数。要求认证。
+  rpc GetNotificationPreferences(GetNotificationPreferencesRequest) returns (NotificationPreferencesResponse) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { get: "/v1/my/notification-preferences" };
+  }
+
+  rpc SetNotificationPreference(SetNotificationPreferenceRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { put: "/v1/my/notification-preferences" body: "*" };
+  }
+
   rpc MarkAllNotificationsRead(MarkAllNotificationsReadRequest) returns (MarkAllNotificationsReadResponse) {
     option (grpcapi.v1.method) = { policy: { authenticated: true } };
     option (google.api.http) = { post: "/v1/notifications:mark-all-read" body: "*" };
@@ -78,3 +88,22 @@ message MarkAllNotificationsReadResponse {
   // 本次标记为已读的条数。
   int64 updated = 1;
 }
+
+// NotificationPreference 是一条投递偏好（未配置的类型默认启用）。
+message NotificationPreference {
+  string type = 1;
+  string channel = 2;   // inapp / email
+  bool enabled = 3;
+}
+
+message NotificationPreferencesResponse {
+  repeated NotificationPreference preferences = 1;
+}
+
+message SetNotificationPreferenceRequest {
+  string type = 1;
+  string channel = 2;
+  bool enabled = 3;
+}
+
+message GetNotificationPreferencesRequest {}

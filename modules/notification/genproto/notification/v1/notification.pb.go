@@ -378,6 +378,207 @@ func (x *MarkAllNotificationsReadResponse) GetUpdated() int64 {
 	return 0
 }
 
+// NotificationPreference 是一条投递偏好（未配置的类型默认启用）。
+type NotificationPreference struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Channel       string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"` // inapp / email
+	Enabled       bool                   `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NotificationPreference) Reset() {
+	*x = NotificationPreference{}
+	mi := &file_notification_v1_notification_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NotificationPreference) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotificationPreference) ProtoMessage() {}
+
+func (x *NotificationPreference) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_v1_notification_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotificationPreference.ProtoReflect.Descriptor instead.
+func (*NotificationPreference) Descriptor() ([]byte, []int) {
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *NotificationPreference) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *NotificationPreference) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
+}
+
+func (x *NotificationPreference) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type NotificationPreferencesResponse struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Preferences   []*NotificationPreference `protobuf:"bytes,1,rep,name=preferences,proto3" json:"preferences,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NotificationPreferencesResponse) Reset() {
+	*x = NotificationPreferencesResponse{}
+	mi := &file_notification_v1_notification_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NotificationPreferencesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotificationPreferencesResponse) ProtoMessage() {}
+
+func (x *NotificationPreferencesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_v1_notification_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotificationPreferencesResponse.ProtoReflect.Descriptor instead.
+func (*NotificationPreferencesResponse) Descriptor() ([]byte, []int) {
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *NotificationPreferencesResponse) GetPreferences() []*NotificationPreference {
+	if x != nil {
+		return x.Preferences
+	}
+	return nil
+}
+
+type SetNotificationPreferenceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Channel       string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
+	Enabled       bool                   `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetNotificationPreferenceRequest) Reset() {
+	*x = SetNotificationPreferenceRequest{}
+	mi := &file_notification_v1_notification_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetNotificationPreferenceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetNotificationPreferenceRequest) ProtoMessage() {}
+
+func (x *SetNotificationPreferenceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_v1_notification_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetNotificationPreferenceRequest.ProtoReflect.Descriptor instead.
+func (*SetNotificationPreferenceRequest) Descriptor() ([]byte, []int) {
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *SetNotificationPreferenceRequest) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *SetNotificationPreferenceRequest) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
+}
+
+func (x *SetNotificationPreferenceRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type GetNotificationPreferencesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetNotificationPreferencesRequest) Reset() {
+	*x = GetNotificationPreferencesRequest{}
+	mi := &file_notification_v1_notification_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetNotificationPreferencesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetNotificationPreferencesRequest) ProtoMessage() {}
+
+func (x *GetNotificationPreferencesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_v1_notification_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetNotificationPreferencesRequest.ProtoReflect.Descriptor instead.
+func (*GetNotificationPreferencesRequest) Descriptor() ([]byte, []int) {
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{9}
+}
+
 var File_notification_v1_notification_proto protoreflect.FileDescriptor
 
 const file_notification_v1_notification_proto_rawDesc = "" +
@@ -412,12 +613,27 @@ const file_notification_v1_notification_proto_rawDesc = "" +
 	"\x0fnotification_id\x18\x01 \x01(\tR\x0enotificationId\"!\n" +
 	"\x1fMarkAllNotificationsReadRequest\"<\n" +
 	" MarkAllNotificationsReadResponse\x12\x18\n" +
-	"\aupdated\x18\x01 \x01(\x03R\aupdated2\xfc\x03\n" +
+	"\aupdated\x18\x01 \x01(\x03R\aupdated\"`\n" +
+	"\x16NotificationPreference\x12\x12\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x12\x18\n" +
+	"\achannel\x18\x02 \x01(\tR\achannel\x12\x18\n" +
+	"\aenabled\x18\x03 \x01(\bR\aenabled\"l\n" +
+	"\x1fNotificationPreferencesResponse\x12I\n" +
+	"\vpreferences\x18\x01 \x03(\v2'.notification.v1.NotificationPreferenceR\vpreferences\"j\n" +
+	" SetNotificationPreferenceRequest\x12\x12\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x12\x18\n" +
+	"\achannel\x18\x02 \x01(\tR\achannel\x12\x18\n" +
+	"\aenabled\x18\x03 \x01(\bR\aenabled\"#\n" +
+	"!GetNotificationPreferencesRequest2\xcf\x06\n" +
 	"\x13NotificationService\x12\x8d\x01\n" +
 	"\x11ListNotifications\x12).notification.v1.ListNotificationsRequest\x1a*.notification.v1.ListNotificationsResponse\"!\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/notifications\x12\x9e\x01\n" +
 	"\x14MarkNotificationRead\x12,.notification.v1.MarkNotificationReadRequest\x1a\x16.google.protobuf.Empty\"@\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x022:\x01*\"-/v1/notifications/{notification_id}:mark-read\x12\xb3\x01\n" +
+	"\x1aGetNotificationPreferences\x122.notification.v1.GetNotificationPreferencesRequest\x1a0.notification.v1.NotificationPreferencesResponse\"/\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02!\x12\x1f/v1/my/notification-preferences\x12\x9a\x01\n" +
+	"\x19SetNotificationPreference\x121.notification.v1.SetNotificationPreferenceRequest\x1a\x16.google.protobuf.Empty\"2\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02$:\x01*\x1a\x1f/v1/my/notification-preferences\x12\xb3\x01\n" +
 	"\x18MarkAllNotificationsRead\x120.notification.v1.MarkAllNotificationsReadRequest\x1a1.notification.v1.MarkAllNotificationsReadResponse\"2\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/notifications:mark-all-readBk\xca\xf0\x19\n" +
 	"\n" +
@@ -435,34 +651,43 @@ func file_notification_v1_notification_proto_rawDescGZIP() []byte {
 	return file_notification_v1_notification_proto_rawDescData
 }
 
-var file_notification_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_notification_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_notification_v1_notification_proto_goTypes = []any{
-	(*Notification)(nil),                     // 0: notification.v1.Notification
-	(*ListNotificationsRequest)(nil),         // 1: notification.v1.ListNotificationsRequest
-	(*ListNotificationsResponse)(nil),        // 2: notification.v1.ListNotificationsResponse
-	(*MarkNotificationReadRequest)(nil),      // 3: notification.v1.MarkNotificationReadRequest
-	(*MarkAllNotificationsReadRequest)(nil),  // 4: notification.v1.MarkAllNotificationsReadRequest
-	(*MarkAllNotificationsReadResponse)(nil), // 5: notification.v1.MarkAllNotificationsReadResponse
-	nil,                                      // 6: notification.v1.Notification.PayloadEntry
-	(*timestamppb.Timestamp)(nil),            // 7: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),                    // 8: google.protobuf.Empty
+	(*Notification)(nil),                      // 0: notification.v1.Notification
+	(*ListNotificationsRequest)(nil),          // 1: notification.v1.ListNotificationsRequest
+	(*ListNotificationsResponse)(nil),         // 2: notification.v1.ListNotificationsResponse
+	(*MarkNotificationReadRequest)(nil),       // 3: notification.v1.MarkNotificationReadRequest
+	(*MarkAllNotificationsReadRequest)(nil),   // 4: notification.v1.MarkAllNotificationsReadRequest
+	(*MarkAllNotificationsReadResponse)(nil),  // 5: notification.v1.MarkAllNotificationsReadResponse
+	(*NotificationPreference)(nil),            // 6: notification.v1.NotificationPreference
+	(*NotificationPreferencesResponse)(nil),   // 7: notification.v1.NotificationPreferencesResponse
+	(*SetNotificationPreferenceRequest)(nil),  // 8: notification.v1.SetNotificationPreferenceRequest
+	(*GetNotificationPreferencesRequest)(nil), // 9: notification.v1.GetNotificationPreferencesRequest
+	nil,                           // 10: notification.v1.Notification.PayloadEntry
+	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),         // 12: google.protobuf.Empty
 }
 var file_notification_v1_notification_proto_depIdxs = []int32{
-	6, // 0: notification.v1.Notification.payload:type_name -> notification.v1.Notification.PayloadEntry
-	7, // 1: notification.v1.Notification.read_at:type_name -> google.protobuf.Timestamp
-	7, // 2: notification.v1.Notification.created_at:type_name -> google.protobuf.Timestamp
-	0, // 3: notification.v1.ListNotificationsResponse.notifications:type_name -> notification.v1.Notification
-	1, // 4: notification.v1.NotificationService.ListNotifications:input_type -> notification.v1.ListNotificationsRequest
-	3, // 5: notification.v1.NotificationService.MarkNotificationRead:input_type -> notification.v1.MarkNotificationReadRequest
-	4, // 6: notification.v1.NotificationService.MarkAllNotificationsRead:input_type -> notification.v1.MarkAllNotificationsReadRequest
-	2, // 7: notification.v1.NotificationService.ListNotifications:output_type -> notification.v1.ListNotificationsResponse
-	8, // 8: notification.v1.NotificationService.MarkNotificationRead:output_type -> google.protobuf.Empty
-	5, // 9: notification.v1.NotificationService.MarkAllNotificationsRead:output_type -> notification.v1.MarkAllNotificationsReadResponse
-	7, // [7:10] is the sub-list for method output_type
-	4, // [4:7] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	10, // 0: notification.v1.Notification.payload:type_name -> notification.v1.Notification.PayloadEntry
+	11, // 1: notification.v1.Notification.read_at:type_name -> google.protobuf.Timestamp
+	11, // 2: notification.v1.Notification.created_at:type_name -> google.protobuf.Timestamp
+	0,  // 3: notification.v1.ListNotificationsResponse.notifications:type_name -> notification.v1.Notification
+	6,  // 4: notification.v1.NotificationPreferencesResponse.preferences:type_name -> notification.v1.NotificationPreference
+	1,  // 5: notification.v1.NotificationService.ListNotifications:input_type -> notification.v1.ListNotificationsRequest
+	3,  // 6: notification.v1.NotificationService.MarkNotificationRead:input_type -> notification.v1.MarkNotificationReadRequest
+	9,  // 7: notification.v1.NotificationService.GetNotificationPreferences:input_type -> notification.v1.GetNotificationPreferencesRequest
+	8,  // 8: notification.v1.NotificationService.SetNotificationPreference:input_type -> notification.v1.SetNotificationPreferenceRequest
+	4,  // 9: notification.v1.NotificationService.MarkAllNotificationsRead:input_type -> notification.v1.MarkAllNotificationsReadRequest
+	2,  // 10: notification.v1.NotificationService.ListNotifications:output_type -> notification.v1.ListNotificationsResponse
+	12, // 11: notification.v1.NotificationService.MarkNotificationRead:output_type -> google.protobuf.Empty
+	7,  // 12: notification.v1.NotificationService.GetNotificationPreferences:output_type -> notification.v1.NotificationPreferencesResponse
+	12, // 13: notification.v1.NotificationService.SetNotificationPreference:output_type -> google.protobuf.Empty
+	5,  // 14: notification.v1.NotificationService.MarkAllNotificationsRead:output_type -> notification.v1.MarkAllNotificationsReadResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_notification_v1_notification_proto_init() }
@@ -476,7 +701,7 @@ func file_notification_v1_notification_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notification_v1_notification_proto_rawDesc), len(file_notification_v1_notification_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

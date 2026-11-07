@@ -50,9 +50,9 @@ func TestRepo(t *testing.T) {
 		if err != nil || total != 2 || len(items) != 2 {
 			t.Fatalf("list u1 = %d/%d err=%v", len(items), total, err)
 		}
-		// created_at DESC：同为 t0 时按 id DESC。
-		if items[0].ID != "n2" {
-			t.Errorf("order: first = %s, want n2", items[0].ID)
+		// created_at DESC：同为 t0 时按 id 决胜 ASC（crud v2）。
+		if items[0].ID != "n1" {
+			t.Errorf("order: first = %s, want n1（createdAt 同刻按 id 决胜 ASC）", items[0].ID)
 		}
 		// payload 语义读回（jsonb 重序列化不做字节比较）。
 		if items[0].Payload["k"] != "v" {

@@ -25,4 +25,10 @@ type Repository interface {
 	MarkRead(ctx context.Context, id, userID string, readAt time.Time) (bool, error)
 	// MarkAllRead 把收件人全部未读置为已读，返回标记条数。
 	MarkAllRead(ctx context.Context, userID string, readAt time.Time) (int64, error)
+
+	// UpsertPreference 写入一条投递偏好（复合键整写）。
+	UpsertPreference(ctx context.Context, p Preference) error
+	// ListPreferences 返回用户的全部偏好行（未配置的类型不在其中——
+	// 调用方按「未配置=启用」语义补全）。
+	ListPreferences(ctx context.Context, userID string) ([]Preference, error)
 }

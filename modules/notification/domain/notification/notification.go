@@ -100,3 +100,42 @@ func (n *Notification) MarkRead(now time.Time) {
 
 // Unread 报告未读状态。
 func (n *Notification) Unread() bool { return n.ReadAt == nil }
+
+// ---- 渠道（v0.7.0 渠道化）----
+
+// 渠道名常量（偏好键的第二维；自定义渠道经应用扩展）。
+const (
+	ChannelInApp = "inapp"
+	ChannelEmail = "email"
+)
+
+// Delivery 是一次渠道投递的输入（title/body 已按模板渲染——渠道拿成品，
+// 不再二次格式化；邮件渠道以 title 为主题、title+body 为纯文本正文）。
+type Delivery struct {
+	UserID  string
+	Type    string
+	Title   string
+	Body    string
+	Payload map[string]string
+}
+
+// Channel 是投递渠道端口（infra 实现，Assemble 注入）：站内（落库）与
+// 邮件（SMTP）。Deliver 失败由调用方记死信日志——渠道间失败不互相
+// 阻断（尽力而为，单进程内无重试队列；高可靠投递经 task 模块组合，
+// 见 README）。
+type Channel interface {
+	Name() string
+	Deliver(ctx context.Context, d Delivery) error
+}
+
+// ---- 偏好 ----
+
+// Preference 是一条投递偏好（复合键 UserID+Type+Channel）。未配置 =
+// 启用（乐观默认）；关闭即该类型在该渠道不再投递（退订位的最小实现，
+// 事务性通知的渠道选择权归收件人）。
+type Preference struct {
+	UserID  string
+	Type    string
+	Channel string
+	Enabled bool
+}

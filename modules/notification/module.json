@@ -1,7 +1,7 @@
 {
   "name": "notification",
-  "version": "0.6.0",
-  "description": "通知模块：订阅账号/组织事件自动生成站内通知（渲染快照落库）+ 自助查询与已读标记，依赖 account+organization",
+  "version": "0.7.0",
+  "description": "通知模块：多渠道通知（站内+SMTP 邮件、模板文案、投递偏好/退订位）+ 账号/组织事件订阅联动 + 显式发送（Sender），依赖 account（通道② 收件地址）+organization（事件）",
   "modulePath": "github.com/lynxland/lynx-start/modules/notification",
   "moduleDependencies": [
     {
@@ -16,6 +16,13 @@
     "github.com/lynxland/appkit/contrib/bunx@v0.5.0",
     "github.com/lynxland/lynx@v1.21.0"
   ],
-  "configFragment": "",
-  "kernelConstraint": ">=0.8.0"
+  "configFragment": "notification:\n  smtp:                      # 邮件渠道（host 留空 = 禁用，仅站内投递）\n    host: \"\"\n    port: 587\n    username: \"\"\n    password: \"\"\n    from: \"noreply@example.com\"\n  templates:                 # 文案模板（text/template；数据=事件载荷；默认条目可覆盖）\n    account.user.password-changed:\n      title: \"密码已更改\"\n      body: \"你的密码刚刚被更改。如果不是你本人操作，请立即重置密码。\"",
+  "kernelConstraint": ">=0.8.0",
+  "env": [
+    {
+      "key": "NOTIFICATION_SMTP_PASSWORD",
+      "description": "邮件渠道 SMTP 密码（host 非空时必填）",
+      "secret": true
+    }
+  ]
 }

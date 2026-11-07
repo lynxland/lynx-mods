@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
+	domainnotification "github.com/lynxland/lynx-start/modules/notification/domain/notification"
 	notificationv1 "github.com/lynxland/lynx-start/modules/notification/genproto/notification/v1"
 	appnotification "github.com/lynxland/lynx-start/modules/notification/internal/app/notification"
 	infranotification "github.com/lynxland/lynx-start/modules/notification/internal/infra/notification"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/configkit"
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/grpcapi/server"
 	"github.com/lynxland/lynx"
@@ -26,30 +27,51 @@ import (
 func Module() appkit.Module {
 	return appkit.Module{
 		Name:        "notification",
-		Description: "通知模块：订阅身份/组织事件生成站内通知（渲染快照落库）+ 自助查询与已读标记，依赖 identity+organization",
+		Description: "通知模块：多渠道通知（站内+邮件、模板文案、投递偏好）+ 事件订阅联动 + 显式发送，依赖 account+organization",
 		DependsOn:   []string{"account", "organization"},
 		Policies:    []protoreflect.FileDescriptor{notificationv1.File_notification_v1_notification_proto},
 		Migrations:  migrations.FS,
 		ConsumedEvents: []string{
-			notification.IdentityUserPasswordChanged,
-			notification.OrganizationMemberAdded,
-			notification.OrganizationMemberRemoved,
+			domainnotification.IdentityUserPasswordChanged,
+			domainnotification.OrganizationMemberAdded,
+			domainnotification.OrganizationMemberRemoved,
 		},
 	}
 }
 
-// Assemble 构造动态装配产物：仓储 → 用例 → 处理器 + 事件订阅器。源码归
+// Assemble 构造动态装配产物：配置（模板+SMTP）→ 渠道（站内必在；邮件
+// 视 SMTP 配置，未配置降级禁用）→ 用例 → 处理器 + 事件订阅器。源码归
 // 应用所有：按需修改。
 func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
 	if deps.Bus == nil {
 		return appkit.Assembly{}, fmt.Errorf("notification: 需要事件总线（appkit.Deps.Bus）——请更新 scaffold bootstrap.NewDeps")
 	}
-	uc := appnotification.New(infranotification.NewRepository(bunx.MustDB(deps)))
+	var cfg appnotification.Config
+	if err := configkit.LoadSection(deps.Config, "notification", cfg.ApplyDefaults, &cfg); err != nil {
+		return appkit.Assembly{}, err
+	}
+	db := bunx.MustDB(deps)
+	repo := infranotification.NewRepository(db)
+
+	// 渠道装配：站内必在；邮件渠道收件地址经 account 的 identity 域
+	// 只读端口解析（通道②），SMTP 未配置（host 空）时降级禁用。
+	smtpCfg := infranotification.SMTPConfig{
+		Host: cfg.SMTP.Host, Port: cfg.SMTP.Port,
+		Username: cfg.SMTP.Username, Password: cfg.SMTP.Password, From: cfg.SMTP.From,
+	}
+	channels := []domainnotification.Channel{infranotification.NewInAppChannel(repo)}
+	if email := infranotification.NewEmailChannel(smtpCfg, infranotification.NewUserReader(db)); email != nil {
+		channels = append(channels, email)
+	} else if deps.Logger != nil {
+		deps.Logger.Info("notification: smtp 未配置，邮件渠道禁用（仅站内投递）")
+	}
+
+	uc := appnotification.New(repo, channels, cfg, deps.Logger)
 	return appkit.Assembly{
 		Registrations: []server.Registration{newRegistration(NewService(uc))},
 		Services: []lynx.Service{
-			// 事件→通知联动：订阅 identity.user.password-changed 与
-			// organization.member.*，落站内通知。
+			// 事件→通知联动：订阅 account.user.password-changed 与
+			// organization.member.*，经投递管线（偏好过滤+多渠道）。
 			infranotification.NewWatcher(deps.Bus, uc, deps.Logger),
 		},
 	}, nil

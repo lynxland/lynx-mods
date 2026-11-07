@@ -4,8 +4,10 @@ go 1.26.8
 
 // 模块在本仓内以真实代码形态维护（可编译、可测试、CI 覆盖）。
 // 契约库（appkit + contrib/bunx）以版本依赖消费（ADR-0006）。
-// DependsOn: account+organization 是事件目录依赖（契约②字符串消费，
-// 不 import 其 Go 代码），故无需 replace。
+// DependsOn: account（ADR-0004 通道②：邮件渠道经 identity 域只读端口
+// 解析收件地址——本模块消费其 domain 端口）+ organization（事件目录
+// 字符串消费，不 import 其 Go 代码）。
+replace github.com/lynxland/lynx-start/modules/account => ../account
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0
@@ -14,6 +16,7 @@ require (
 	github.com/lynxland/grpcapi v0.5.0
 	github.com/lynxland/grpcapi/genproto v0.4.0
 	github.com/lynxland/lynx v1.21.0
+	github.com/lynxland/lynx-start/modules/account v0.0.0
 	github.com/uptrace/bun v1.3.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20261019180522-ce908d29299b
 	google.golang.org/grpc v1.84.0

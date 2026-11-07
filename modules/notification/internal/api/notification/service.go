@@ -111,3 +111,36 @@ func toAPI(n *notification.Notification) *notificationv1.Notification {
 	}
 	return out
 }
+
+// GetNotificationPreferences 列当前用户投递偏好（已配置行）。
+func (s *Service) GetNotificationPreferences(ctx context.Context, _ *notificationv1.GetNotificationPreferencesRequest) (*notificationv1.NotificationPreferencesResponse, error) {
+	who, err := actorID(ctx)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	prefs, err := s.uc.ListMyPreferences(ctx, who)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	resp := &notificationv1.NotificationPreferencesResponse{
+		Preferences: make([]*notificationv1.NotificationPreference, 0, len(prefs)),
+	}
+	for _, p := range prefs {
+		resp.Preferences = append(resp.Preferences, &notificationv1.NotificationPreference{
+			Type: p.Type, Channel: p.Channel, Enabled: p.Enabled,
+		})
+	}
+	return resp, nil
+}
+
+// SetNotificationPreference 写当前用户一条投递偏好。
+func (s *Service) SetNotificationPreference(ctx context.Context, req *notificationv1.SetNotificationPreferenceRequest) (*emptypb.Empty, error) {
+	who, err := actorID(ctx)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	if err := s.uc.SetMyPreference(ctx, who, req.GetType(), req.GetChannel(), req.GetEnabled()); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}

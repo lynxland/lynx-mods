@@ -1,29 +1,213 @@
-// Package notification 是通知模块的用例层：编排领域与端口。写入仅经
-// 事件订阅（watcher 调 OnXxx）——内容在发生时刻定格为快照（title/body
-// 文案是产品可见字符串，装后即归应用，按需修改）；查询/已读是收件人
-// 自助操作（user_id 一律取自调用方语境或事件载荷，不信任请求参数）。
+// Package notification 是通知模块的用例层：投递管线（模板渲染 → 渠道
+// 偏好过滤 → 多渠道尽力投递）与自助查询/已读/偏好管理。文案在渲染时刻
+// 定格为快照（模板可改，已投递的不受影响）。
 package notification
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"strings"
+	"text/template"
 	"time"
 
 	"github.com/lynxland/appkit/crud"
-	"github.com/lynxland/appkit/idgen"
 	"github.com/lynxland/lynx-start/modules/notification/domain/notification"
 )
 
-// UseCase 是通知模块的用例集。
-type UseCase struct {
-	repo notification.Repository
-	now  func() time.Time
+// Template 是一类通知的文案模板（text/template；数据=事件载荷
+// map[string]string——如 {{.organization_name}}）。
+type Template struct {
+	Title string `mapstructure:"title"`
+	Body  string `mapstructure:"body"`
 }
 
-// New 构造用例（Assemble 调用）。
-func New(repo notification.Repository) *UseCase {
-	return &UseCase{repo: repo, now: time.Now}
+// SMTP 是邮件渠道配置（notification.smtp 段；Host 空 = 渠道禁用）。
+type SMTP struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	From     string `mapstructure:"from"`
 }
+
+// Config 是通知模块的配置段。
+type Config struct {
+	Templates map[string]Template `mapstructure:"templates"`
+	SMTP      SMTP                `mapstructure:"smtp"`
+}
+
+// defaultTemplates 是各通知类型的默认文案（与 v0.6.0 硬编码一致——
+// 已装应用零文案漂移；应用在 config.yaml 覆盖或扩充）。
+func defaultTemplates() map[string]Template {
+	return map[string]Template{
+		notification.IdentityUserPasswordChanged: {
+			Title: "密码已更改",
+			Body:  "你的密码刚刚被更改。如果不是你本人操作，请立即重置密码。",
+		},
+		notification.OrganizationMemberAdded: {
+			Title: "你已被加入组织 {{.organization_name}}",
+			Body:  "你已被组织 {{.organization_name}} 添加为成员。",
+		},
+		notification.OrganizationMemberRemoved: {
+			Title: "你已被移出组织 {{.organization_name}}",
+			Body:  "你不再是组织 {{.organization_name}} 的成员。",
+		},
+		notification.TypeCustom: {
+			Title: "{{.title}}",
+			Body:  "{{.body}}",
+		},
+	}
+}
+
+// ApplyDefaults 落默认值（LoadSection 的 defaults 钩子；用户声明的模板
+// 覆盖同名默认条目，其余保留）。
+func (c *Config) ApplyDefaults() {
+	if c.Templates == nil {
+		c.Templates = defaultTemplates()
+		return
+	}
+	for typ, tpl := range defaultTemplates() {
+		if _, ok := c.Templates[typ]; !ok {
+			c.Templates[typ] = tpl
+		}
+	}
+}
+
+// UseCase 是通知模块的用例集。
+type UseCase struct {
+	repo      notification.Repository
+	channels  []notification.Channel
+	templates map[string]Template
+	logger    *slog.Logger
+	now       func() time.Time
+}
+
+// New 构造用例（Assemble 调用；channels 为已启用渠道——站内必在，
+// 邮件视 SMTP 配置）。
+func New(repo notification.Repository, channels []notification.Channel, cfg Config, logger *slog.Logger) *UseCase {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &UseCase{repo: repo, channels: channels, templates: cfg.Templates, logger: logger, now: time.Now}
+}
+
+// ---- 投递管线 ----
+
+// dispatch 是所有投递（事件订阅与显式 Send）的唯一路径：模板渲染 →
+// 渠道偏好过滤 → 逐渠道尽力投递（失败记死信日志，不阻断其他渠道——
+// 单进程内无重试；高可靠投递经 task 模块组合，见 README）。
+func (u *UseCase) dispatch(ctx context.Context, userID, typ string, payload map[string]string) error {
+	title, body, err := u.render(typ, payload)
+	if err != nil {
+		return err
+	}
+	prefs, err := u.repo.ListPreferences(ctx, userID)
+	if err != nil {
+		return err
+	}
+	enabled := map[string]bool{} // 未配置 = 启用
+	for _, p := range prefs {
+		if p.Type == typ {
+			enabled[p.Channel] = p.Enabled
+		}
+	}
+	for _, ch := range u.channels {
+		if on, ok := enabled[ch.Name()]; ok && !on {
+			continue
+		}
+		if err := ch.Deliver(ctx, notification.Delivery{
+			UserID: userID, Type: typ, Title: title, Body: body, Payload: payload,
+		}); err != nil {
+			u.logger.Error("notification: channel deliver failed (dead-lettered)",
+				"channel", ch.Name(), "user_id", userID, "type", typ, "error", err)
+		}
+	}
+	return nil
+}
+
+// render 渲染类型模板（数据=载荷；模板缺失退化为 title=类型名）。
+func (u *UseCase) render(typ string, payload map[string]string) (string, string, error) {
+	tpl, ok := u.templates[typ]
+	if !ok {
+		tpl = Template{Title: typ, Body: ""}
+	}
+	render := func(text string) (string, error) {
+		if text == "" {
+			return "", nil
+		}
+		t, err := template.New(typ).Parse(text)
+		if err != nil {
+			return "", fmt.Errorf("notification: template %s: %w", typ, err)
+		}
+		var b strings.Builder
+		if err := t.Execute(&b, payload); err != nil {
+			return "", fmt.Errorf("notification: template %s: %w", typ, err)
+		}
+		return b.String(), nil
+	}
+	title, err := render(tpl.Title)
+	if err != nil {
+		return "", "", err
+	}
+	body, err := render(tpl.Body)
+	if err != nil {
+		return "", "", err
+	}
+	return title, body, nil
+}
+
+// ---- 显式发送（domain.Sender）----
+
+// Send 显式发送（domain.Sender 通道③ 能力；Type 空则 notification.custom，
+// 模板可引用载荷的 title/body）。
+func (u *UseCase) Send(ctx context.Context, input notification.SendInput) error {
+	if input.Type == "" {
+		input.Type = notification.TypeCustom
+	}
+	return u.dispatch(ctx, input.UserID, input.Type, input.Payload)
+}
+
+// 编译期断言：用例实现 domain.Sender。
+var _ notification.Sender = (*UseCase)(nil)
+
+// ---- 事件订阅 ----
+
+// OnPasswordChanged 生成改密安全提醒（收件人 = 事件载荷里的用户）。
+func (u *UseCase) OnPasswordChanged(ctx context.Context, userID string) error {
+	return u.dispatch(ctx, userID, notification.IdentityUserPasswordChanged, map[string]string{"id": userID})
+}
+
+// OnMemberAdded 生成「被加入组织」通知。
+func (u *UseCase) OnMemberAdded(ctx context.Context, userID, organizationID, organizationName string) error {
+	return u.dispatch(ctx, userID, notification.OrganizationMemberAdded,
+		map[string]string{"organization_id": organizationID, "user_id": userID, "organization_name": organizationName})
+}
+
+// OnMemberRemoved 生成「被移出组织」通知。
+func (u *UseCase) OnMemberRemoved(ctx context.Context, userID, organizationID, organizationName string) error {
+	return u.dispatch(ctx, userID, notification.OrganizationMemberRemoved,
+		map[string]string{"organization_id": organizationID, "user_id": userID, "organization_name": organizationName})
+}
+
+// ---- 偏好（自助面）----
+
+// ListMyPreferences 返回用户已配置的偏好行（未配置类型默认启用）。
+func (u *UseCase) ListMyPreferences(ctx context.Context, userID string) ([]notification.Preference, error) {
+	return u.repo.ListPreferences(ctx, userID)
+}
+
+// SetMyPreference 写一条偏好（channel 校验 fail-closed）。
+func (u *UseCase) SetMyPreference(ctx context.Context, userID, typ, channel string, enabled bool) error {
+	if channel != notification.ChannelInApp && channel != notification.ChannelEmail {
+		return fmt.Errorf("notification: unknown channel %q", channel)
+	}
+	return u.repo.UpsertPreference(ctx, notification.Preference{
+		UserID: userID, Type: typ, Channel: channel, Enabled: enabled,
+	})
+}
+
+// ---- 自助查询 ----
 
 // ListResult 是通知列表用例的产物。
 type ListResult struct {
@@ -70,64 +254,14 @@ func (u *UseCase) List(ctx context.Context, userID string, unreadOnly bool, page
 	}, nil
 }
 
-// MarkRead 标记单条已读（他人通知与不存在统一 ErrNotificationNotFound——
-// 不泄露存在性差异；幂等）。
+// MarkRead 标记单条已读（他人通知与不存在统一 ErrNotificationNotFound，
+// 幂等）。
 func (u *UseCase) MarkRead(ctx context.Context, userID, id string) error {
-	if _, err := u.repo.MarkRead(ctx, id, userID, u.now().UTC()); err != nil {
-		return err
-	}
-	return nil
+	_, err := u.repo.MarkRead(ctx, id, userID, u.now().UTC())
+	return err
 }
 
 // MarkAllRead 全部未读置已读，返回标记条数。
 func (u *UseCase) MarkAllRead(ctx context.Context, userID string) (int64, error) {
 	return u.repo.MarkAllRead(ctx, userID, u.now().UTC())
-}
-
-// Send 显式发送（domain.Sender 通道③ 能力的用例实现）：应用代码直接
-// 给用户发系统通知（Type 空则 notification.custom；复用事件的快照语义
-// ——文案在发送时刻定格）。
-func (u *UseCase) Send(ctx context.Context, input notification.SendInput) error {
-	if input.Type == "" {
-		input.Type = notification.TypeCustom
-	}
-	return u.create(ctx, input.UserID, input.Type, input.Title, input.Body, input.Payload)
-}
-
-// 编译期断言：用例实现 domain.Sender。
-var _ notification.Sender = (*UseCase)(nil)
-
-// OnPasswordChanged 生成改密安全提醒（收件人 = 事件载荷里的用户）。
-func (u *UseCase) OnPasswordChanged(ctx context.Context, userID string) error {
-	return u.create(ctx, userID, notification.IdentityUserPasswordChanged,
-		"密码已更改", "你的密码刚刚被更改。如果不是你本人操作，请立即重置密码。",
-		map[string]string{"id": userID},
-	)
-}
-
-// OnMemberAdded 生成「被加入组织」通知。
-func (u *UseCase) OnMemberAdded(ctx context.Context, userID, organizationID, organizationName string) error {
-	return u.create(ctx, userID, notification.OrganizationMemberAdded,
-		fmt.Sprintf("你已被加入组织 %s", organizationName),
-		fmt.Sprintf("你已被组织 %s 添加为成员。", organizationName),
-		map[string]string{"organization_id": organizationID, "user_id": userID},
-	)
-}
-
-// OnMemberRemoved 生成「被移出组织」通知。
-func (u *UseCase) OnMemberRemoved(ctx context.Context, userID, organizationID, organizationName string) error {
-	return u.create(ctx, userID, notification.OrganizationMemberRemoved,
-		fmt.Sprintf("你已被移出组织 %s", organizationName),
-		fmt.Sprintf("你不再是组织 %s 的成员。", organizationName),
-		map[string]string{"organization_id": organizationID, "user_id": userID},
-	)
-}
-
-// create 构造聚合并落库。
-func (u *UseCase) create(ctx context.Context, userID, typ, title, body string, payload map[string]string) error {
-	n, err := notification.NewNotification(idgen.New(), userID, typ, title, body, payload, u.now().UTC())
-	if err != nil {
-		return err
-	}
-	return u.repo.Create(ctx, n)
 }

@@ -30,6 +30,17 @@ type notificationModel struct {
 	CreatedAt time.Time       `bun:"created_at,notnull"`
 }
 
+// preferenceModel 是投递偏好的 PO。
+type preferenceModel struct {
+	bun.BaseModel `bun:"table:notification_preferences,alias:p"`
+
+	UserID    string    `bun:"user_id,pk"`
+	Type      string    `bun:"type,pk"`
+	Channel   string    `bun:"channel,pk"`
+	Enabled   bool      `bun:"enabled"`
+	UpdatedAt time.Time `bun:"updated_at"`
+}
+
 // Repo 实现 notification.Repository。
 type Repo struct {
 	db *bun.DB
@@ -148,4 +159,33 @@ func toDomain(m *notificationModel) *notification.Notification {
 		ID: m.ID, UserID: m.UserID, Type: m.Type, Title: m.Title, Body: m.Body,
 		Payload: payload, ReadAt: m.ReadAt, CreatedAt: m.CreatedAt,
 	}
+}
+
+// UpsertPreference 写入一条投递偏好（复合键整写）。
+func (r *Repo) UpsertPreference(ctx context.Context, p notification.Preference) error {
+	_, err := buntx.Conn(ctx, r.db).NewInsert().
+		Model(&preferenceModel{
+			UserID: p.UserID, Type: p.Type, Channel: p.Channel,
+			Enabled: p.Enabled, UpdatedAt: time.Now().UTC(),
+		}).
+		On("CONFLICT (user_id, type, channel) DO UPDATE SET enabled = EXCLUDED.enabled, updated_at = EXCLUDED.updated_at").
+		Exec(ctx)
+	return err
+}
+
+// ListPreferences 返回用户全部偏好行。
+func (r *Repo) ListPreferences(ctx context.Context, userID string) ([]notification.Preference, error) {
+	var rows []preferenceModel
+	err := buntx.Conn(ctx, r.db).NewSelect().Model(&rows).
+		Where("p.user_id = ?", userID).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]notification.Preference, 0, len(rows))
+	for i := range rows {
+		out = append(out, notification.Preference{
+			UserID: rows[i].UserID, Type: rows[i].Type, Channel: rows[i].Channel, Enabled: rows[i].Enabled,
+		})
+	}
+	return out, nil
 }
