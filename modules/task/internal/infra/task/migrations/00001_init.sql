@@ -1,19 +1,42 @@
 -- +goose Up
-CREATE TABLE IF NOT EXISTS task_tasks (
-    id              text PRIMARY KEY,
-    organization_id text NOT NULL,
-    creator_id      text NOT NULL,
-    title           text NOT NULL,
-    description     text NOT NULL DEFAULT '',
-    completed_at    timestamptz,
-    created_at      timestamptz NOT NULL DEFAULT now(),
-    updated_at      timestamptz NOT NULL DEFAULT now()
+-- task 模块（v0.7.0 重写：后台任务与调度，ADR-0009 自足模块）的初始迁移。
+
+CREATE TABLE IF NOT EXISTS task_jobs (
+    id           text PRIMARY KEY,
+    type         text NOT NULL,
+    payload      text NOT NULL DEFAULT '{}',
+    status       text NOT NULL DEFAULT 'pending',
+    priority     integer NOT NULL DEFAULT 0,
+    run_at       timestamptz NOT NULL DEFAULT now(),
+    attempt      integer NOT NULL DEFAULT 0,
+    max_attempts integer NOT NULL DEFAULT 5,
+    unique_key   text,
+    last_error   text,
+    created_at   timestamptz NOT NULL DEFAULT now(),
+    updated_at   timestamptz NOT NULL DEFAULT now(),
+    finished_at  timestamptz
 );
-CREATE INDEX IF NOT EXISTS idx_task_tasks_organization
-    ON task_tasks (organization_id, created_at DESC);
--- ADR-0008：organization_id 是租户键（只存 ID 不设外键，契约④）；
--- 本域无业务级唯一约束（同名任务合法）——若有，必含 organization_id。
--- creator_id 只存 ID：完成与删除的裁决依据（v1 资源所有权语义）。
+-- 到期扫描（认领的主索引）：run_at 升序 + 优先级 + id 决胜，只扫 pending。
+CREATE INDEX IF NOT EXISTS idx_task_jobs_due ON task_jobs (run_at, priority, id) WHERE status = 'pending';
+-- 唯一键防重：仅在存续状态（pending/running）内唯一——已完成/死信的任务
+-- 不阻塞同 key 重新入队。
+CREATE UNIQUE INDEX IF NOT EXISTS idx_task_jobs_unique ON task_jobs (unique_key) WHERE unique_key IS NOT NULL AND status IN ('pending', 'running');
+-- 管理面列表（keyset：created_at DESC + id 决胜）。
+CREATE INDEX IF NOT EXISTS idx_task_jobs_list ON task_jobs (created_at DESC, id);
+
+CREATE TABLE IF NOT EXISTS task_recurring_rules (
+    id          text PRIMARY KEY,
+    type        text NOT NULL,
+    payload     text NOT NULL DEFAULT '{}',
+    cron_expr   text NOT NULL,
+    enabled     boolean NOT NULL DEFAULT true,
+    last_run_at timestamptz,
+    next_run_at timestamptz NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    updated_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_task_rules_due ON task_recurring_rules (next_run_at) WHERE enabled;
 
 -- +goose Down
-DROP TABLE IF EXISTS task_tasks;
+DROP TABLE IF EXISTS task_recurring_rules;
+DROP TABLE IF EXISTS task_jobs;

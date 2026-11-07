@@ -1,21 +1,22 @@
 {
-  "configFragment": "",
-  "description": "任务模块：组织内任务（创建/查询/完成/删除，完成与删除限创建者）——第一个组织挂靠业务资源（ADR-0008 姿势首秀），依赖 organization",
+  "name": "task",
+  "version": "0.7.0",
+  "description": "后台任务与调度模块：持久化任务队列（即时/延迟/定时入队、唯一键防重、退避重试、死信）+ cron 周期规则 + 管理面（列表/重试/取消/规则/计数），零模块依赖；worker handler 经桥接包由应用接线",
+  "modulePath": "github.com/lynxland/lynx-start/modules/task",
+  "moduleDependencies": [],
   "goDependencies": [
     "github.com/lynxland/appkit@v0.8.0",
-    "github.com/lynxland/appkit/contrib/bunx@v0.5.0"
+    "github.com/lynxland/appkit/contrib/bunx@v0.5.0",
+    "github.com/lynxland/grpcapi@v0.5.0",
+    "github.com/lynxland/lynx@v1.21.0",
+    "github.com/robfig/cron/v3@v3.0.1"
   ],
-  "kernelConstraint": ">=0.8.0",
-  "moduleDependencies": [
-    {
-      "organization": ">=0.1.0"
-    }
-  ],
-  "modulePath": "github.com/lynxland/lynx-start/modules/task",
-  "name": "task",
+  "configFragment": "task:\n  scheduler_interval: 30s  # 周期规则调度轮询间隔（cron 到期扫描）",
   "publishedEvents": [
-    "task.task.created",
-    "task.task.completed"
+    "task.job.enqueued",
+    "task.job.completed",
+    "task.job.failed",
+    "task.job.dead"
   ],
-  "version": "0.6.0"
+  "kernelConstraint": ">=0.8.0"
 }

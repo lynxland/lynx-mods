@@ -14,7 +14,8 @@ require (
 	github.com/lynxland/appkit/contrib/bunx v0.5.0
 	github.com/lynxland/grpcapi v0.5.0
 	github.com/lynxland/grpcapi/genproto v0.4.0
-	github.com/lynxland/lynx-start/modules/organization v0.0.0-00010101000000-000000000000
+	github.com/lynxland/lynx v1.21.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/uptrace/bun v1.3.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20261019180522-ce908d29299b
 	google.golang.org/grpc v1.84.0
@@ -35,14 +36,12 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/lynxland/lynx v1.21.0 // indirect
 	github.com/lynxland/lynx/contrib/cluster v1.21.0 // indirect
 	github.com/lynxland/lynx/contrib/schedule v1.21.0 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/pressly/goose/v3 v3.29.0 // indirect
 	github.com/puzpuzpuz/xsync/v3 v3.5.1 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/sethvargo/go-retry v0.5.0 // indirect
 	github.com/spf13/afero v1.15.0 // indirect

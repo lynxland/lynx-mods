@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/lynxland/lynx-start/modules/task/domain/task"
 	taskv1 "github.com/lynxland/lynx-start/modules/task/genproto/task/v1"
@@ -11,40 +12,61 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lynxland/appkit"
+	"github.com/lynxland/appkit/configkit"
 	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/grpcapi/server"
+	"github.com/lynxland/lynx"
+	"github.com/uptrace/bun"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// Module 返回静态装配描述。DependsOn: organization——任务必属一个组织，
-// 成员资格经其 domain 端口校验（安装器校验依赖已装）。第一个组织挂靠
-// 业务资源（ADR-0008）。v0.1 无配置段、不消费事件。
+// Module 返回静态装配描述。零模块依赖（ADR-0009 自足模块）：job 属于
+// 应用全局，不带组织/租户维度。
 func Module() appkit.Module {
 	return appkit.Module{
 		Name:        "task",
-		Description: "任务模块：组织内任务（创建/查询/完成/删除，完成与删除限创建者），依赖 organization",
-		DependsOn:   []string{"organization"},
+		Description: "后台任务与调度：持久化任务队列（即时/延迟/定时入队、唯一键防重、退避重试、死信）+ cron 周期规则；worker handler 经桥接包由应用接线",
 		Policies:    []protoreflect.FileDescriptor{taskv1.File_task_v1_task_proto},
 		Migrations:  migrations.FS,
 		PublishedEvents: []string{
-			task.EventTaskCreated,
-			task.EventTaskCompleted,
+			task.EventJobEnqueued,
+			task.EventJobCompleted,
+			task.EventJobFailed,
+			task.EventJobDead,
+		},
+		Config: appkit.ConfigSpec{
+			Defaults: map[string]any{
+				"scheduler_interval": "30s",
+			},
 		},
 	}
 }
 
-// Assemble 构造动态装配产物：仓储（本模块 + organization domain 只读
-// 适配器）→ 用例 → 处理器 → 注册。源码归应用所有：按需修改。
+// Assemble 构造动态装配产物：管理面 RPC（TaskService）+ 周期调度器
+// （recurring → 入队，自治无需 handler）。**worker runner 不在此**——
+// 它必须携带应用的 handler 表，经 NewRunner 由应用组合根构造（转发
+// 写法见模块 README「接线 runner」）。
 func Assemble(deps appkit.Deps) (appkit.Assembly, error) {
-	uc := apptask.New(
-		infratask.NewRepository(bunx.MustDB(deps)),
-		infratask.NewOrganizationReader(bunx.MustDB(deps)), // DependsOn: organization domain 只读消费
-		deps.Tx, deps.Events,
-	)
+	var cfg apptask.Config
+	if err := configkit.LoadSection(deps.Config, "task", cfg.ApplyDefaults, &cfg); err != nil {
+		return appkit.Assembly{}, err
+	}
+	db := bunx.MustDB(deps)
+	uc := apptask.New(infratask.NewRepository(db), deps.Events)
 	return appkit.Assembly{
 		Registrations: []server.Registration{newRegistration(NewService(uc))},
+		Services: []lynx.Service{
+			infratask.NewScheduler(infratask.NewRepository(db), cfg.SchedulerInterval, deps.Logger),
+		},
 	}, nil
+}
+
+// NewRunner 转发 worker 执行器的构造（应用组合根经模块桥接包调用：
+// `func NewRunner(db *bun.DB, handlers domain task.HandlerRegistry, ...)`
+// ——桥接包注入物形态，应用按需追加转发行；见 README）。
+func NewRunner(db *bun.DB, handlers task.HandlerRegistry, logger *slog.Logger, opts infratask.RunnerOptions) *infratask.Runner {
+	return infratask.NewRunner(db, handlers, nil, opts)
 }
 
 // newRegistration 手写注册（Name/Descriptor/RegisterGRPC/RegisterHTTP），

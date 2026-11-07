@@ -9,89 +9,169 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "grpcapi/v1/policy.proto";
 
-// 公开 API 面 + 文件级默认公开曝光。全部方法要求认证；成员资格与
-// 创建者校验在 app 层（v1 不做组织级 RBAC——角色语义归 access）。
-// 资源路由挂组织层级（ADR-0008：organization_id 是租户语境的 REST 表达）。
+// 公开 API 面 + 文件级默认公开曝光。全部方法要求认证；管理面按
+// task.job.read / task.job.write / task.rule.write 权限裁决（claims 由
+// account 的 access 域注入；角色目录在应用 config.yaml 声明）。
 option (grpcapi.v1.api) = { api: "public", default_exposure: EXPOSURE_PUBLIC };
 
-// TaskService 是任务模块的 API 面：组织内任务（第一个组织挂靠业务资源，
-// ADR-0008 姿势首秀）。依赖 organization（DependsOn）：任务必属一个组织，
-// 读写前经其 domain 端口校验成员资格；完成与删除限创建者。
+// TaskService 是后台任务与调度模块的 API 面：持久化任务队列（即时/
+// 延迟/定时入队、唯一键防重、退避重试、死信）与 cron 周期规则。
+// 零模块依赖（ADR-0009 自足模块）；worker 的 handler 注册属应用组合根
+// （见模块 README「接线 runner」）。
 service TaskService {
-  // 建任务（成员即可创建；创建者记为 actor）。要求认证。
-  rpc CreateTask(CreateTaskRequest) returns (Task) {
-    option (grpcapi.v1.method) = { policy: { authenticated: true } };
-    option (google.api.http) = { post: "/v1/organizations/{organization_id}/tasks" body: "*" };
+  // 入队（即时；run_at/delay 二选一可延迟或定时；unique_key 在
+  // pending/running 存续期内防重）。要求 task.job.write。
+  rpc Enqueue(EnqueueRequest) returns (Job) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["task.job.write"] } };
+    option (google.api.http) = { post: "/v1/task/jobs" body: "*" };
   }
 
-  // 取任务（成员可见）。要求认证。
-  rpc GetTask(GetTaskRequest) returns (Task) {
-    option (grpcapi.v1.method) = { policy: { authenticated: true } };
-    option (google.api.http) = { get: "/v1/organizations/{organization_id}/tasks/{task_id}" };
+  // 取单个任务。要求 task.job.read。
+  rpc GetJob(GetJobRequest) returns (Job) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["task.job.read"] } };
+    option (google.api.http) = { get: "/v1/task/jobs/{id}" };
   }
 
-  // 组织任务列表（成员可见，分页，created_at 降序）。要求认证。
-  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse) {
-    option (grpcapi.v1.method) = { policy: { authenticated: true } };
-    option (google.api.http) = { get: "/v1/organizations/{organization_id}/tasks" };
+  // 列任务（按状态/类型过滤，keyset 分页，created_at 降序）。要求
+  // task.job.read。
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["task.job.read"] } };
+    option (google.api.http) = { get: "/v1/task/jobs" };
   }
 
-  // 标记完成（限创建者；幂等）。要求认证。
-  rpc CompleteTask(CompleteTaskRequest) returns (Task) {
-    option (grpcapi.v1.method) = { policy: { authenticated: true } };
-    option (google.api.http) = { post: "/v1/organizations/{organization_id}/tasks/{task_id}:complete" body: "*" };
+  // 重试（死信/已取消 → pending，attempt 归零）。要求 task.job.write。
+  rpc RetryJob(RetryJobRequest) returns (Job) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["task.job.write"] } };
+    option (google.api.http) = { post: "/v1/task/jobs/{id}:retry" body: "*" };
   }
 
-  // 删除任务（限创建者；幂等）。要求认证。
-  rpc DeleteTask(DeleteTaskRequest) returns (google.protobuf.Empty) {
-    option (grpcapi.v1.method) = { policy: { authenticated: true } };
-    option (google.api.http) = { delete: "/v1/organizations/{organization_id}/tasks/{task_id}" };
+  // 取消（仅 pending；运行中不可取消）。要求 task.job.write。
+  rpc CancelJob(CancelJobRequest) returns (Job) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["task.job.write"] } };
+    option (google.api.http) = { post: "/v1/task/jobs/{id}:cancel" body: "*" };
+  }
+
+  // 各状态计数（监控/告警消费）。要求 task.job.read。
+  rpc GetStats(GetStatsRequest) returns (Stats) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["task.job.read"] } };
+    option (google.api.http) = { get: "/v1/task/stats" };
+  }
+
+  // 列周期规则（分页，next_run_at 升序）。要求 task.job.read。
+  rpc ListRecurringRules(ListRecurringRulesRequest) returns (ListRecurringRulesResponse) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["task.job.read"] } };
+    option (google.api.http) = { get: "/v1/task/rules" };
+  }
+
+  // 新建或更新周期规则（id 空新建；cron 为 5 段标准表达式或
+  // "@every 1h" 描述符）。要求 task.rule.write。
+  rpc UpsertRecurringRule(UpsertRecurringRuleRequest) returns (RecurringRule) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["task.rule.write"] } };
+    option (google.api.http) = { put: "/v1/task/rules" body: "*" };
+  }
+
+  // 删除周期规则（已入队任务不受影响）。要求 task.rule.write。
+  rpc DeleteRecurringRule(DeleteRecurringRuleRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { permissions: ["task.rule.write"] } };
+    option (google.api.http) = { delete: "/v1/task/rules/{id}" };
   }
 }
 
-// Task 是一条组织内任务。creator 是创建者（完成与删除的裁决依据）。
-message Task {
+// Job 是一个持久化任务。payload 是业务自定义 JSON 文本；status 状态机：
+// PENDING → RUNNING → DONE /（失败退避）PENDING → … → DEAD；
+// PENDING → CANCELLED（人工取消）。
+message Job {
   string id = 1;
-  string organization_id = 2;
-  string creator_id = 3;
-  string title = 4;
-  string description = 5;
-  // 完成时间；未完成为空。
-  google.protobuf.Timestamp completed_at = 6;
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
+  string type = 2;
+  string payload = 3;
+  Status status = 4;
+  int32 priority = 5;          // 小值先执行（默认 0）
+  google.protobuf.Timestamp run_at = 6;
+  int32 attempt = 7;
+  int32 max_attempts = 8;
+  string unique_key = 9;
+  string last_error = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp finished_at = 12;
 }
 
-message CreateTaskRequest {
-  // 组织 ID（路径绑定 /v1/organizations/{organization_id}/tasks）。
-  string organization_id = 1;
-  string title = 2;
-  string description = 3;
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_PENDING = 1;
+  STATUS_RUNNING = 2;
+  STATUS_DONE = 3;
+  STATUS_DEAD = 4;
+  STATUS_CANCELLED = 5;
 }
 
-message GetTaskRequest {
-  string organization_id = 1;
-  string task_id = 2;
+message EnqueueRequest {
+  string type = 1;
+  string payload = 2;          // JSON 文本（可空对象）
+  google.protobuf.Timestamp run_at = 3;   // 定时（与 delay_seconds 互斥）
+  int32 delay_seconds = 4;                // 延迟（与 run_at 互斥）
+  string unique_key = 5;                  // pending/running 存续期防重
+  int32 priority = 6;
+  int32 max_attempts = 7;                 // 默认 5（含首次）
 }
 
-message ListTasksRequest {
-  string organization_id = 1;
-  int32 page_size = 2;
-  string page_token = 3;
+message GetJobRequest { string id = 1; }
+
+message ListJobsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  Status status = 3;
+  string type = 4;
 }
 
-message ListTasksResponse {
-  repeated Task tasks = 1;
+message ListJobsResponse {
+  repeated Job jobs = 1;
   string next_page_token = 2;
   int32 total_size = 3;
 }
 
-message CompleteTaskRequest {
-  string organization_id = 1;
-  string task_id = 2;
+message RetryJobRequest { string id = 1; }
+message CancelJobRequest { string id = 1; }
+message GetStatsRequest {}
+
+message Stats {
+  int64 pending = 1;
+  int64 running = 2;
+  int64 done = 3;
+  int64 dead = 4;
+  int64 cancelled = 5;
 }
 
-message DeleteTaskRequest {
-  string organization_id = 1;
-  string task_id = 2;
+// RecurringRule 是一条 cron 周期规则：调度器按 next_run_at 到期入队
+// （每次触发的 job 带 unique_key=<rule_id>:<触发时间>，重放安全）。
+message RecurringRule {
+  string id = 1;
+  string type = 2;
+  string payload = 3;
+  string cron = 4;
+  bool enabled = 5;
+  google.protobuf.Timestamp last_run_at = 6;
+  google.protobuf.Timestamp next_run_at = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
 }
+
+message ListRecurringRulesRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListRecurringRulesResponse {
+  repeated RecurringRule rules = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+message UpsertRecurringRuleRequest {
+  string id = 1;               // 空 = 新建
+  string type = 2;
+  string payload = 3;
+  string cron = 4;
+  bool enabled = 5;
+}
+
+message DeleteRecurringRuleRequest { string id = 1; }

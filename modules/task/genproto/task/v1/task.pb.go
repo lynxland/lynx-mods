@@ -25,36 +25,99 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Task 是一条组织内任务。creator 是创建者（完成与删除的裁决依据）。
-type Task struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrganizationId string                 `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	CreatorId      string                 `protobuf:"bytes,3,opt,name=creator_id,json=creatorId,proto3" json:"creator_id,omitempty"`
-	Title          string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	Description    string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	// 完成时间；未完成为空。
-	CompletedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+type Status int32
+
+const (
+	Status_STATUS_UNSPECIFIED Status = 0
+	Status_STATUS_PENDING     Status = 1
+	Status_STATUS_RUNNING     Status = 2
+	Status_STATUS_DONE        Status = 3
+	Status_STATUS_DEAD        Status = 4
+	Status_STATUS_CANCELLED   Status = 5
+)
+
+// Enum value maps for Status.
+var (
+	Status_name = map[int32]string{
+		0: "STATUS_UNSPECIFIED",
+		1: "STATUS_PENDING",
+		2: "STATUS_RUNNING",
+		3: "STATUS_DONE",
+		4: "STATUS_DEAD",
+		5: "STATUS_CANCELLED",
+	}
+	Status_value = map[string]int32{
+		"STATUS_UNSPECIFIED": 0,
+		"STATUS_PENDING":     1,
+		"STATUS_RUNNING":     2,
+		"STATUS_DONE":        3,
+		"STATUS_DEAD":        4,
+		"STATUS_CANCELLED":   5,
+	}
+)
+
+func (x Status) Enum() *Status {
+	p := new(Status)
+	*p = x
+	return p
+}
+
+func (x Status) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Status) Descriptor() protoreflect.EnumDescriptor {
+	return file_task_v1_task_proto_enumTypes[0].Descriptor()
+}
+
+func (Status) Type() protoreflect.EnumType {
+	return &file_task_v1_task_proto_enumTypes[0]
+}
+
+func (x Status) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Status.Descriptor instead.
+func (Status) EnumDescriptor() ([]byte, []int) {
+	return file_task_v1_task_proto_rawDescGZIP(), []int{0}
+}
+
+// Job 是一个持久化任务。payload 是业务自定义 JSON 文本；status 状态机：
+// PENDING → RUNNING → DONE /（失败退避）PENDING → … → DEAD；
+// PENDING → CANCELLED（人工取消）。
+type Job struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Payload       string                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	Status        Status                 `protobuf:"varint,4,opt,name=status,proto3,enum=task.v1.Status" json:"status,omitempty"`
+	Priority      int32                  `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty"` // 小值先执行（默认 0）
+	RunAt         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=run_at,json=runAt,proto3" json:"run_at,omitempty"`
+	Attempt       int32                  `protobuf:"varint,7,opt,name=attempt,proto3" json:"attempt,omitempty"`
+	MaxAttempts   int32                  `protobuf:"varint,8,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`
+	UniqueKey     string                 `protobuf:"bytes,9,opt,name=unique_key,json=uniqueKey,proto3" json:"unique_key,omitempty"`
+	LastError     string                 `protobuf:"bytes,10,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	FinishedAt    *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Task) Reset() {
-	*x = Task{}
+func (x *Job) Reset() {
+	*x = Job{}
 	mi := &file_task_v1_task_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Task) String() string {
+func (x *Job) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Task) ProtoMessage() {}
+func (*Job) ProtoMessage() {}
 
-func (x *Task) ProtoReflect() protoreflect.Message {
+func (x *Job) ProtoReflect() protoreflect.Message {
 	mi := &file_task_v1_task_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -66,91 +129,122 @@ func (x *Task) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Task.ProtoReflect.Descriptor instead.
-func (*Task) Descriptor() ([]byte, []int) {
+// Deprecated: Use Job.ProtoReflect.Descriptor instead.
+func (*Job) Descriptor() ([]byte, []int) {
 	return file_task_v1_task_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Task) GetId() string {
+func (x *Job) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *Task) GetOrganizationId() string {
+func (x *Job) GetType() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.Type
 	}
 	return ""
 }
 
-func (x *Task) GetCreatorId() string {
+func (x *Job) GetPayload() string {
 	if x != nil {
-		return x.CreatorId
+		return x.Payload
 	}
 	return ""
 }
 
-func (x *Task) GetTitle() string {
+func (x *Job) GetStatus() Status {
 	if x != nil {
-		return x.Title
+		return x.Status
 	}
-	return ""
+	return Status_STATUS_UNSPECIFIED
 }
 
-func (x *Task) GetDescription() string {
+func (x *Job) GetPriority() int32 {
 	if x != nil {
-		return x.Description
+		return x.Priority
 	}
-	return ""
+	return 0
 }
 
-func (x *Task) GetCompletedAt() *timestamppb.Timestamp {
+func (x *Job) GetRunAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CompletedAt
+		return x.RunAt
 	}
 	return nil
 }
 
-func (x *Task) GetCreatedAt() *timestamppb.Timestamp {
+func (x *Job) GetAttempt() int32 {
+	if x != nil {
+		return x.Attempt
+	}
+	return 0
+}
+
+func (x *Job) GetMaxAttempts() int32 {
+	if x != nil {
+		return x.MaxAttempts
+	}
+	return 0
+}
+
+func (x *Job) GetUniqueKey() string {
+	if x != nil {
+		return x.UniqueKey
+	}
+	return ""
+}
+
+func (x *Job) GetLastError() string {
+	if x != nil {
+		return x.LastError
+	}
+	return ""
+}
+
+func (x *Job) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
 	}
 	return nil
 }
 
-func (x *Task) GetUpdatedAt() *timestamppb.Timestamp {
+func (x *Job) GetFinishedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.UpdatedAt
+		return x.FinishedAt
 	}
 	return nil
 }
 
-type CreateTaskRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// 组织 ID（路径绑定 /v1/organizations/{organization_id}/tasks）。
-	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	Title          string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description    string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+type EnqueueRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Payload       string                 `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`                                // JSON 文本（可空对象）
+	RunAt         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=run_at,json=runAt,proto3" json:"run_at,omitempty"`                       // 定时（与 delay_seconds 互斥）
+	DelaySeconds  int32                  `protobuf:"varint,4,opt,name=delay_seconds,json=delaySeconds,proto3" json:"delay_seconds,omitempty"` // 延迟（与 run_at 互斥）
+	UniqueKey     string                 `protobuf:"bytes,5,opt,name=unique_key,json=uniqueKey,proto3" json:"unique_key,omitempty"`           // pending/running 存续期防重
+	Priority      int32                  `protobuf:"varint,6,opt,name=priority,proto3" json:"priority,omitempty"`
+	MaxAttempts   int32                  `protobuf:"varint,7,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"` // 默认 5（含首次）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateTaskRequest) Reset() {
-	*x = CreateTaskRequest{}
+func (x *EnqueueRequest) Reset() {
+	*x = EnqueueRequest{}
 	mi := &file_task_v1_task_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateTaskRequest) String() string {
+func (x *EnqueueRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateTaskRequest) ProtoMessage() {}
+func (*EnqueueRequest) ProtoMessage() {}
 
-func (x *CreateTaskRequest) ProtoReflect() protoreflect.Message {
+func (x *EnqueueRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_task_v1_task_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -162,54 +256,81 @@ func (x *CreateTaskRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateTaskRequest.ProtoReflect.Descriptor instead.
-func (*CreateTaskRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use EnqueueRequest.ProtoReflect.Descriptor instead.
+func (*EnqueueRequest) Descriptor() ([]byte, []int) {
 	return file_task_v1_task_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CreateTaskRequest) GetOrganizationId() string {
+func (x *EnqueueRequest) GetType() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.Type
 	}
 	return ""
 }
 
-func (x *CreateTaskRequest) GetTitle() string {
+func (x *EnqueueRequest) GetPayload() string {
 	if x != nil {
-		return x.Title
+		return x.Payload
 	}
 	return ""
 }
 
-func (x *CreateTaskRequest) GetDescription() string {
+func (x *EnqueueRequest) GetRunAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Description
+		return x.RunAt
+	}
+	return nil
+}
+
+func (x *EnqueueRequest) GetDelaySeconds() int32 {
+	if x != nil {
+		return x.DelaySeconds
+	}
+	return 0
+}
+
+func (x *EnqueueRequest) GetUniqueKey() string {
+	if x != nil {
+		return x.UniqueKey
 	}
 	return ""
 }
 
-type GetTaskRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	TaskId         string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+func (x *EnqueueRequest) GetPriority() int32 {
+	if x != nil {
+		return x.Priority
+	}
+	return 0
 }
 
-func (x *GetTaskRequest) Reset() {
-	*x = GetTaskRequest{}
+func (x *EnqueueRequest) GetMaxAttempts() int32 {
+	if x != nil {
+		return x.MaxAttempts
+	}
+	return 0
+}
+
+type GetJobRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetJobRequest) Reset() {
+	*x = GetJobRequest{}
 	mi := &file_task_v1_task_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetTaskRequest) String() string {
+func (x *GetJobRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetTaskRequest) ProtoMessage() {}
+func (*GetJobRequest) ProtoMessage() {}
 
-func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
+func (x *GetJobRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_task_v1_task_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -221,48 +342,42 @@ func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTaskRequest.ProtoReflect.Descriptor instead.
-func (*GetTaskRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetJobRequest.ProtoReflect.Descriptor instead.
+func (*GetJobRequest) Descriptor() ([]byte, []int) {
 	return file_task_v1_task_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetTaskRequest) GetOrganizationId() string {
+func (x *GetJobRequest) GetId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.Id
 	}
 	return ""
 }
 
-func (x *GetTaskRequest) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
-	}
-	return ""
+type ListJobsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PageSize      int32                  `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Status        Status                 `protobuf:"varint,3,opt,name=status,proto3,enum=task.v1.Status" json:"status,omitempty"`
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-type ListTasksRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	PageSize       int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	PageToken      string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *ListTasksRequest) Reset() {
-	*x = ListTasksRequest{}
+func (x *ListJobsRequest) Reset() {
+	*x = ListJobsRequest{}
 	mi := &file_task_v1_task_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListTasksRequest) String() string {
+func (x *ListJobsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListTasksRequest) ProtoMessage() {}
+func (*ListJobsRequest) ProtoMessage() {}
 
-func (x *ListTasksRequest) ProtoReflect() protoreflect.Message {
+func (x *ListJobsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_task_v1_task_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -274,55 +389,62 @@ func (x *ListTasksRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTasksRequest.ProtoReflect.Descriptor instead.
-func (*ListTasksRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListJobsRequest.ProtoReflect.Descriptor instead.
+func (*ListJobsRequest) Descriptor() ([]byte, []int) {
 	return file_task_v1_task_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ListTasksRequest) GetOrganizationId() string {
-	if x != nil {
-		return x.OrganizationId
-	}
-	return ""
-}
-
-func (x *ListTasksRequest) GetPageSize() int32 {
+func (x *ListJobsRequest) GetPageSize() int32 {
 	if x != nil {
 		return x.PageSize
 	}
 	return 0
 }
 
-func (x *ListTasksRequest) GetPageToken() string {
+func (x *ListJobsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
 	}
 	return ""
 }
 
-type ListTasksResponse struct {
+func (x *ListJobsRequest) GetStatus() Status {
+	if x != nil {
+		return x.Status
+	}
+	return Status_STATUS_UNSPECIFIED
+}
+
+func (x *ListJobsRequest) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+type ListJobsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tasks         []*Task                `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
+	Jobs          []*Job                 `protobuf:"bytes,1,rep,name=jobs,proto3" json:"jobs,omitempty"`
 	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	TotalSize     int32                  `protobuf:"varint,3,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListTasksResponse) Reset() {
-	*x = ListTasksResponse{}
+func (x *ListJobsResponse) Reset() {
+	*x = ListJobsResponse{}
 	mi := &file_task_v1_task_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListTasksResponse) String() string {
+func (x *ListJobsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListTasksResponse) ProtoMessage() {}
+func (*ListJobsResponse) ProtoMessage() {}
 
-func (x *ListTasksResponse) ProtoReflect() protoreflect.Message {
+func (x *ListJobsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_task_v1_task_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -334,54 +456,53 @@ func (x *ListTasksResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTasksResponse.ProtoReflect.Descriptor instead.
-func (*ListTasksResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListJobsResponse.ProtoReflect.Descriptor instead.
+func (*ListJobsResponse) Descriptor() ([]byte, []int) {
 	return file_task_v1_task_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ListTasksResponse) GetTasks() []*Task {
+func (x *ListJobsResponse) GetJobs() []*Job {
 	if x != nil {
-		return x.Tasks
+		return x.Jobs
 	}
 	return nil
 }
 
-func (x *ListTasksResponse) GetNextPageToken() string {
+func (x *ListJobsResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
 	}
 	return ""
 }
 
-func (x *ListTasksResponse) GetTotalSize() int32 {
+func (x *ListJobsResponse) GetTotalSize() int32 {
 	if x != nil {
 		return x.TotalSize
 	}
 	return 0
 }
 
-type CompleteTaskRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	TaskId         string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+type RetryJobRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CompleteTaskRequest) Reset() {
-	*x = CompleteTaskRequest{}
+func (x *RetryJobRequest) Reset() {
+	*x = RetryJobRequest{}
 	mi := &file_task_v1_task_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CompleteTaskRequest) String() string {
+func (x *RetryJobRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CompleteTaskRequest) ProtoMessage() {}
+func (*RetryJobRequest) ProtoMessage() {}
 
-func (x *CompleteTaskRequest) ProtoReflect() protoreflect.Message {
+func (x *RetryJobRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_task_v1_task_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -393,47 +514,39 @@ func (x *CompleteTaskRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CompleteTaskRequest.ProtoReflect.Descriptor instead.
-func (*CompleteTaskRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RetryJobRequest.ProtoReflect.Descriptor instead.
+func (*RetryJobRequest) Descriptor() ([]byte, []int) {
 	return file_task_v1_task_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *CompleteTaskRequest) GetOrganizationId() string {
+func (x *RetryJobRequest) GetId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.Id
 	}
 	return ""
 }
 
-func (x *CompleteTaskRequest) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
-	}
-	return ""
+type CancelJobRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-type DeleteTaskRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	TaskId         string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *DeleteTaskRequest) Reset() {
-	*x = DeleteTaskRequest{}
+func (x *CancelJobRequest) Reset() {
+	*x = CancelJobRequest{}
 	mi := &file_task_v1_task_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeleteTaskRequest) String() string {
+func (x *CancelJobRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteTaskRequest) ProtoMessage() {}
+func (*CancelJobRequest) ProtoMessage() {}
 
-func (x *DeleteTaskRequest) ProtoReflect() protoreflect.Message {
+func (x *CancelJobRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_task_v1_task_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -445,21 +558,468 @@ func (x *DeleteTaskRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteTaskRequest.ProtoReflect.Descriptor instead.
-func (*DeleteTaskRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CancelJobRequest.ProtoReflect.Descriptor instead.
+func (*CancelJobRequest) Descriptor() ([]byte, []int) {
 	return file_task_v1_task_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *DeleteTaskRequest) GetOrganizationId() string {
+func (x *CancelJobRequest) GetId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.Id
 	}
 	return ""
 }
 
-func (x *DeleteTaskRequest) GetTaskId() string {
+type GetStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStatsRequest) Reset() {
+	*x = GetStatsRequest{}
+	mi := &file_task_v1_task_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatsRequest) ProtoMessage() {}
+
+func (x *GetStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_task_v1_task_proto_msgTypes[7]
 	if x != nil {
-		return x.TaskId
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetStatsRequest) Descriptor() ([]byte, []int) {
+	return file_task_v1_task_proto_rawDescGZIP(), []int{7}
+}
+
+type Stats struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pending       int64                  `protobuf:"varint,1,opt,name=pending,proto3" json:"pending,omitempty"`
+	Running       int64                  `protobuf:"varint,2,opt,name=running,proto3" json:"running,omitempty"`
+	Done          int64                  `protobuf:"varint,3,opt,name=done,proto3" json:"done,omitempty"`
+	Dead          int64                  `protobuf:"varint,4,opt,name=dead,proto3" json:"dead,omitempty"`
+	Cancelled     int64                  `protobuf:"varint,5,opt,name=cancelled,proto3" json:"cancelled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Stats) Reset() {
+	*x = Stats{}
+	mi := &file_task_v1_task_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Stats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Stats) ProtoMessage() {}
+
+func (x *Stats) ProtoReflect() protoreflect.Message {
+	mi := &file_task_v1_task_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Stats.ProtoReflect.Descriptor instead.
+func (*Stats) Descriptor() ([]byte, []int) {
+	return file_task_v1_task_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *Stats) GetPending() int64 {
+	if x != nil {
+		return x.Pending
+	}
+	return 0
+}
+
+func (x *Stats) GetRunning() int64 {
+	if x != nil {
+		return x.Running
+	}
+	return 0
+}
+
+func (x *Stats) GetDone() int64 {
+	if x != nil {
+		return x.Done
+	}
+	return 0
+}
+
+func (x *Stats) GetDead() int64 {
+	if x != nil {
+		return x.Dead
+	}
+	return 0
+}
+
+func (x *Stats) GetCancelled() int64 {
+	if x != nil {
+		return x.Cancelled
+	}
+	return 0
+}
+
+// RecurringRule 是一条 cron 周期规则：调度器按 next_run_at 到期入队
+// （每次触发的 job 带 unique_key=<rule_id>:<触发时间>，重放安全）。
+type RecurringRule struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Payload       string                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	Cron          string                 `protobuf:"bytes,4,opt,name=cron,proto3" json:"cron,omitempty"`
+	Enabled       bool                   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	LastRunAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_run_at,json=lastRunAt,proto3" json:"last_run_at,omitempty"`
+	NextRunAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=next_run_at,json=nextRunAt,proto3" json:"next_run_at,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecurringRule) Reset() {
+	*x = RecurringRule{}
+	mi := &file_task_v1_task_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecurringRule) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecurringRule) ProtoMessage() {}
+
+func (x *RecurringRule) ProtoReflect() protoreflect.Message {
+	mi := &file_task_v1_task_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecurringRule.ProtoReflect.Descriptor instead.
+func (*RecurringRule) Descriptor() ([]byte, []int) {
+	return file_task_v1_task_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *RecurringRule) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *RecurringRule) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *RecurringRule) GetPayload() string {
+	if x != nil {
+		return x.Payload
+	}
+	return ""
+}
+
+func (x *RecurringRule) GetCron() string {
+	if x != nil {
+		return x.Cron
+	}
+	return ""
+}
+
+func (x *RecurringRule) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *RecurringRule) GetLastRunAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastRunAt
+	}
+	return nil
+}
+
+func (x *RecurringRule) GetNextRunAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.NextRunAt
+	}
+	return nil
+}
+
+func (x *RecurringRule) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *RecurringRule) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type ListRecurringRulesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PageSize      int32                  `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListRecurringRulesRequest) Reset() {
+	*x = ListRecurringRulesRequest{}
+	mi := &file_task_v1_task_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListRecurringRulesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListRecurringRulesRequest) ProtoMessage() {}
+
+func (x *ListRecurringRulesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_task_v1_task_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListRecurringRulesRequest.ProtoReflect.Descriptor instead.
+func (*ListRecurringRulesRequest) Descriptor() ([]byte, []int) {
+	return file_task_v1_task_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ListRecurringRulesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListRecurringRulesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListRecurringRulesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Rules         []*RecurringRule       `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	TotalSize     int32                  `protobuf:"varint,3,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListRecurringRulesResponse) Reset() {
+	*x = ListRecurringRulesResponse{}
+	mi := &file_task_v1_task_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListRecurringRulesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListRecurringRulesResponse) ProtoMessage() {}
+
+func (x *ListRecurringRulesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_task_v1_task_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListRecurringRulesResponse.ProtoReflect.Descriptor instead.
+func (*ListRecurringRulesResponse) Descriptor() ([]byte, []int) {
+	return file_task_v1_task_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ListRecurringRulesResponse) GetRules() []*RecurringRule {
+	if x != nil {
+		return x.Rules
+	}
+	return nil
+}
+
+func (x *ListRecurringRulesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+func (x *ListRecurringRulesResponse) GetTotalSize() int32 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
+type UpsertRecurringRuleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // 空 = 新建
+	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Payload       string                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	Cron          string                 `protobuf:"bytes,4,opt,name=cron,proto3" json:"cron,omitempty"`
+	Enabled       bool                   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertRecurringRuleRequest) Reset() {
+	*x = UpsertRecurringRuleRequest{}
+	mi := &file_task_v1_task_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertRecurringRuleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertRecurringRuleRequest) ProtoMessage() {}
+
+func (x *UpsertRecurringRuleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_task_v1_task_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertRecurringRuleRequest.ProtoReflect.Descriptor instead.
+func (*UpsertRecurringRuleRequest) Descriptor() ([]byte, []int) {
+	return file_task_v1_task_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *UpsertRecurringRuleRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpsertRecurringRuleRequest) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *UpsertRecurringRuleRequest) GetPayload() string {
+	if x != nil {
+		return x.Payload
+	}
+	return ""
+}
+
+func (x *UpsertRecurringRuleRequest) GetCron() string {
+	if x != nil {
+		return x.Cron
+	}
+	return ""
+}
+
+func (x *UpsertRecurringRuleRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type DeleteRecurringRuleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteRecurringRuleRequest) Reset() {
+	*x = DeleteRecurringRuleRequest{}
+	mi := &file_task_v1_task_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteRecurringRuleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteRecurringRuleRequest) ProtoMessage() {}
+
+func (x *DeleteRecurringRuleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_task_v1_task_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteRecurringRuleRequest.ProtoReflect.Descriptor instead.
+func (*DeleteRecurringRuleRequest) Descriptor() ([]byte, []int) {
+	return file_task_v1_task_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *DeleteRecurringRuleRequest) GetId() string {
+	if x != nil {
+		return x.Id
 	}
 	return ""
 }
@@ -468,55 +1028,113 @@ var File_task_v1_task_proto protoreflect.FileDescriptor
 
 const file_task_v1_task_proto_rawDesc = "" +
 	"\n" +
-	"\x12task/v1/task.proto\x12\atask.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17grpcapi/v1/policy.proto\"\xcb\x02\n" +
-	"\x04Task\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
-	"\x0forganization_id\x18\x02 \x01(\tR\x0eorganizationId\x12\x1d\n" +
+	"\x12task/v1/task.proto\x12\atask.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17grpcapi/v1/policy.proto\"\xae\x03\n" +
+	"\x03Job\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\x12\x18\n" +
+	"\apayload\x18\x03 \x01(\tR\apayload\x12'\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x0f.task.v1.StatusR\x06status\x12\x1a\n" +
+	"\bpriority\x18\x05 \x01(\x05R\bpriority\x121\n" +
+	"\x06run_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x05runAt\x12\x18\n" +
+	"\aattempt\x18\a \x01(\x05R\aattempt\x12!\n" +
+	"\fmax_attempts\x18\b \x01(\x05R\vmaxAttempts\x12\x1d\n" +
 	"\n" +
-	"creator_id\x18\x03 \x01(\tR\tcreatorId\x12\x14\n" +
-	"\x05title\x18\x04 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x05 \x01(\tR\vdescription\x12=\n" +
-	"\fcompleted_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x129\n" +
+	"unique_key\x18\t \x01(\tR\tuniqueKey\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"last_error\x18\n" +
+	" \x01(\tR\tlastError\x129\n" +
 	"\n" +
-	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"t\n" +
-	"\x11CreateTaskRequest\x12'\n" +
-	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\"R\n" +
-	"\x0eGetTaskRequest\x12'\n" +
-	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x17\n" +
-	"\atask_id\x18\x02 \x01(\tR\x06taskId\"w\n" +
-	"\x10ListTasksRequest\x12'\n" +
-	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12;\n" +
+	"\vfinished_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"finishedAt\"\xf4\x01\n" +
+	"\x0eEnqueueRequest\x12\x12\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x12\x18\n" +
+	"\apayload\x18\x02 \x01(\tR\apayload\x121\n" +
+	"\x06run_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x05runAt\x12#\n" +
+	"\rdelay_seconds\x18\x04 \x01(\x05R\fdelaySeconds\x12\x1d\n" +
 	"\n" +
-	"page_token\x18\x03 \x01(\tR\tpageToken\"\x7f\n" +
-	"\x11ListTasksResponse\x12#\n" +
-	"\x05tasks\x18\x01 \x03(\v2\r.task.v1.TaskR\x05tasks\x12&\n" +
+	"unique_key\x18\x05 \x01(\tR\tuniqueKey\x12\x1a\n" +
+	"\bpriority\x18\x06 \x01(\x05R\bpriority\x12!\n" +
+	"\fmax_attempts\x18\a \x01(\x05R\vmaxAttempts\"\x1f\n" +
+	"\rGetJobRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x8a\x01\n" +
+	"\x0fListJobsRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\x12'\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x0f.task.v1.StatusR\x06status\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\"{\n" +
+	"\x10ListJobsResponse\x12 \n" +
+	"\x04jobs\x18\x01 \x03(\v2\f.task.v1.JobR\x04jobs\x12&\n" +
 	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12\x1d\n" +
 	"\n" +
-	"total_size\x18\x03 \x01(\x05R\ttotalSize\"W\n" +
-	"\x13CompleteTaskRequest\x12'\n" +
-	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x17\n" +
-	"\atask_id\x18\x02 \x01(\tR\x06taskId\"U\n" +
-	"\x11DeleteTaskRequest\x12'\n" +
-	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x17\n" +
-	"\atask_id\x18\x02 \x01(\tR\x06taskId2\x92\x05\n" +
-	"\vTaskService\x12u\n" +
+	"total_size\x18\x03 \x01(\x05R\ttotalSize\"!\n" +
+	"\x0fRetryJobRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\"\n" +
+	"\x10CancelJobRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x11\n" +
+	"\x0fGetStatsRequest\"\x81\x01\n" +
+	"\x05Stats\x12\x18\n" +
+	"\apending\x18\x01 \x01(\x03R\apending\x12\x18\n" +
+	"\arunning\x18\x02 \x01(\x03R\arunning\x12\x12\n" +
+	"\x04done\x18\x03 \x01(\x03R\x04done\x12\x12\n" +
+	"\x04dead\x18\x04 \x01(\x03R\x04dead\x12\x1c\n" +
+	"\tcancelled\x18\x05 \x01(\x03R\tcancelled\"\xe9\x02\n" +
+	"\rRecurringRule\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\x12\x18\n" +
+	"\apayload\x18\x03 \x01(\tR\apayload\x12\x12\n" +
+	"\x04cron\x18\x04 \x01(\tR\x04cron\x12\x18\n" +
+	"\aenabled\x18\x05 \x01(\bR\aenabled\x12:\n" +
+	"\vlast_run_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tlastRunAt\x12:\n" +
+	"\vnext_run_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tnextRunAt\x129\n" +
 	"\n" +
-	"CreateTask\x12\x1a.task.v1.CreateTaskRequest\x1a\r.task.v1.Task\"<\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02.:\x01*\")/v1/organizations/{organization_id}/tasks\x12v\n" +
-	"\aGetTask\x12\x17.task.v1.GetTaskRequest\x1a\r.task.v1.Task\"C\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x025\x123/v1/organizations/{organization_id}/tasks/{task_id}\x12}\n" +
-	"\tListTasks\x12\x19.task.v1.ListTasksRequest\x1a\x1a.task.v1.ListTasksResponse\"9\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02+\x12)/v1/organizations/{organization_id}/tasks\x12\x8c\x01\n" +
-	"\fCompleteTask\x12\x1c.task.v1.CompleteTaskRequest\x1a\r.task.v1.Task\"O\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02A:\x01*\"</v1/organizations/{organization_id}/tasks/{task_id}:complete\x12\x85\x01\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"DeleteTask\x12\x1a.task.v1.DeleteTaskRequest\x1a\x16.google.protobuf.Empty\"C\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x025*3/v1/organizations/{organization_id}/tasks/{task_id}BS\xca\xf0\x19\n" +
+	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"W\n" +
+	"\x19ListRecurringRulesRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\"\x91\x01\n" +
+	"\x1aListRecurringRulesResponse\x12,\n" +
+	"\x05rules\x18\x01 \x03(\v2\x16.task.v1.RecurringRuleR\x05rules\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\x03 \x01(\x05R\ttotalSize\"\x88\x01\n" +
+	"\x1aUpsertRecurringRuleRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\x12\x18\n" +
+	"\apayload\x18\x03 \x01(\tR\apayload\x12\x12\n" +
+	"\x04cron\x18\x04 \x01(\tR\x04cron\x12\x18\n" +
+	"\aenabled\x18\x05 \x01(\bR\aenabled\",\n" +
+	"\x1aDeleteRecurringRuleRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id*\x80\x01\n" +
+	"\x06Status\x12\x16\n" +
+	"\x12STATUS_UNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0eSTATUS_PENDING\x10\x01\x12\x12\n" +
+	"\x0eSTATUS_RUNNING\x10\x02\x12\x0f\n" +
+	"\vSTATUS_DONE\x10\x03\x12\x0f\n" +
+	"\vSTATUS_DEAD\x10\x04\x12\x14\n" +
+	"\x10STATUS_CANCELLED\x10\x052\x9e\b\n" +
+	"\vTaskService\x12`\n" +
+	"\aEnqueue\x12\x17.task.v1.EnqueueRequest\x1a\f.task.v1.Job\".\xda\xf0\x19\x12\n" +
+	"\x102\x0etask.job.write\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/v1/task/jobs\x12_\n" +
+	"\x06GetJob\x12\x16.task.v1.GetJobRequest\x1a\f.task.v1.Job\"/\xda\xf0\x19\x11\n" +
+	"\x0f2\rtask.job.read\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/task/jobs/{id}\x12k\n" +
+	"\bListJobs\x12\x18.task.v1.ListJobsRequest\x1a\x19.task.v1.ListJobsResponse\"*\xda\xf0\x19\x11\n" +
+	"\x0f2\rtask.job.read\x82\xd3\xe4\x93\x02\x0f\x12\r/v1/task/jobs\x12m\n" +
+	"\bRetryJob\x12\x18.task.v1.RetryJobRequest\x1a\f.task.v1.Job\"9\xda\xf0\x19\x12\n" +
+	"\x102\x0etask.job.write\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/v1/task/jobs/{id}:retry\x12p\n" +
+	"\tCancelJob\x12\x19.task.v1.CancelJobRequest\x1a\f.task.v1.Job\":\xda\xf0\x19\x12\n" +
+	"\x102\x0etask.job.write\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/task/jobs/{id}:cancel\x12a\n" +
+	"\bGetStats\x12\x18.task.v1.GetStatsRequest\x1a\x0e.task.v1.Stats\"+\xda\xf0\x19\x11\n" +
+	"\x0f2\rtask.job.read\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/task/stats\x12\x8a\x01\n" +
+	"\x12ListRecurringRules\x12\".task.v1.ListRecurringRulesRequest\x1a#.task.v1.ListRecurringRulesResponse\"+\xda\xf0\x19\x11\n" +
+	"\x0f2\rtask.job.read\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/task/rules\x12\x84\x01\n" +
+	"\x13UpsertRecurringRule\x12#.task.v1.UpsertRecurringRuleRequest\x1a\x16.task.v1.RecurringRule\"0\xda\xf0\x19\x13\n" +
+	"\x112\x0ftask.rule.write\x82\xd3\xe4\x93\x02\x13:\x01*\x1a\x0e/v1/task/rules\x12\x86\x01\n" +
+	"\x13DeleteRecurringRule\x12#.task.v1.DeleteRecurringRuleRequest\x1a\x16.google.protobuf.Empty\"2\xda\xf0\x19\x13\n" +
+	"\x112\x0ftask.rule.write\x82\xd3\xe4\x93\x02\x15*\x13/v1/task/rules/{id}BS\xca\xf0\x19\n" +
 	"\n" +
 	"\x06public \x02ZCgithub.com/lynxland/lynx-start/modules/task/genproto/task/v1;taskv1b\x06proto3"
 
@@ -532,38 +1150,63 @@ func file_task_v1_task_proto_rawDescGZIP() []byte {
 	return file_task_v1_task_proto_rawDescData
 }
 
-var file_task_v1_task_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_task_v1_task_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_task_v1_task_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_task_v1_task_proto_goTypes = []any{
-	(*Task)(nil),                  // 0: task.v1.Task
-	(*CreateTaskRequest)(nil),     // 1: task.v1.CreateTaskRequest
-	(*GetTaskRequest)(nil),        // 2: task.v1.GetTaskRequest
-	(*ListTasksRequest)(nil),      // 3: task.v1.ListTasksRequest
-	(*ListTasksResponse)(nil),     // 4: task.v1.ListTasksResponse
-	(*CompleteTaskRequest)(nil),   // 5: task.v1.CompleteTaskRequest
-	(*DeleteTaskRequest)(nil),     // 6: task.v1.DeleteTaskRequest
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),         // 8: google.protobuf.Empty
+	(Status)(0),                        // 0: task.v1.Status
+	(*Job)(nil),                        // 1: task.v1.Job
+	(*EnqueueRequest)(nil),             // 2: task.v1.EnqueueRequest
+	(*GetJobRequest)(nil),              // 3: task.v1.GetJobRequest
+	(*ListJobsRequest)(nil),            // 4: task.v1.ListJobsRequest
+	(*ListJobsResponse)(nil),           // 5: task.v1.ListJobsResponse
+	(*RetryJobRequest)(nil),            // 6: task.v1.RetryJobRequest
+	(*CancelJobRequest)(nil),           // 7: task.v1.CancelJobRequest
+	(*GetStatsRequest)(nil),            // 8: task.v1.GetStatsRequest
+	(*Stats)(nil),                      // 9: task.v1.Stats
+	(*RecurringRule)(nil),              // 10: task.v1.RecurringRule
+	(*ListRecurringRulesRequest)(nil),  // 11: task.v1.ListRecurringRulesRequest
+	(*ListRecurringRulesResponse)(nil), // 12: task.v1.ListRecurringRulesResponse
+	(*UpsertRecurringRuleRequest)(nil), // 13: task.v1.UpsertRecurringRuleRequest
+	(*DeleteRecurringRuleRequest)(nil), // 14: task.v1.DeleteRecurringRuleRequest
+	(*timestamppb.Timestamp)(nil),      // 15: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),              // 16: google.protobuf.Empty
 }
 var file_task_v1_task_proto_depIdxs = []int32{
-	7, // 0: task.v1.Task.completed_at:type_name -> google.protobuf.Timestamp
-	7, // 1: task.v1.Task.created_at:type_name -> google.protobuf.Timestamp
-	7, // 2: task.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
-	0, // 3: task.v1.ListTasksResponse.tasks:type_name -> task.v1.Task
-	1, // 4: task.v1.TaskService.CreateTask:input_type -> task.v1.CreateTaskRequest
-	2, // 5: task.v1.TaskService.GetTask:input_type -> task.v1.GetTaskRequest
-	3, // 6: task.v1.TaskService.ListTasks:input_type -> task.v1.ListTasksRequest
-	5, // 7: task.v1.TaskService.CompleteTask:input_type -> task.v1.CompleteTaskRequest
-	6, // 8: task.v1.TaskService.DeleteTask:input_type -> task.v1.DeleteTaskRequest
-	0, // 9: task.v1.TaskService.CreateTask:output_type -> task.v1.Task
-	0, // 10: task.v1.TaskService.GetTask:output_type -> task.v1.Task
-	4, // 11: task.v1.TaskService.ListTasks:output_type -> task.v1.ListTasksResponse
-	0, // 12: task.v1.TaskService.CompleteTask:output_type -> task.v1.Task
-	8, // 13: task.v1.TaskService.DeleteTask:output_type -> google.protobuf.Empty
-	9, // [9:14] is the sub-list for method output_type
-	4, // [4:9] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0,  // 0: task.v1.Job.status:type_name -> task.v1.Status
+	15, // 1: task.v1.Job.run_at:type_name -> google.protobuf.Timestamp
+	15, // 2: task.v1.Job.created_at:type_name -> google.protobuf.Timestamp
+	15, // 3: task.v1.Job.finished_at:type_name -> google.protobuf.Timestamp
+	15, // 4: task.v1.EnqueueRequest.run_at:type_name -> google.protobuf.Timestamp
+	0,  // 5: task.v1.ListJobsRequest.status:type_name -> task.v1.Status
+	1,  // 6: task.v1.ListJobsResponse.jobs:type_name -> task.v1.Job
+	15, // 7: task.v1.RecurringRule.last_run_at:type_name -> google.protobuf.Timestamp
+	15, // 8: task.v1.RecurringRule.next_run_at:type_name -> google.protobuf.Timestamp
+	15, // 9: task.v1.RecurringRule.created_at:type_name -> google.protobuf.Timestamp
+	15, // 10: task.v1.RecurringRule.updated_at:type_name -> google.protobuf.Timestamp
+	10, // 11: task.v1.ListRecurringRulesResponse.rules:type_name -> task.v1.RecurringRule
+	2,  // 12: task.v1.TaskService.Enqueue:input_type -> task.v1.EnqueueRequest
+	3,  // 13: task.v1.TaskService.GetJob:input_type -> task.v1.GetJobRequest
+	4,  // 14: task.v1.TaskService.ListJobs:input_type -> task.v1.ListJobsRequest
+	6,  // 15: task.v1.TaskService.RetryJob:input_type -> task.v1.RetryJobRequest
+	7,  // 16: task.v1.TaskService.CancelJob:input_type -> task.v1.CancelJobRequest
+	8,  // 17: task.v1.TaskService.GetStats:input_type -> task.v1.GetStatsRequest
+	11, // 18: task.v1.TaskService.ListRecurringRules:input_type -> task.v1.ListRecurringRulesRequest
+	13, // 19: task.v1.TaskService.UpsertRecurringRule:input_type -> task.v1.UpsertRecurringRuleRequest
+	14, // 20: task.v1.TaskService.DeleteRecurringRule:input_type -> task.v1.DeleteRecurringRuleRequest
+	1,  // 21: task.v1.TaskService.Enqueue:output_type -> task.v1.Job
+	1,  // 22: task.v1.TaskService.GetJob:output_type -> task.v1.Job
+	5,  // 23: task.v1.TaskService.ListJobs:output_type -> task.v1.ListJobsResponse
+	1,  // 24: task.v1.TaskService.RetryJob:output_type -> task.v1.Job
+	1,  // 25: task.v1.TaskService.CancelJob:output_type -> task.v1.Job
+	9,  // 26: task.v1.TaskService.GetStats:output_type -> task.v1.Stats
+	12, // 27: task.v1.TaskService.ListRecurringRules:output_type -> task.v1.ListRecurringRulesResponse
+	10, // 28: task.v1.TaskService.UpsertRecurringRule:output_type -> task.v1.RecurringRule
+	16, // 29: task.v1.TaskService.DeleteRecurringRule:output_type -> google.protobuf.Empty
+	21, // [21:30] is the sub-list for method output_type
+	12, // [12:21] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_task_v1_task_proto_init() }
@@ -576,13 +1219,14 @@ func file_task_v1_task_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_task_v1_task_proto_rawDesc), len(file_task_v1_task_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   7,
+			NumEnums:      1,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_task_v1_task_proto_goTypes,
 		DependencyIndexes: file_task_v1_task_proto_depIdxs,
+		EnumInfos:         file_task_v1_task_proto_enumTypes,
 		MessageInfos:      file_task_v1_task_proto_msgTypes,
 	}.Build()
 	File_task_v1_task_proto = out.File

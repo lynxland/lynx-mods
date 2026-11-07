@@ -101,10 +101,13 @@ git -C "$FIXTURE/reg" tag -f modules/account/v0.1.0 HEAD
 git -C "$FIXTURE/reg" tag -f modules/organization/v0.1.0 HEAD
 git -C "$FIXTURE/reg" revert --no-edit HEAD >/dev/null
 fi
-# doctor 场景的工作区版本 tag：全模块锚 HEAD（0.6.0；发版后真 tag 到位，
-# fixture tag 被 -f 覆盖亦无碍——fixture 一次性）。
+# doctor 场景的工作区版本 tag：版本号从各模块 module.json 动态读取
+# （跟随在制版本，不需同步维护本脚本）；锚 HEAD，发版后真 tag 到位，
+# fixture tag 被 -f 覆盖亦无碍——fixture 一次性。
 for m in demo account audit organization notification task; do
-  git -C "$FIXTURE/reg" tag -f "modules/$m/v0.6.0" HEAD >/dev/null
+  v="$(sed -n 's/.*"version": "\([0-9][0-9.]*\)".*/\1/p' "$FIXTURE/reg/modules/$m/module.json")"
+  [ -n "$v" ] || { echo "fixture: $m module.json 缺 version"; exit 1; }
+  git -C "$FIXTURE/reg" tag -f "modules/$m/v$v" HEAD >/dev/null
 done
 if [ -z "${SKIP_ACCOUNT_SCENARIOS:-}" ]; then
 # DAG 负路径：organization 依赖 account，干净应用上直接装必须被拒；装

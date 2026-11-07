@@ -20,31 +20,47 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TaskService_CreateTask_FullMethodName   = "/task.v1.TaskService/CreateTask"
-	TaskService_GetTask_FullMethodName      = "/task.v1.TaskService/GetTask"
-	TaskService_ListTasks_FullMethodName    = "/task.v1.TaskService/ListTasks"
-	TaskService_CompleteTask_FullMethodName = "/task.v1.TaskService/CompleteTask"
-	TaskService_DeleteTask_FullMethodName   = "/task.v1.TaskService/DeleteTask"
+	TaskService_Enqueue_FullMethodName             = "/task.v1.TaskService/Enqueue"
+	TaskService_GetJob_FullMethodName              = "/task.v1.TaskService/GetJob"
+	TaskService_ListJobs_FullMethodName            = "/task.v1.TaskService/ListJobs"
+	TaskService_RetryJob_FullMethodName            = "/task.v1.TaskService/RetryJob"
+	TaskService_CancelJob_FullMethodName           = "/task.v1.TaskService/CancelJob"
+	TaskService_GetStats_FullMethodName            = "/task.v1.TaskService/GetStats"
+	TaskService_ListRecurringRules_FullMethodName  = "/task.v1.TaskService/ListRecurringRules"
+	TaskService_UpsertRecurringRule_FullMethodName = "/task.v1.TaskService/UpsertRecurringRule"
+	TaskService_DeleteRecurringRule_FullMethodName = "/task.v1.TaskService/DeleteRecurringRule"
 )
 
 // TaskServiceClient is the client API for TaskService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// TaskService 是任务模块的 API 面：组织内任务（第一个组织挂靠业务资源，
-// ADR-0008 姿势首秀）。依赖 organization（DependsOn）：任务必属一个组织，
-// 读写前经其 domain 端口校验成员资格；完成与删除限创建者。
+// TaskService 是后台任务与调度模块的 API 面：持久化任务队列（即时/
+// 延迟/定时入队、唯一键防重、退避重试、死信）与 cron 周期规则。
+// 零模块依赖（ADR-0009 自足模块）；worker 的 handler 注册属应用组合根
+// （见模块 README「接线 runner」）。
 type TaskServiceClient interface {
-	// 建任务（成员即可创建；创建者记为 actor）。要求认证。
-	CreateTask(ctx context.Context, in *CreateTaskRequest, opts ...grpc.CallOption) (*Task, error)
-	// 取任务（成员可见）。要求认证。
-	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*Task, error)
-	// 组织任务列表（成员可见，分页，created_at 降序）。要求认证。
-	ListTasks(ctx context.Context, in *ListTasksRequest, opts ...grpc.CallOption) (*ListTasksResponse, error)
-	// 标记完成（限创建者；幂等）。要求认证。
-	CompleteTask(ctx context.Context, in *CompleteTaskRequest, opts ...grpc.CallOption) (*Task, error)
-	// 删除任务（限创建者；幂等）。要求认证。
-	DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 入队（即时；run_at/delay 二选一可延迟或定时；unique_key 在
+	// pending/running 存续期内防重）。要求 task.job.write。
+	Enqueue(ctx context.Context, in *EnqueueRequest, opts ...grpc.CallOption) (*Job, error)
+	// 取单个任务。要求 task.job.read。
+	GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*Job, error)
+	// 列任务（按状态/类型过滤，keyset 分页，created_at 降序）。要求
+	// task.job.read。
+	ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error)
+	// 重试（死信/已取消 → pending，attempt 归零）。要求 task.job.write。
+	RetryJob(ctx context.Context, in *RetryJobRequest, opts ...grpc.CallOption) (*Job, error)
+	// 取消（仅 pending；运行中不可取消）。要求 task.job.write。
+	CancelJob(ctx context.Context, in *CancelJobRequest, opts ...grpc.CallOption) (*Job, error)
+	// 各状态计数（监控/告警消费）。要求 task.job.read。
+	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*Stats, error)
+	// 列周期规则（分页，next_run_at 升序）。要求 task.job.read。
+	ListRecurringRules(ctx context.Context, in *ListRecurringRulesRequest, opts ...grpc.CallOption) (*ListRecurringRulesResponse, error)
+	// 新建或更新周期规则（id 空新建；cron 为 5 段标准表达式或
+	// "@every 1h" 描述符）。要求 task.rule.write。
+	UpsertRecurringRule(ctx context.Context, in *UpsertRecurringRuleRequest, opts ...grpc.CallOption) (*RecurringRule, error)
+	// 删除周期规则（已入队任务不受影响）。要求 task.rule.write。
+	DeleteRecurringRule(ctx context.Context, in *DeleteRecurringRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type taskServiceClient struct {
@@ -55,50 +71,90 @@ func NewTaskServiceClient(cc grpc.ClientConnInterface) TaskServiceClient {
 	return &taskServiceClient{cc}
 }
 
-func (c *taskServiceClient) CreateTask(ctx context.Context, in *CreateTaskRequest, opts ...grpc.CallOption) (*Task, error) {
+func (c *taskServiceClient) Enqueue(ctx context.Context, in *EnqueueRequest, opts ...grpc.CallOption) (*Job, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Task)
-	err := c.cc.Invoke(ctx, TaskService_CreateTask_FullMethodName, in, out, cOpts...)
+	out := new(Job)
+	err := c.cc.Invoke(ctx, TaskService_Enqueue_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*Task, error) {
+func (c *taskServiceClient) GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*Job, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Task)
-	err := c.cc.Invoke(ctx, TaskService_GetTask_FullMethodName, in, out, cOpts...)
+	out := new(Job)
+	err := c.cc.Invoke(ctx, TaskService_GetJob_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) ListTasks(ctx context.Context, in *ListTasksRequest, opts ...grpc.CallOption) (*ListTasksResponse, error) {
+func (c *taskServiceClient) ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListTasksResponse)
-	err := c.cc.Invoke(ctx, TaskService_ListTasks_FullMethodName, in, out, cOpts...)
+	out := new(ListJobsResponse)
+	err := c.cc.Invoke(ctx, TaskService_ListJobs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) CompleteTask(ctx context.Context, in *CompleteTaskRequest, opts ...grpc.CallOption) (*Task, error) {
+func (c *taskServiceClient) RetryJob(ctx context.Context, in *RetryJobRequest, opts ...grpc.CallOption) (*Job, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Task)
-	err := c.cc.Invoke(ctx, TaskService_CompleteTask_FullMethodName, in, out, cOpts...)
+	out := new(Job)
+	err := c.cc.Invoke(ctx, TaskService_RetryJob_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *taskServiceClient) DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *taskServiceClient) CancelJob(ctx context.Context, in *CancelJobRequest, opts ...grpc.CallOption) (*Job, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Job)
+	err := c.cc.Invoke(ctx, TaskService_CancelJob_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*Stats, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Stats)
+	err := c.cc.Invoke(ctx, TaskService_GetStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) ListRecurringRules(ctx context.Context, in *ListRecurringRulesRequest, opts ...grpc.CallOption) (*ListRecurringRulesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRecurringRulesResponse)
+	err := c.cc.Invoke(ctx, TaskService_ListRecurringRules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) UpsertRecurringRule(ctx context.Context, in *UpsertRecurringRuleRequest, opts ...grpc.CallOption) (*RecurringRule, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecurringRule)
+	err := c.cc.Invoke(ctx, TaskService_UpsertRecurringRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taskServiceClient) DeleteRecurringRule(ctx context.Context, in *DeleteRecurringRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, TaskService_DeleteTask_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, TaskService_DeleteRecurringRule_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -109,20 +165,32 @@ func (c *taskServiceClient) DeleteTask(ctx context.Context, in *DeleteTaskReques
 // All implementations must embed UnimplementedTaskServiceServer
 // for forward compatibility.
 //
-// TaskService 是任务模块的 API 面：组织内任务（第一个组织挂靠业务资源，
-// ADR-0008 姿势首秀）。依赖 organization（DependsOn）：任务必属一个组织，
-// 读写前经其 domain 端口校验成员资格；完成与删除限创建者。
+// TaskService 是后台任务与调度模块的 API 面：持久化任务队列（即时/
+// 延迟/定时入队、唯一键防重、退避重试、死信）与 cron 周期规则。
+// 零模块依赖（ADR-0009 自足模块）；worker 的 handler 注册属应用组合根
+// （见模块 README「接线 runner」）。
 type TaskServiceServer interface {
-	// 建任务（成员即可创建；创建者记为 actor）。要求认证。
-	CreateTask(context.Context, *CreateTaskRequest) (*Task, error)
-	// 取任务（成员可见）。要求认证。
-	GetTask(context.Context, *GetTaskRequest) (*Task, error)
-	// 组织任务列表（成员可见，分页，created_at 降序）。要求认证。
-	ListTasks(context.Context, *ListTasksRequest) (*ListTasksResponse, error)
-	// 标记完成（限创建者；幂等）。要求认证。
-	CompleteTask(context.Context, *CompleteTaskRequest) (*Task, error)
-	// 删除任务（限创建者；幂等）。要求认证。
-	DeleteTask(context.Context, *DeleteTaskRequest) (*emptypb.Empty, error)
+	// 入队（即时；run_at/delay 二选一可延迟或定时；unique_key 在
+	// pending/running 存续期内防重）。要求 task.job.write。
+	Enqueue(context.Context, *EnqueueRequest) (*Job, error)
+	// 取单个任务。要求 task.job.read。
+	GetJob(context.Context, *GetJobRequest) (*Job, error)
+	// 列任务（按状态/类型过滤，keyset 分页，created_at 降序）。要求
+	// task.job.read。
+	ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error)
+	// 重试（死信/已取消 → pending，attempt 归零）。要求 task.job.write。
+	RetryJob(context.Context, *RetryJobRequest) (*Job, error)
+	// 取消（仅 pending；运行中不可取消）。要求 task.job.write。
+	CancelJob(context.Context, *CancelJobRequest) (*Job, error)
+	// 各状态计数（监控/告警消费）。要求 task.job.read。
+	GetStats(context.Context, *GetStatsRequest) (*Stats, error)
+	// 列周期规则（分页，next_run_at 升序）。要求 task.job.read。
+	ListRecurringRules(context.Context, *ListRecurringRulesRequest) (*ListRecurringRulesResponse, error)
+	// 新建或更新周期规则（id 空新建；cron 为 5 段标准表达式或
+	// "@every 1h" 描述符）。要求 task.rule.write。
+	UpsertRecurringRule(context.Context, *UpsertRecurringRuleRequest) (*RecurringRule, error)
+	// 删除周期规则（已入队任务不受影响）。要求 task.rule.write。
+	DeleteRecurringRule(context.Context, *DeleteRecurringRuleRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedTaskServiceServer()
 }
 
@@ -133,20 +201,32 @@ type TaskServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTaskServiceServer struct{}
 
-func (UnimplementedTaskServiceServer) CreateTask(context.Context, *CreateTaskRequest) (*Task, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateTask not implemented")
+func (UnimplementedTaskServiceServer) Enqueue(context.Context, *EnqueueRequest) (*Job, error) {
+	return nil, status.Error(codes.Unimplemented, "method Enqueue not implemented")
 }
-func (UnimplementedTaskServiceServer) GetTask(context.Context, *GetTaskRequest) (*Task, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetTask not implemented")
+func (UnimplementedTaskServiceServer) GetJob(context.Context, *GetJobRequest) (*Job, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetJob not implemented")
 }
-func (UnimplementedTaskServiceServer) ListTasks(context.Context, *ListTasksRequest) (*ListTasksResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListTasks not implemented")
+func (UnimplementedTaskServiceServer) ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListJobs not implemented")
 }
-func (UnimplementedTaskServiceServer) CompleteTask(context.Context, *CompleteTaskRequest) (*Task, error) {
-	return nil, status.Error(codes.Unimplemented, "method CompleteTask not implemented")
+func (UnimplementedTaskServiceServer) RetryJob(context.Context, *RetryJobRequest) (*Job, error) {
+	return nil, status.Error(codes.Unimplemented, "method RetryJob not implemented")
 }
-func (UnimplementedTaskServiceServer) DeleteTask(context.Context, *DeleteTaskRequest) (*emptypb.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method DeleteTask not implemented")
+func (UnimplementedTaskServiceServer) CancelJob(context.Context, *CancelJobRequest) (*Job, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelJob not implemented")
+}
+func (UnimplementedTaskServiceServer) GetStats(context.Context, *GetStatsRequest) (*Stats, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStats not implemented")
+}
+func (UnimplementedTaskServiceServer) ListRecurringRules(context.Context, *ListRecurringRulesRequest) (*ListRecurringRulesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListRecurringRules not implemented")
+}
+func (UnimplementedTaskServiceServer) UpsertRecurringRule(context.Context, *UpsertRecurringRuleRequest) (*RecurringRule, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertRecurringRule not implemented")
+}
+func (UnimplementedTaskServiceServer) DeleteRecurringRule(context.Context, *DeleteRecurringRuleRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteRecurringRule not implemented")
 }
 func (UnimplementedTaskServiceServer) mustEmbedUnimplementedTaskServiceServer() {}
 func (UnimplementedTaskServiceServer) testEmbeddedByValue()                     {}
@@ -169,92 +249,164 @@ func RegisterTaskServiceServer(s grpc.ServiceRegistrar, srv TaskServiceServer) {
 	s.RegisterService(&TaskService_ServiceDesc, srv)
 }
 
-func _TaskService_CreateTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateTaskRequest)
+func _TaskService_Enqueue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnqueueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).CreateTask(ctx, in)
+		return srv.(TaskServiceServer).Enqueue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_CreateTask_FullMethodName,
+		FullMethod: TaskService_Enqueue_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).CreateTask(ctx, req.(*CreateTaskRequest))
+		return srv.(TaskServiceServer).Enqueue(ctx, req.(*EnqueueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_GetTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTaskRequest)
+func _TaskService_GetJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetJobRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).GetTask(ctx, in)
+		return srv.(TaskServiceServer).GetJob(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_GetTask_FullMethodName,
+		FullMethod: TaskService_GetJob_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).GetTask(ctx, req.(*GetTaskRequest))
+		return srv.(TaskServiceServer).GetJob(ctx, req.(*GetJobRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_ListTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTasksRequest)
+func _TaskService_ListJobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListJobsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).ListTasks(ctx, in)
+		return srv.(TaskServiceServer).ListJobs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_ListTasks_FullMethodName,
+		FullMethod: TaskService_ListJobs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).ListTasks(ctx, req.(*ListTasksRequest))
+		return srv.(TaskServiceServer).ListJobs(ctx, req.(*ListJobsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_CompleteTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CompleteTaskRequest)
+func _TaskService_RetryJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetryJobRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).CompleteTask(ctx, in)
+		return srv.(TaskServiceServer).RetryJob(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_CompleteTask_FullMethodName,
+		FullMethod: TaskService_RetryJob_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).CompleteTask(ctx, req.(*CompleteTaskRequest))
+		return srv.(TaskServiceServer).RetryJob(ctx, req.(*RetryJobRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TaskService_DeleteTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteTaskRequest)
+func _TaskService_CancelJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelJobRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TaskServiceServer).DeleteTask(ctx, in)
+		return srv.(TaskServiceServer).CancelJob(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TaskService_DeleteTask_FullMethodName,
+		FullMethod: TaskService_CancelJob_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).DeleteTask(ctx, req.(*DeleteTaskRequest))
+		return srv.(TaskServiceServer).CancelJob(ctx, req.(*CancelJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_GetStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).GetStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_GetStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).GetStats(ctx, req.(*GetStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_ListRecurringRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRecurringRulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).ListRecurringRules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_ListRecurringRules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).ListRecurringRules(ctx, req.(*ListRecurringRulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_UpsertRecurringRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertRecurringRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).UpsertRecurringRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_UpsertRecurringRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).UpsertRecurringRule(ctx, req.(*UpsertRecurringRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaskService_DeleteRecurringRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRecurringRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).DeleteRecurringRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_DeleteRecurringRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).DeleteRecurringRule(ctx, req.(*DeleteRecurringRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -267,24 +419,40 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TaskServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateTask",
-			Handler:    _TaskService_CreateTask_Handler,
+			MethodName: "Enqueue",
+			Handler:    _TaskService_Enqueue_Handler,
 		},
 		{
-			MethodName: "GetTask",
-			Handler:    _TaskService_GetTask_Handler,
+			MethodName: "GetJob",
+			Handler:    _TaskService_GetJob_Handler,
 		},
 		{
-			MethodName: "ListTasks",
-			Handler:    _TaskService_ListTasks_Handler,
+			MethodName: "ListJobs",
+			Handler:    _TaskService_ListJobs_Handler,
 		},
 		{
-			MethodName: "CompleteTask",
-			Handler:    _TaskService_CompleteTask_Handler,
+			MethodName: "RetryJob",
+			Handler:    _TaskService_RetryJob_Handler,
 		},
 		{
-			MethodName: "DeleteTask",
-			Handler:    _TaskService_DeleteTask_Handler,
+			MethodName: "CancelJob",
+			Handler:    _TaskService_CancelJob_Handler,
+		},
+		{
+			MethodName: "GetStats",
+			Handler:    _TaskService_GetStats_Handler,
+		},
+		{
+			MethodName: "ListRecurringRules",
+			Handler:    _TaskService_ListRecurringRules_Handler,
+		},
+		{
+			MethodName: "UpsertRecurringRule",
+			Handler:    _TaskService_UpsertRecurringRule_Handler,
+		},
+		{
+			MethodName: "DeleteRecurringRule",
+			Handler:    _TaskService_DeleteRecurringRule_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

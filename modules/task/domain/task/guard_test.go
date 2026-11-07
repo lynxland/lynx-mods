@@ -1,18 +1,17 @@
 package task
 
 import (
+	"github.com/lynxland/appkit/contrib/bunx/testutil"
+
 	"go/parser"
 	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/lynxland/appkit/contrib/bunx/testutil"
 )
 
-// TestDomainPurity 契约②护栏：domain 层不得 import 本应用的 app/infra/api 层
-// （跨模块仅允许他模块的 domain 包）。
+// TestDomainPurity 契约②护栏：domain 层不得 import 本模块的 app/infra/api 层。
 func TestDomainPurity(t *testing.T) {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -42,8 +41,7 @@ func TestDomainPurity(t *testing.T) {
 	}
 }
 
-// TestDepsAtAPILayer ADR-0005 护栏：appkit 根包（Deps/Assembly 所在）只允许
-// api 装配层 import——domain/app/infra 一律经子包端口（uow/events/crud/…）消费。
+// TestDepsAtAPILayer ADR-0005 护栏：appkit 根包只允许 api 装配层 import。
 func TestDepsAtAPILayer(t *testing.T) {
 	testutil.AssertDepsAtAPILayer(t, ".", "../../internal/app", "../../internal/infra")
 }
