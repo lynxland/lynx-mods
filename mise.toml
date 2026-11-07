@@ -83,7 +83,7 @@ esac
 FIXTURE="$(mktemp -d)"
 git clone -q "$ROOT" "$FIXTURE/reg"
 if [ -z "${SKIP_ACCOUNT_SCENARIOS:-}" ]; then
-sed -i 's/"version": "0.6.0"/"version": "0.1.0"/' \
+sed -i -E 's/"version": "[0-9.]+"/"version": "0.1.0"/' \
   "$FIXTURE/reg/modules/account/module.json" \
   "$FIXTURE/reg/modules/organization/module.json"
 # 注入在 import 块结束后：gofmt 合法（声明须在 import 后），且远离 update
