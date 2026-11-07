@@ -693,6 +693,531 @@ func (x *LeaveRequest) GetOrganizationId() string {
 	return ""
 }
 
+// Invitation 是一条组织邀请（状态机：pending → accepted / revoked / expired）。
+type Invitation struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrganizationId string                 `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	Email          string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Role           string                 `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`     // 接受后授予的成员角色（admin/member）
+	Status         string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"` // pending / accepted / revoked / expired
+	ExpiresAt      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Invitation) Reset() {
+	*x = Invitation{}
+	mi := &file_organization_v1_organization_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Invitation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Invitation) ProtoMessage() {}
+
+func (x *Invitation) ProtoReflect() protoreflect.Message {
+	mi := &file_organization_v1_organization_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Invitation.ProtoReflect.Descriptor instead.
+func (*Invitation) Descriptor() ([]byte, []int) {
+	return file_organization_v1_organization_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *Invitation) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Invitation) GetOrganizationId() string {
+	if x != nil {
+		return x.OrganizationId
+	}
+	return ""
+}
+
+func (x *Invitation) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *Invitation) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *Invitation) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Invitation) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *Invitation) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+type CreateInvitationRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	Email          string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Role           string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"` // admin/member（默认 member；不可为 owner）
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CreateInvitationRequest) Reset() {
+	*x = CreateInvitationRequest{}
+	mi := &file_organization_v1_organization_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateInvitationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateInvitationRequest) ProtoMessage() {}
+
+func (x *CreateInvitationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_organization_v1_organization_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateInvitationRequest.ProtoReflect.Descriptor instead.
+func (*CreateInvitationRequest) Descriptor() ([]byte, []int) {
+	return file_organization_v1_organization_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *CreateInvitationRequest) GetOrganizationId() string {
+	if x != nil {
+		return x.OrganizationId
+	}
+	return ""
+}
+
+func (x *CreateInvitationRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *CreateInvitationRequest) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+type ListInvitationsRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	PageSize       int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken      string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ListInvitationsRequest) Reset() {
+	*x = ListInvitationsRequest{}
+	mi := &file_organization_v1_organization_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListInvitationsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListInvitationsRequest) ProtoMessage() {}
+
+func (x *ListInvitationsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_organization_v1_organization_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListInvitationsRequest.ProtoReflect.Descriptor instead.
+func (*ListInvitationsRequest) Descriptor() ([]byte, []int) {
+	return file_organization_v1_organization_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ListInvitationsRequest) GetOrganizationId() string {
+	if x != nil {
+		return x.OrganizationId
+	}
+	return ""
+}
+
+func (x *ListInvitationsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListInvitationsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListInvitationsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Invitations   []*Invitation          `protobuf:"bytes,1,rep,name=invitations,proto3" json:"invitations,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	TotalSize     int32                  `protobuf:"varint,3,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListInvitationsResponse) Reset() {
+	*x = ListInvitationsResponse{}
+	mi := &file_organization_v1_organization_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListInvitationsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListInvitationsResponse) ProtoMessage() {}
+
+func (x *ListInvitationsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_organization_v1_organization_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListInvitationsResponse.ProtoReflect.Descriptor instead.
+func (*ListInvitationsResponse) Descriptor() ([]byte, []int) {
+	return file_organization_v1_organization_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListInvitationsResponse) GetInvitations() []*Invitation {
+	if x != nil {
+		return x.Invitations
+	}
+	return nil
+}
+
+func (x *ListInvitationsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+func (x *ListInvitationsResponse) GetTotalSize() int32 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
+type RevokeInvitationRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	InvitationId   string                 `protobuf:"bytes,2,opt,name=invitation_id,json=invitationId,proto3" json:"invitation_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RevokeInvitationRequest) Reset() {
+	*x = RevokeInvitationRequest{}
+	mi := &file_organization_v1_organization_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeInvitationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeInvitationRequest) ProtoMessage() {}
+
+func (x *RevokeInvitationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_organization_v1_organization_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeInvitationRequest.ProtoReflect.Descriptor instead.
+func (*RevokeInvitationRequest) Descriptor() ([]byte, []int) {
+	return file_organization_v1_organization_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *RevokeInvitationRequest) GetOrganizationId() string {
+	if x != nil {
+		return x.OrganizationId
+	}
+	return ""
+}
+
+func (x *RevokeInvitationRequest) GetInvitationId() string {
+	if x != nil {
+		return x.InvitationId
+	}
+	return ""
+}
+
+type AcceptInvitationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AcceptInvitationRequest) Reset() {
+	*x = AcceptInvitationRequest{}
+	mi := &file_organization_v1_organization_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AcceptInvitationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AcceptInvitationRequest) ProtoMessage() {}
+
+func (x *AcceptInvitationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_organization_v1_organization_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AcceptInvitationRequest.ProtoReflect.Descriptor instead.
+func (*AcceptInvitationRequest) Descriptor() ([]byte, []int) {
+	return file_organization_v1_organization_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *AcceptInvitationRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type UpdateMemberRoleRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	UserId         string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Role           string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"` // admin/member
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *UpdateMemberRoleRequest) Reset() {
+	*x = UpdateMemberRoleRequest{}
+	mi := &file_organization_v1_organization_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateMemberRoleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateMemberRoleRequest) ProtoMessage() {}
+
+func (x *UpdateMemberRoleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_organization_v1_organization_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateMemberRoleRequest.ProtoReflect.Descriptor instead.
+func (*UpdateMemberRoleRequest) Descriptor() ([]byte, []int) {
+	return file_organization_v1_organization_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *UpdateMemberRoleRequest) GetOrganizationId() string {
+	if x != nil {
+		return x.OrganizationId
+	}
+	return ""
+}
+
+func (x *UpdateMemberRoleRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UpdateMemberRoleRequest) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+type TransferOwnershipRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	NewOwnerUserId string                 `protobuf:"bytes,2,opt,name=new_owner_user_id,json=newOwnerUserId,proto3" json:"new_owner_user_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *TransferOwnershipRequest) Reset() {
+	*x = TransferOwnershipRequest{}
+	mi := &file_organization_v1_organization_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransferOwnershipRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransferOwnershipRequest) ProtoMessage() {}
+
+func (x *TransferOwnershipRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_organization_v1_organization_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransferOwnershipRequest.ProtoReflect.Descriptor instead.
+func (*TransferOwnershipRequest) Descriptor() ([]byte, []int) {
+	return file_organization_v1_organization_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *TransferOwnershipRequest) GetOrganizationId() string {
+	if x != nil {
+		return x.OrganizationId
+	}
+	return ""
+}
+
+func (x *TransferOwnershipRequest) GetNewOwnerUserId() string {
+	if x != nil {
+		return x.NewOwnerUserId
+	}
+	return ""
+}
+
+type DeleteOrganizationRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DeleteOrganizationRequest) Reset() {
+	*x = DeleteOrganizationRequest{}
+	mi := &file_organization_v1_organization_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteOrganizationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteOrganizationRequest) ProtoMessage() {}
+
+func (x *DeleteOrganizationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_organization_v1_organization_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteOrganizationRequest.ProtoReflect.Descriptor instead.
+func (*DeleteOrganizationRequest) Descriptor() ([]byte, []int) {
+	return file_organization_v1_organization_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *DeleteOrganizationRequest) GetOrganizationId() string {
+	if x != nil {
+		return x.OrganizationId
+	}
+	return ""
+}
+
 var File_organization_v1_organization_proto protoreflect.FileDescriptor
 
 const file_organization_v1_organization_proto_rawDesc = "" +
@@ -744,7 +1269,46 @@ const file_organization_v1_organization_proto_rawDesc = "" +
 	"\n" +
 	"total_size\x18\x03 \x01(\x05R\ttotalSize\"7\n" +
 	"\fLeaveRequest\x12'\n" +
-	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId2\x96\t\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\"\xfd\x01\n" +
+	"\n" +
+	"Invitation\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
+	"\x0forganization_id\x18\x02 \x01(\tR\x0eorganizationId\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12\x12\n" +
+	"\x04role\x18\x04 \x01(\tR\x04role\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\x129\n" +
+	"\n" +
+	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x129\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"l\n" +
+	"\x17CreateInvitationRequest\x12'\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\"}\n" +
+	"\x16ListInvitationsRequest\x12'\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"\x9f\x01\n" +
+	"\x17ListInvitationsResponse\x12=\n" +
+	"\vinvitations\x18\x01 \x03(\v2\x1b.organization.v1.InvitationR\vinvitations\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\x03 \x01(\x05R\ttotalSize\"g\n" +
+	"\x17RevokeInvitationRequest\x12'\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12#\n" +
+	"\rinvitation_id\x18\x02 \x01(\tR\finvitationId\"/\n" +
+	"\x17AcceptInvitationRequest\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"o\n" +
+	"\x17UpdateMemberRoleRequest\x12'\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x12\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\"n\n" +
+	"\x18TransferOwnershipRequest\x12'\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12)\n" +
+	"\x11new_owner_user_id\x18\x02 \x01(\tR\x0enewOwnerUserId\"D\n" +
+	"\x19DeleteOrganizationRequest\x12'\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId2\xf0\x11\n" +
 	"\x13OrganizationService\x12\x85\x01\n" +
 	"\x12CreateOrganization\x12*.organization.v1.CreateOrganizationRequest\x1a\x1d.organization.v1.Organization\"$\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/organizations\x12\x8e\x01\n" +
@@ -761,7 +1325,21 @@ const file_organization_v1_organization_proto_rawDesc = "" +
 	"\vListMembers\x12#.organization.v1.ListMembersRequest\x1a$.organization.v1.ListMembersResponse\";\xda\xf0\x19\x04\n" +
 	"\x02 \x01\x82\xd3\xe4\x93\x02-\x12+/v1/organizations/{organization_id}/members\x12|\n" +
 	"\x05Leave\x12\x1d.organization.v1.LeaveRequest\x1a\x16.google.protobuf.Empty\"<\xda\xf0\x19\x04\n" +
-	"\x02 \x01\x82\xd3\xe4\x93\x02.:\x01*\")/v1/organizations/{organization_id}:leaveBk\xca\xf0\x19\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02.:\x01*\")/v1/organizations/{organization_id}:leave\x12\x9d\x01\n" +
+	"\x10CreateInvitation\x12(.organization.v1.CreateInvitationRequest\x1a\x1b.organization.v1.Invitation\"B\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x024:\x01*\"//v1/organizations/{organization_id}/invitations\x12\xa5\x01\n" +
+	"\x0fListInvitations\x12'.organization.v1.ListInvitationsRequest\x1a(.organization.v1.ListInvitationsResponse\"?\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x021\x12//v1/organizations/{organization_id}/invitations\x12\xa5\x01\n" +
+	"\x10RevokeInvitation\x12(.organization.v1.RevokeInvitationRequest\x1a\x16.google.protobuf.Empty\"O\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02A*?/v1/organizations/{organization_id}/invitations/{invitation_id}\x12\x8d\x01\n" +
+	"\x10AcceptInvitation\x12(.organization.v1.AcceptInvitationRequest\x1a\x16.google.protobuf.Empty\"7\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02):\x01*\"$/v1/organizations/invitations:accept\x12\xa3\x01\n" +
+	"\x10UpdateMemberRole\x12(.organization.v1.UpdateMemberRoleRequest\x1a\x16.google.protobuf.Empty\"M\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02?:\x01*2:/v1/organizations/{organization_id}/members/{user_id}/role\x12\xa1\x01\n" +
+	"\x11TransferOwnership\x12).organization.v1.TransferOwnershipRequest\x1a\x16.google.protobuf.Empty\"I\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02;:\x01*\"6/v1/organizations/{organization_id}:transfer-ownership\x12\x8d\x01\n" +
+	"\x12DeleteOrganization\x12*.organization.v1.DeleteOrganizationRequest\x1a\x16.google.protobuf.Empty\"3\xda\xf0\x19\x04\n" +
+	"\x02 \x01\x82\xd3\xe4\x93\x02%*#/v1/organizations/{organization_id}Bk\xca\xf0\x19\n" +
 	"\n" +
 	"\x06public \x02Z[github.com/lynxland/lynx-start/modules/organization/genproto/organization/v1;organizationv1b\x06proto3"
 
@@ -777,7 +1355,7 @@ func file_organization_v1_organization_proto_rawDescGZIP() []byte {
 	return file_organization_v1_organization_proto_rawDescData
 }
 
-var file_organization_v1_organization_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_organization_v1_organization_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_organization_v1_organization_proto_goTypes = []any{
 	(*Organization)(nil),                // 0: organization.v1.Organization
 	(*OrganizationMember)(nil),          // 1: organization.v1.OrganizationMember
@@ -791,36 +1369,62 @@ var file_organization_v1_organization_proto_goTypes = []any{
 	(*ListMembersRequest)(nil),          // 9: organization.v1.ListMembersRequest
 	(*ListMembersResponse)(nil),         // 10: organization.v1.ListMembersResponse
 	(*LeaveRequest)(nil),                // 11: organization.v1.LeaveRequest
-	(*timestamppb.Timestamp)(nil),       // 12: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),               // 13: google.protobuf.Empty
+	(*Invitation)(nil),                  // 12: organization.v1.Invitation
+	(*CreateInvitationRequest)(nil),     // 13: organization.v1.CreateInvitationRequest
+	(*ListInvitationsRequest)(nil),      // 14: organization.v1.ListInvitationsRequest
+	(*ListInvitationsResponse)(nil),     // 15: organization.v1.ListInvitationsResponse
+	(*RevokeInvitationRequest)(nil),     // 16: organization.v1.RevokeInvitationRequest
+	(*AcceptInvitationRequest)(nil),     // 17: organization.v1.AcceptInvitationRequest
+	(*UpdateMemberRoleRequest)(nil),     // 18: organization.v1.UpdateMemberRoleRequest
+	(*TransferOwnershipRequest)(nil),    // 19: organization.v1.TransferOwnershipRequest
+	(*DeleteOrganizationRequest)(nil),   // 20: organization.v1.DeleteOrganizationRequest
+	(*timestamppb.Timestamp)(nil),       // 21: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),               // 22: google.protobuf.Empty
 }
 var file_organization_v1_organization_proto_depIdxs = []int32{
-	12, // 0: organization.v1.Organization.created_at:type_name -> google.protobuf.Timestamp
-	12, // 1: organization.v1.Organization.updated_at:type_name -> google.protobuf.Timestamp
-	12, // 2: organization.v1.OrganizationMember.joined_at:type_name -> google.protobuf.Timestamp
+	21, // 0: organization.v1.Organization.created_at:type_name -> google.protobuf.Timestamp
+	21, // 1: organization.v1.Organization.updated_at:type_name -> google.protobuf.Timestamp
+	21, // 2: organization.v1.OrganizationMember.joined_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: organization.v1.ListMyOrganizationsResponse.organizations:type_name -> organization.v1.Organization
 	1,  // 4: organization.v1.ListMembersResponse.members:type_name -> organization.v1.OrganizationMember
-	2,  // 5: organization.v1.OrganizationService.CreateOrganization:input_type -> organization.v1.CreateOrganizationRequest
-	3,  // 6: organization.v1.OrganizationService.GetOrganization:input_type -> organization.v1.GetOrganizationRequest
-	4,  // 7: organization.v1.OrganizationService.ListMyOrganizations:input_type -> organization.v1.ListMyOrganizationsRequest
-	6,  // 8: organization.v1.OrganizationService.RenameOrganization:input_type -> organization.v1.RenameOrganizationRequest
-	7,  // 9: organization.v1.OrganizationService.AddMember:input_type -> organization.v1.AddMemberRequest
-	8,  // 10: organization.v1.OrganizationService.RemoveMember:input_type -> organization.v1.RemoveMemberRequest
-	9,  // 11: organization.v1.OrganizationService.ListMembers:input_type -> organization.v1.ListMembersRequest
-	11, // 12: organization.v1.OrganizationService.Leave:input_type -> organization.v1.LeaveRequest
-	0,  // 13: organization.v1.OrganizationService.CreateOrganization:output_type -> organization.v1.Organization
-	0,  // 14: organization.v1.OrganizationService.GetOrganization:output_type -> organization.v1.Organization
-	5,  // 15: organization.v1.OrganizationService.ListMyOrganizations:output_type -> organization.v1.ListMyOrganizationsResponse
-	0,  // 16: organization.v1.OrganizationService.RenameOrganization:output_type -> organization.v1.Organization
-	13, // 17: organization.v1.OrganizationService.AddMember:output_type -> google.protobuf.Empty
-	13, // 18: organization.v1.OrganizationService.RemoveMember:output_type -> google.protobuf.Empty
-	10, // 19: organization.v1.OrganizationService.ListMembers:output_type -> organization.v1.ListMembersResponse
-	13, // 20: organization.v1.OrganizationService.Leave:output_type -> google.protobuf.Empty
-	13, // [13:21] is the sub-list for method output_type
-	5,  // [5:13] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	21, // 5: organization.v1.Invitation.expires_at:type_name -> google.protobuf.Timestamp
+	21, // 6: organization.v1.Invitation.created_at:type_name -> google.protobuf.Timestamp
+	12, // 7: organization.v1.ListInvitationsResponse.invitations:type_name -> organization.v1.Invitation
+	2,  // 8: organization.v1.OrganizationService.CreateOrganization:input_type -> organization.v1.CreateOrganizationRequest
+	3,  // 9: organization.v1.OrganizationService.GetOrganization:input_type -> organization.v1.GetOrganizationRequest
+	4,  // 10: organization.v1.OrganizationService.ListMyOrganizations:input_type -> organization.v1.ListMyOrganizationsRequest
+	6,  // 11: organization.v1.OrganizationService.RenameOrganization:input_type -> organization.v1.RenameOrganizationRequest
+	7,  // 12: organization.v1.OrganizationService.AddMember:input_type -> organization.v1.AddMemberRequest
+	8,  // 13: organization.v1.OrganizationService.RemoveMember:input_type -> organization.v1.RemoveMemberRequest
+	9,  // 14: organization.v1.OrganizationService.ListMembers:input_type -> organization.v1.ListMembersRequest
+	11, // 15: organization.v1.OrganizationService.Leave:input_type -> organization.v1.LeaveRequest
+	13, // 16: organization.v1.OrganizationService.CreateInvitation:input_type -> organization.v1.CreateInvitationRequest
+	14, // 17: organization.v1.OrganizationService.ListInvitations:input_type -> organization.v1.ListInvitationsRequest
+	16, // 18: organization.v1.OrganizationService.RevokeInvitation:input_type -> organization.v1.RevokeInvitationRequest
+	17, // 19: organization.v1.OrganizationService.AcceptInvitation:input_type -> organization.v1.AcceptInvitationRequest
+	18, // 20: organization.v1.OrganizationService.UpdateMemberRole:input_type -> organization.v1.UpdateMemberRoleRequest
+	19, // 21: organization.v1.OrganizationService.TransferOwnership:input_type -> organization.v1.TransferOwnershipRequest
+	20, // 22: organization.v1.OrganizationService.DeleteOrganization:input_type -> organization.v1.DeleteOrganizationRequest
+	0,  // 23: organization.v1.OrganizationService.CreateOrganization:output_type -> organization.v1.Organization
+	0,  // 24: organization.v1.OrganizationService.GetOrganization:output_type -> organization.v1.Organization
+	5,  // 25: organization.v1.OrganizationService.ListMyOrganizations:output_type -> organization.v1.ListMyOrganizationsResponse
+	0,  // 26: organization.v1.OrganizationService.RenameOrganization:output_type -> organization.v1.Organization
+	22, // 27: organization.v1.OrganizationService.AddMember:output_type -> google.protobuf.Empty
+	22, // 28: organization.v1.OrganizationService.RemoveMember:output_type -> google.protobuf.Empty
+	10, // 29: organization.v1.OrganizationService.ListMembers:output_type -> organization.v1.ListMembersResponse
+	22, // 30: organization.v1.OrganizationService.Leave:output_type -> google.protobuf.Empty
+	12, // 31: organization.v1.OrganizationService.CreateInvitation:output_type -> organization.v1.Invitation
+	15, // 32: organization.v1.OrganizationService.ListInvitations:output_type -> organization.v1.ListInvitationsResponse
+	22, // 33: organization.v1.OrganizationService.RevokeInvitation:output_type -> google.protobuf.Empty
+	22, // 34: organization.v1.OrganizationService.AcceptInvitation:output_type -> google.protobuf.Empty
+	22, // 35: organization.v1.OrganizationService.UpdateMemberRole:output_type -> google.protobuf.Empty
+	22, // 36: organization.v1.OrganizationService.TransferOwnership:output_type -> google.protobuf.Empty
+	22, // 37: organization.v1.OrganizationService.DeleteOrganization:output_type -> google.protobuf.Empty
+	23, // [23:38] is the sub-list for method output_type
+	8,  // [8:23] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_organization_v1_organization_proto_init() }
@@ -834,7 +1438,7 @@ func file_organization_v1_organization_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_organization_v1_organization_proto_rawDesc), len(file_organization_v1_organization_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

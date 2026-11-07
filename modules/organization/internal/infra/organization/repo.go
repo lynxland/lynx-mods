@@ -27,9 +27,10 @@ type organizationModel struct {
 
 	row.Stamps
 
-	ID   string `bun:"id,pk"`
-	Name string `bun:"name,notnull"`
-	Slug string `bun:"slug,notnull,unique"`
+	ID        string     `bun:"id,pk"`
+	Name      string     `bun:"name,notnull"`
+	Slug      string     `bun:"slug,notnull,unique"`
+	DeletedAt *time.Time `bun:"deleted_at,nullzero"`
 }
 
 // memberModel 是成员事实 PO。user_id 只存 ID 不设外键——契约④：
@@ -39,7 +40,8 @@ type memberModel struct {
 
 	OrganizationID string    `bun:"organization_id,pk"`
 	UserID         string    `bun:"user_id,pk"`
-	IsOwner        bool      `bun:"is_owner,notnull"`
+	IsOwner        bool      `bun:"is_owner,notnull"` // 派生写：role == owner 时为 true
+	Role           string    `bun:"role,notnull"`
 	JoinedAt       time.Time `bun:"joined_at,notnull"`
 }
 
@@ -70,7 +72,7 @@ func (r *Repo) Create(ctx context.Context, o *organization.Organization) error {
 func (r *Repo) Get(ctx context.Context, id string) (*organization.Organization, error) {
 	m := new(organizationModel)
 	err := buntx.Conn(ctx, r.db).NewSelect().Model(m).
-		Where("o.id = ?", id).Scan(ctx)
+		Where("o.id = ? AND o.deleted_at IS NULL", id).Scan(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, organization.ErrOrganizationNotFound
 	}
@@ -163,14 +165,14 @@ func (r *Repo) ListByUser(ctx context.Context, userID string, plan crud.PagePlan
 	conn := buntx.Conn(ctx, r.db)
 	err := bunx.ApplyPage(conn.NewSelect().Model(&rows).
 		Join("JOIN organization_members AS jm ON jm.organization_id = o.id").
-		Where("jm.user_id = ?", userID), plan).
+		Where("jm.user_id = ? AND o.deleted_at IS NULL", userID), plan).
 		Scan(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 	total, err := conn.NewSelect().Model((*organizationModel)(nil)).
 		Join("JOIN organization_members AS jm ON jm.organization_id = o.id").
-		Where("jm.user_id = ?", userID).Count(ctx)
+		Where("jm.user_id = ? AND o.deleted_at IS NULL", userID).Count(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -202,15 +204,28 @@ func toOrganizationDomain(m *organizationModel) *organization.Organization {
 	}
 }
 
+// roleOf 取成员角色（旧数据兼容：role 空且 is_owner 时视作 owner）。
+func roleOf(m *organization.Member) string {
+	if m.Role != "" {
+		return m.Role
+	}
+	if m.IsOwner {
+		return organization.MemberRoleOwner
+	}
+	return organization.MemberRoleMember
+}
+
 func toMemberModel(m *organization.Member) memberModel {
 	return memberModel{
-		OrganizationID: m.OrganizationID, UserID: m.UserID, IsOwner: m.IsOwner, JoinedAt: m.JoinedAt,
+		OrganizationID: m.OrganizationID, UserID: m.UserID, IsOwner: roleOf(m) == organization.MemberRoleOwner,
+		Role: roleOf(m), JoinedAt: m.JoinedAt,
 	}
 }
 
 func toMemberDomain(m *memberModel) *organization.Member {
 	return &organization.Member{
-		OrganizationID: m.OrganizationID, UserID: m.UserID, IsOwner: m.IsOwner, JoinedAt: m.JoinedAt,
+		OrganizationID: m.OrganizationID, UserID: m.UserID, IsOwner: m.Role == organization.MemberRoleOwner || m.IsOwner,
+		Role: m.Role, JoinedAt: m.JoinedAt,
 	}
 }
 
@@ -270,4 +285,185 @@ func (r *userReader) UpdateEmailVerified(context.Context, string, bool, time.Tim
 
 func (r *userReader) List(context.Context, crud.PagePlan) ([]*identity.User, int, error) {
 	return nil, 0, errors.New("organization: userReader is read-only (List belongs to identity)")
+}
+
+// ---- B2B 扩展（v0.7.0）----
+
+// invitationModel 是邀请的 PO。
+type invitationModel struct {
+	bun.BaseModel `bun:"table:organization_invitations,alias:i"`
+
+	ID             string     `bun:"id,pk"`
+	OrganizationID string     `bun:"organization_id"`
+	Email          string     `bun:"email"`
+	Role           string     `bun:"role"`
+	Token          string     `bun:"token,unique"`
+	Status         string     `bun:"status"`
+	CreatedBy      string     `bun:"created_by"`
+	ExpiresAt      time.Time  `bun:"expires_at"`
+	AcceptedAt     *time.Time `bun:"accepted_at"`
+	AcceptedBy     string     `bun:"accepted_by"`
+	CreatedAt      time.Time  `bun:"created_at"`
+	UpdatedAt      time.Time  `bun:"updated_at"`
+}
+
+func toInvitationDomain(m *invitationModel) *organization.Invitation {
+	return &organization.Invitation{
+		ID: m.ID, OrganizationID: m.OrganizationID, Email: m.Email, Role: m.Role,
+		Token: m.Token, Status: m.Status, CreatedBy: m.CreatedBy,
+		ExpiresAt: m.ExpiresAt, AcceptedAt: m.AcceptedAt, AcceptedBy: m.AcceptedBy,
+		CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
+	}
+}
+
+// UpdateMemberRole 改成员角色（owner 行不可直改——结构性保护）。
+func (r *Repo) UpdateMemberRole(ctx context.Context, organizationID, userID, role string, now time.Time) error {
+	res, err := buntx.Conn(ctx, r.db).NewUpdate().
+		Model((*memberModel)(nil)).
+		Set("role = ?", role).
+		Set("is_owner = ?", role == organization.MemberRoleOwner).
+		Set("joined_at = joined_at"). // 只写角色列（白名单护栏：不触碰 joined_at）
+		Where("organization_id = ? AND user_id = ? AND role <> 'owner'", organizationID, userID).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		// 区分：非成员 vs owner 行。
+		if _, gerr := r.Member(ctx, organizationID, userID); gerr != nil {
+			return organization.ErrNotMember
+		}
+		return organization.ErrInvalidRole
+	}
+	return nil
+}
+
+// TransferOwnership 原子互换：新 owner 升 owner，原 owner 降 admin。
+func (r *Repo) TransferOwnership(ctx context.Context, organizationID, newOwnerID string, now time.Time) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		// 新 owner 升位。
+		res, err := tx.NewUpdate().Model((*memberModel)(nil)).
+			Set("role = 'owner'").Set("is_owner = true").
+			Where("organization_id = ? AND user_id = ?", organizationID, newOwnerID).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return organization.ErrNotMember
+		}
+		// 原唯一 owner 降为 admin。
+		_, err = tx.NewUpdate().Model((*memberModel)(nil)).
+			Set("role = 'admin'").Set("is_owner = false").
+			Where("organization_id = ? AND role = 'owner' AND user_id <> ?", organizationID, newOwnerID).
+			Exec(ctx)
+		return err
+	})
+}
+
+// SoftDelete 软删组织（幂等）。
+func (r *Repo) SoftDelete(ctx context.Context, organizationID string, now time.Time) error {
+	_, err := buntx.Conn(ctx, r.db).NewUpdate().
+		Model((*organizationModel)(nil)).
+		Set("deleted_at = ?", now).
+		Where("id = ?", organizationID).
+		Where("deleted_at IS NULL").
+		Exec(ctx)
+	return err
+}
+
+// InsertInvitation 建邀请（pending 唯一冲突 → ErrInvitePending 语义由
+// 调用方处理：唯一索引吸收，方法返回哨兵）。
+func (r *Repo) InsertInvitation(ctx context.Context, inv *organization.Invitation) error {
+	m := &invitationModel{
+		ID: inv.ID, OrganizationID: inv.OrganizationID, Email: inv.Email,
+		Role: inv.Role, Token: inv.Token, Status: inv.Status, CreatedBy: inv.CreatedBy,
+		ExpiresAt: inv.ExpiresAt, CreatedAt: inv.CreatedAt, UpdatedAt: inv.UpdatedAt,
+	}
+	// 同组织同邮箱 pending 唯一：改写已有 pending（令牌刷新、过期重置）。
+	_, err := buntx.Conn(ctx, r.db).NewInsert().Model(m).
+		On("CONFLICT (organization_id, email) WHERE status = 'pending' DO UPDATE SET token = EXCLUDED.token, role = EXCLUDED.role, expires_at = EXCLUDED.expires_at, created_by = EXCLUDED.created_by, updated_at = EXCLUDED.updated_at").
+		Exec(ctx)
+	return err
+}
+
+// GetInvitationByToken 按令牌取。
+func (r *Repo) GetInvitationByToken(ctx context.Context, token string) (*organization.Invitation, error) {
+	m := new(invitationModel)
+	err := buntx.Conn(ctx, r.db).NewSelect().Model(m).
+		Where("i.token = ?", token).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, organization.ErrInviteNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return toInvitationDomain(m), nil
+}
+
+// GetInvitation 按 ID 取（组织内收敛可见性）。
+func (r *Repo) GetInvitation(ctx context.Context, organizationID, id string) (*organization.Invitation, error) {
+	m := new(invitationModel)
+	err := buntx.Conn(ctx, r.db).NewSelect().Model(m).
+		Where("i.organization_id = ? AND i.id = ?", organizationID, id).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, organization.ErrInviteNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return toInvitationDomain(m), nil
+}
+
+// ListInvitations 分页（keyset：created_at DESC + id 决胜）。
+func (r *Repo) ListInvitations(ctx context.Context, organizationID string, plan crud.PagePlan) ([]*organization.Invitation, int, error) {
+	var rows []invitationModel
+	if err := bunx.ApplyPage(buntx.Conn(ctx, r.db).NewSelect().Model(&rows).
+		Where("i.organization_id = ?", organizationID), plan).Scan(ctx); err != nil {
+		return nil, 0, err
+	}
+	count, err := buntx.Conn(ctx, r.db).NewSelect().Model((*invitationModel)(nil)).
+		Where("organization_id = ?", organizationID).Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]*organization.Invitation, 0, len(rows))
+	for i := range rows {
+		out = append(out, toInvitationDomain(&rows[i]))
+	}
+	return out, int(count), nil
+}
+
+// UpdateInvitationStatus 写邀请状态流转。
+func (r *Repo) UpdateInvitationStatus(ctx context.Context, inv *organization.Invitation) error {
+	_, err := buntx.Conn(ctx, r.db).NewUpdate().
+		Model((*invitationModel)(nil)).
+		Set("status = ?", inv.Status).
+		Set("accepted_at = ?", inv.AcceptedAt).
+		Set("accepted_by = ?", inv.AcceptedBy).
+		Set("updated_at = ?", inv.UpdatedAt).
+		Where("id = ?", inv.ID).
+		Exec(ctx)
+	return err
+}
+
+// GetMemberRole 取成员角色。
+func (r *Repo) GetMemberRole(ctx context.Context, organizationID, userID string) (string, error) {
+	m := new(memberModel)
+	err := buntx.Conn(ctx, r.db).NewSelect().Model(m).
+		Column("m.role", "m.is_owner").
+		Where("m.organization_id = ? AND m.user_id = ?", organizationID, userID).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", organization.ErrNotMember
+	}
+	if err != nil {
+		return "", err
+	}
+	if m.Role == "" {
+		if m.IsOwner {
+			return organization.MemberRoleOwner, nil
+		}
+		return organization.MemberRoleMember, nil
+	}
+	return m.Role, nil
 }

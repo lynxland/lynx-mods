@@ -2,6 +2,7 @@ package organization
 
 import (
 	"context"
+	"time"
 
 	"github.com/lynxland/appkit/crud"
 )
@@ -31,4 +32,29 @@ type Repository interface {
 	ListByUser(ctx context.Context, userID string, plan crud.PagePlan) ([]*Organization, int, error)
 	// CountOwners 统计组织 owner 数（最后一个 owner 不可离开的裁决依据）。
 	CountOwners(ctx context.Context, organizationID string) (int, error)
+}
+
+// B2B 扩展端口（v0.7.0）：角色分级 / 邀请 / 软删。
+type RepositoryB2B interface {
+	// UpdateMemberRole 改成员角色（owner 角色不可直改——TransferOwnership
+	// 专用）；影响 0 行映射 ErrNotMember。
+	UpdateMemberRole(ctx context.Context, organizationID, userID, role string, now time.Time) error
+	// TransferOwnership 原子互换（新 owner 升 owner，原 owner 降 admin）。
+	TransferOwnership(ctx context.Context, organizationID, newOwnerID string, now time.Time) error
+	// SoftDelete 软删组织（deleted_at 落值；幂等）。
+	SoftDelete(ctx context.Context, organizationID string, now time.Time) error
+	// InsertInvitation 建邀请（pending 唯一冲突映射 ErrInvitePending——
+	// 由 app 决定改写还是拒绝）。
+	InsertInvitation(ctx context.Context, inv *Invitation) error
+	// GetInvitationByToken 按令牌取邀请（接受面）。
+	GetInvitationByToken(ctx context.Context, token string) (*Invitation, error)
+	// GetInvitation 按 ID 取。
+	GetInvitation(ctx context.Context, organizationID, id string) (*Invitation, error)
+	// ListInvitations 分页（keyset：created_at DESC + id 决胜）。
+	ListInvitations(ctx context.Context, organizationID string, plan crud.PagePlan) ([]*Invitation, int, error)
+	// UpdateInvitationStatus 写邀请状态流转（accepted/revoked/expired）。
+	UpdateInvitationStatus(ctx context.Context, inv *Invitation) error
+	// GetMemberRole 取成员角色（裁决 owner-or-admin 用）；非成员映射
+	// ErrNotMember。
+	GetMemberRole(ctx context.Context, organizationID, userID string) (string, error)
 }

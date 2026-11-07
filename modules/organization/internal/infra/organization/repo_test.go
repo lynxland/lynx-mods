@@ -167,3 +167,131 @@ func TestRepo(t *testing.T) {
 		}
 	})
 }
+
+// TestB2B 覆盖 v0.7.0：角色分级 / 邀请状态机 / 所有权转让 / 软删过滤。
+func TestB2B(t *testing.T) {
+	testutil.SkipUnlessPg(t)
+	db := testutil.NewDB(t, testutil.Chain{Module: "organization", FS: migrations.FS})
+	repo := NewRepository(db)
+	ctx := context.Background()
+	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	// 种组织 + owner + 两成员。
+	o, err := organization.NewOrganization("org-b2b", "Acme B2B", "acme-b2b", base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.Create(ctx, o); err != nil {
+		t.Fatal(err)
+	}
+	owner, _ := organization.NewMemberWithRole(o.ID, "u-owner", organization.MemberRoleOwner, base)
+	if _, err := repo.AddMember(ctx, owner); err != nil {
+		t.Fatal(err)
+	}
+	mem1, _ := organization.NewMemberWithRole(o.ID, "u-mem1", organization.MemberRoleAdmin, base)
+	if _, err := repo.AddMember(ctx, mem1); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("member role read and update", func(t *testing.T) {
+		role, err := repo.GetMemberRole(ctx, o.ID, "u-owner")
+		if err != nil || role != organization.MemberRoleOwner {
+			t.Fatalf("owner role = %q err=%v", role, err)
+		}
+		if err := repo.UpdateMemberRole(ctx, o.ID, "u-mem1", organization.MemberRoleMember, base); err != nil {
+			t.Fatal(err)
+		}
+		if role, _ := repo.GetMemberRole(ctx, o.ID, "u-mem1"); role != organization.MemberRoleMember {
+			t.Fatalf("updated role = %q", role)
+		}
+		// owner 角色不可直改。
+		if err := repo.UpdateMemberRole(ctx, o.ID, "u-owner", organization.MemberRoleMember, base); err != organization.ErrInvalidRole {
+			t.Fatalf("owner demote err = %v, want ErrInvalidRole", err)
+		}
+	})
+
+	t.Run("invitation lifecycle", func(t *testing.T) {
+		inv, err := organization.NewInvitation("inv-1", o.ID, "New@Example.com", organization.MemberRoleAdmin, "tok-1", "u-owner", base)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if inv.Email != "new@example.com" {
+			t.Fatalf("email normalized = %q", inv.Email)
+		}
+		if err := repo.InsertInvitation(ctx, inv); err != nil {
+			t.Fatal(err)
+		}
+		// 重复邀请（pending 唯一）改写已有行——令牌刷新。
+		inv2, _ := organization.NewInvitation("inv-2", o.ID, "new@example.com", organization.MemberRoleMember, "tok-2", "u-owner", base.Add(time.Minute))
+		if err := repo.InsertInvitation(ctx, inv2); err != nil {
+			t.Fatal(err)
+		}
+		got, err := repo.GetInvitationByToken(ctx, "tok-2")
+		if err != nil || got.Role != organization.MemberRoleMember {
+			t.Fatalf("rewritten invite = %+v err=%v", got, err)
+		}
+		if _, err := repo.GetInvitationByToken(ctx, "tok-1"); err != organization.ErrInviteNotFound {
+			t.Fatalf("stale token err = %v, want ErrInviteNotFound", err)
+		}
+		// 邮箱不匹配拒绝。
+		if err := got.AcceptIfEligible("other@example.com", "u-x", base); err != organization.ErrInviteEmailMismatch {
+			t.Fatalf("mismatch err = %v", err)
+		}
+		// 过期拒绝。
+		if err := got.AcceptIfEligible("new@example.com", "u-new", got.ExpiresAt.Add(time.Second)); err != organization.ErrInviteExpired {
+			t.Fatalf("expired err = %v", err)
+		}
+		// 正常接受。
+		if err := got.AcceptIfEligible("new@example.com", "u-new", base); err != nil {
+			t.Fatal(err)
+		}
+		if err := repo.UpdateInvitationStatus(ctx, got); err != nil {
+			t.Fatal(err)
+		}
+		back, _ := repo.GetInvitationByToken(ctx, "tok-2")
+		if back.Status != organization.InviteStatusAccepted || back.AcceptedBy != "u-new" {
+			t.Fatalf("accepted = %+v", back)
+		}
+		// 二次接受拒绝（非 pending）。
+		if err := back.AcceptIfEligible("new@example.com", "u-new", base); err != organization.ErrInviteNotPending {
+			t.Fatalf("re-accept err = %v", err)
+		}
+	})
+
+	t.Run("transfer ownership", func(t *testing.T) {
+		if err := repo.TransferOwnership(ctx, o.ID, "u-mem1", base); err != nil {
+			t.Fatal(err)
+		}
+		if role, _ := repo.GetMemberRole(ctx, o.ID, "u-mem1"); role != organization.MemberRoleOwner {
+			t.Fatalf("new owner role = %q", role)
+		}
+		if role, _ := repo.GetMemberRole(ctx, o.ID, "u-owner"); role != organization.MemberRoleAdmin {
+			t.Fatalf("old owner role = %q", role)
+		}
+		// 非成员转让失败。
+		if err := repo.TransferOwnership(ctx, o.ID, "ghost", base); err != organization.ErrNotMember {
+			t.Fatalf("ghost transfer err = %v", err)
+		}
+	})
+
+	t.Run("soft delete filters visibility", func(t *testing.T) {
+		if err := repo.SoftDelete(ctx, o.ID, base); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := repo.Get(ctx, o.ID); err != organization.ErrOrganizationNotFound {
+			t.Fatalf("deleted get err = %v", err)
+		}
+		if orgs, total, _ := repo.ListByUser(ctx, "u-owner", orgsPlan(t)); total != 0 || len(orgs) != 0 {
+			t.Fatalf("deleted list = %d/%d, want empty", len(orgs), total)
+		}
+	})
+}
+
+func orgsPlan(t *testing.T) crud.PagePlan {
+	t.Helper()
+	return crud.PagePlan{
+		Mode:  crud.ModeKeyset,
+		Limit: 10,
+		Order: []crud.OrderClause{{Expr: "o.created_at", Desc: true, RawField: "createdAt"}, {Expr: "o.id", RawField: "id"}},
+	}
+}

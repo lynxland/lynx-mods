@@ -38,9 +38,12 @@ var (
 // 事件目录（契约②）：app 层发布与 Module().PublishedEvents 共用同一常量
 // （杜绝声明与实发漂移），module.json 的 publishedEvents 与此同步。
 const (
-	EventOrganizationCreated = "organization.organization.created"
-	EventMemberAdded         = "organization.member.added"
-	EventMemberRemoved       = "organization.member.removed"
+	EventOrganizationCreated  = "organization.organization.created"
+	EventMemberAdded          = "organization.member.added"
+	EventMemberRemoved        = "organization.member.removed"
+	EventOwnershipTransferred = "organization.ownership.transferred"
+	EventInvitationCreated    = "organization.invite.created"
+	EventInvitationAccepted   = "organization.invite.accepted"
 )
 
 // slugRe 约束 slug 形态：3-64 位小写字母/数字/中划线，字母开头、
@@ -88,8 +91,20 @@ func (o *Organization) Rename(name string, now time.Time) error {
 type Member struct {
 	OrganizationID string
 	UserID         string
-	IsOwner        bool
+	IsOwner        bool // Role == owner 的派生读（结构标记，v0.7.0 起与 Role 并存）
+	Role           string
 	JoinedAt       time.Time
+}
+
+// NewMemberWithRole 按角色构造成员（owner 角色同时置 IsOwner——派生写）。
+func NewMemberWithRole(organizationID, userID, role string, now time.Time) (*Member, error) {
+	if organizationID == "" || userID == "" {
+		return nil, fmt.Errorf("organization: empty organizationID/userID")
+	}
+	return &Member{
+		OrganizationID: organizationID, UserID: userID,
+		Role: role, IsOwner: role == MemberRoleOwner, JoinedAt: now,
+	}, nil
 }
 
 // NewMember 构造新成员事实。

@@ -1,7 +1,7 @@
 {
   "name": "organization",
-  "version": "0.6.0",
-  "description": "组织模块：组织与成员事实（创建者即 owner，owner-only 管理；结构非 RBAC——权限语义归 account 的 access 域），依赖 account（ADR-0009 合并后依赖唯一账号模块）",
+  "version": "0.7.0",
+  "description": "组织模块:组织与成员(角色分级 owner/admin/member)、邮件邀请流(一次性令牌+状态机+7 天过期)、所有权转让、软删,依赖 account",
   "modulePath": "github.com/lynxland/lynx-start/modules/organization",
   "moduleDependencies": [
     {
@@ -17,7 +17,10 @@
   "publishedEvents": [
     "organization.organization.created",
     "organization.member.added",
-    "organization.member.removed"
+    "organization.member.removed",
+    "organization.ownership.transferred",
+    "organization.invite.created",
+    "organization.invite.accepted"
   ],
   "kernelConstraint": ">=0.8.0"
 }

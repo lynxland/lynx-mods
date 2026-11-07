@@ -196,3 +196,109 @@ func toMemberAPI(m *organization.Member) *organizationv1.OrganizationMember {
 		JoinedAt: timestamppb.New(m.JoinedAt),
 	}
 }
+
+// ---- B2B（v0.7.0）----
+
+// CreateInvitation 创建邀请（令牌经事件投递）。
+func (s *Service) CreateInvitation(ctx context.Context, req *organizationv1.CreateInvitationRequest) (*organizationv1.Invitation, error) {
+	who, err := actorID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	inv, err := s.uc.CreateInvitation(ctx, who, req.GetOrganizationId(), req.GetEmail(), req.GetRole())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return toAPIInvitation(inv), nil
+}
+
+// ListInvitations 列邀请。
+func (s *Service) ListInvitations(ctx context.Context, req *organizationv1.ListInvitationsRequest) (*organizationv1.ListInvitationsResponse, error) {
+	who, err := actorID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.uc.ListInvitations(ctx, who, req.GetOrganizationId(), req.GetPageSize(), req.GetPageToken())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	resp := &organizationv1.ListInvitationsResponse{
+		Invitations:   make([]*organizationv1.Invitation, 0, len(res.Invitations)),
+		NextPageToken: res.NextToken,
+		TotalSize:     res.TotalSize,
+	}
+	for _, inv := range res.Invitations {
+		resp.Invitations = append(resp.Invitations, toAPIInvitation(inv))
+	}
+	return resp, nil
+}
+
+// RevokeInvitation 撤销邀请。
+func (s *Service) RevokeInvitation(ctx context.Context, req *organizationv1.RevokeInvitationRequest) (*emptypb.Empty, error) {
+	who, err := actorID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.uc.RevokeInvitation(ctx, who, req.GetOrganizationId(), req.GetInvitationId()); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// AcceptInvitation 接受邀请（凭令牌）。
+func (s *Service) AcceptInvitation(ctx context.Context, req *organizationv1.AcceptInvitationRequest) (*emptypb.Empty, error) {
+	p, ok := principal.From(ctx)
+	if !ok || p.ID == "" {
+		return nil, status.Error(codes.Unauthenticated, "authentication required")
+	}
+	if err := s.uc.AcceptInvitation(ctx, p.Attrs["email"], p.ID, req.GetToken()); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// UpdateMemberRole 改成员角色。
+func (s *Service) UpdateMemberRole(ctx context.Context, req *organizationv1.UpdateMemberRoleRequest) (*emptypb.Empty, error) {
+	who, err := actorID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.uc.UpdateMemberRole(ctx, who, req.GetOrganizationId(), req.GetUserId(), req.GetRole()); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// TransferOwnership 转让所有权。
+func (s *Service) TransferOwnership(ctx context.Context, req *organizationv1.TransferOwnershipRequest) (*emptypb.Empty, error) {
+	who, err := actorID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.uc.TransferOwnership(ctx, who, req.GetOrganizationId(), req.GetNewOwnerUserId()); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// DeleteOrganization 软删组织。
+func (s *Service) DeleteOrganization(ctx context.Context, req *organizationv1.DeleteOrganizationRequest) (*emptypb.Empty, error) {
+	who, err := actorID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.uc.DeleteOrganization(ctx, who, req.GetOrganizationId()); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func toAPIInvitation(inv *organization.Invitation) *organizationv1.Invitation {
+	out := &organizationv1.Invitation{
+		Id: inv.ID, OrganizationId: inv.OrganizationID, Email: inv.Email,
+		Role: inv.Role, Status: inv.Status,
+		ExpiresAt: timestamppb.New(inv.ExpiresAt),
+		CreatedAt: timestamppb.New(inv.CreatedAt),
+	}
+	return out
+}

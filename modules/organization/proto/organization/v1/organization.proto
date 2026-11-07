@@ -65,6 +65,51 @@ service OrganizationService {
     option (grpcapi.v1.method) = { policy: { authenticated: true } };
     option (google.api.http) = { post: "/v1/organizations/{organization_id}:leave" body: "*" };
   }
+
+  // 创建邀请（owner 或 admin）：生成一次性令牌投递到被邀邮箱（经
+  // organization.invite.created 事件——通知渠道发信）；7 天过期；
+  // 同组织同邮箱仅一个 pending。
+  rpc CreateInvitation(CreateInvitationRequest) returns (Invitation) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { post: "/v1/organizations/{organization_id}/invitations" body: "*" };
+  }
+
+  // 列邀请（owner 或 admin）。
+  rpc ListInvitations(ListInvitationsRequest) returns (ListInvitationsResponse) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { get: "/v1/organizations/{organization_id}/invitations" };
+  }
+
+  // 撤销邀请（owner 或 admin；幂等）。
+  rpc RevokeInvitation(RevokeInvitationRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { delete: "/v1/organizations/{organization_id}/invitations/{invitation_id}" };
+  }
+
+  // 接受邀请（自助——凭令牌；被邀邮箱须与当前账号邮箱一致）。
+  rpc AcceptInvitation(AcceptInvitationRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { post: "/v1/organizations/invitations:accept" body: "*" };
+  }
+
+  // 改成员角色（owner 或 admin；owner 角色只能经 TransferOwnership 变更）。
+  rpc UpdateMemberRole(UpdateMemberRoleRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { patch: "/v1/organizations/{organization_id}/members/{user_id}/role" body: "*" };
+  }
+
+  // 转让所有权（owner-only）：新 owner 须为现有成员；转让后原 owner 降
+  // 为 admin。解「单 owner 组织不可换主」死锁。
+  rpc TransferOwnership(TransferOwnershipRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { post: "/v1/organizations/{organization_id}:transfer-ownership" body: "*" };
+  }
+
+  // 删除组织（owner-only；软删——成员即时失去访问，数据保留供审计）。
+  rpc DeleteOrganization(DeleteOrganizationRequest) returns (google.protobuf.Empty) {
+    option (grpcapi.v1.method) = { policy: { authenticated: true } };
+    option (google.api.http) = { delete: "/v1/organizations/{organization_id}" };
+  }
 }
 
 message Organization {
@@ -135,3 +180,52 @@ message LeaveRequest {
   // 组织 ID（路径绑定 /v1/organizations/{organization_id}:leave）。
   string organization_id = 1;
 }
+
+// Invitation 是一条组织邀请（状态机：pending → accepted / revoked / expired）。
+message Invitation {
+  string id = 1;
+  string organization_id = 2;
+  string email = 3;
+  string role = 4;             // 接受后授予的成员角色（admin/member）
+  string status = 5;           // pending / accepted / revoked / expired
+  google.protobuf.Timestamp expires_at = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message CreateInvitationRequest {
+  string organization_id = 1;
+  string email = 2;
+  string role = 3;             // admin/member（默认 member；不可为 owner）
+}
+
+message ListInvitationsRequest {
+  string organization_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListInvitationsResponse {
+  repeated Invitation invitations = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+message RevokeInvitationRequest {
+  string organization_id = 1;
+  string invitation_id = 2;
+}
+
+message AcceptInvitationRequest { string token = 1; }
+
+message UpdateMemberRoleRequest {
+  string organization_id = 1;
+  string user_id = 2;
+  string role = 3;             // admin/member
+}
+
+message TransferOwnershipRequest {
+  string organization_id = 1;
+  string new_owner_user_id = 2;
+}
+
+message DeleteOrganizationRequest { string organization_id = 1; }
