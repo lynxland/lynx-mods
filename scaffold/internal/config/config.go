@@ -18,8 +18,20 @@ type Config struct {
 
 // ServerConfig 是服务监听配置。
 type ServerConfig struct {
-	GRPCAddr string `mapstructure:"grpc_addr"`
-	HTTPAddr string `mapstructure:"http_addr"`
+	GRPCAddr   string `mapstructure:"grpc_addr"`
+	HTTPAddr   string `mapstructure:"http_addr"`
+	// CORS 是浏览器跨源配置——SaaS 前端（浏览器直调 API）必配，nil=不
+	// 启用（非浏览器客户端无感）。AllowedOrigins 精确匹配（不支持
+	// 通配符 *——凭据场景下通配是被浏览器拒绝的）。
+	CORS *CORSConfig `mapstructure:"cors"`
+	// AccessLog 开请求访问日志（默认 false——审计模块已记录全部 RPC，
+	// 访问日志是流量画像的补充）。
+	AccessLog bool `mapstructure:"access_log"`
+}
+
+// CORSConfig 是跨源资源共享配置。
+type CORSConfig struct {
+	AllowedOrigins []string `mapstructure:"allowed_origins"`
 }
 
 // DataConfig 是数据层配置。

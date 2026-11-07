@@ -1,4 +1,10 @@
 server:
+  # CORS：浏览器前端必配（精确 origin；非浏览器客户端无需）。示例：
+  # cors:
+  #   allowed_origins:
+  #     - "https://app.example.com"
+  # access_log: false   # 请求访问日志（审计模块的补充）
+
   grpc_addr: ":9060"
   http_addr: ":8080"
 

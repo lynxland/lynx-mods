@@ -18,8 +18,10 @@ import (
 
 	"github.com/lynxland/appkit"
 	"github.com/lynxland/appkit/chain"
+	"github.com/lynxland/appkit/contrib/bunx"
 	"github.com/lynxland/appkit/compose"
 	grpcapiauthn "github.com/lynxland/grpcapi/authn"
+	grpcapicors "github.com/lynxland/grpcapi/cors"
 	grpcapiopenapi "github.com/lynxland/grpcapi/openapi"
 	grpcapipolicy "github.com/lynxland/grpcapi/policy"
 	grpcapiprotopolicy "github.com/lynxland/grpcapi/policy/protopolicy"
@@ -90,6 +92,15 @@ func setup(app lynx.App) error {
 		Chain:                chain,
 		GRPCAddr:             cfg.Server.GRPCAddr,
 		HTTPAddr:             cfg.Server.HTTPAddr,
+		AccessLog:            cfg.Server.AccessLog,
+		// 就绪探测接 DB ping（/readyz 从恒 200 变为真实探活——编排系统
+		// 滚动发布的依据；/healthz 仍是进程存活）。
+		Readiness: func(ctx context.Context) error {
+			return bunx.MustDB(deps).PingContext(ctx)
+		},
+		// CORS：浏览器前端（SaaS 场景）在 config.yaml 的 server.cors
+		// 段声明 allowed_origins；未配置 = 不启用（非浏览器客户端无感）。
+		CORS:                 corsConfigOf(cfg),
 		AllowNoAuthenticator: len(agg.Authenticators) == 0,
 		OpenAPI:              &grpcapiopenapi.Info{Title: "{{.AppName}}", Version: "v1"},
 		Logger:               logger,
@@ -190,4 +201,13 @@ func httpRules(md protoreflect.MethodDescriptor) [][2]string {
 		add(ab, &out)
 	}
 	return out
+}
+
+
+// corsConfigOf 把应用配置的 server.cors 段映射为 grpcapi 的 CORS 配置。
+func corsConfigOf(cfg *config.Config) *grpcapicors.Config {
+	if cfg.Server.CORS == nil || len(cfg.Server.CORS.AllowedOrigins) == 0 {
+		return nil
+	}
+	return &grpcapicors.Config{AllowedOrigins: cfg.Server.CORS.AllowedOrigins}
 }
