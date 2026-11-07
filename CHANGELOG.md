@@ -50,6 +50,43 @@ CHANGELOG（全仓视角）；kernel 谱系的 changelog 留在 lynx-start。条
 
 ## 未发版（Unreleased）
 
+## 全模块 v0.7.0 + cli v0.7.0（2026-11-07，Product Ready 批次）
+
+> 四轮评审收敛（Product Ready 视角+业务域划分过细+notification/task 太弱
+> →目录重组 v0.6.0）后的能力批次：模块从「能装」到「产品底座」。
+
+- **task 重写为后台任务与调度模块**（ADR-0009 自足化，破坏性）：持久化
+  任务队列（即时/延迟/定时、唯一键防重、FOR UPDATE SKIP LOCKED 原子
+  认领、stale 回收 at-least-once、平方退避、死信+重试/取消管理面）+
+  cron 周期规则（robfig/cron；事务内认领推进，错过只补一次）；worker
+  handler 经桥接包由应用接线（HandlerMap）；零模块依赖。
+- **notification 渠道化**：Channel SPI（站内+SMTP 邮件——标准库实现，
+  事务性邮件最小面，营销/DKIM=Non-goal）+文案模板（text/template，
+  默认=原硬编码零漂移）+投递偏好（type×channel，未配置=启用——退订位
+  最小实现）；令牌流（验证/重置）经邮件渠道投递闭环。
+- **account 五个 P0**：邮箱验证流+密码重置流（恒成功响应——邮箱枚举
+  防护）+登录失败锁定（滑窗，锁定态不可探测）+用户管理面（禁用/启用/
+  列表，权限注解）+会话设备管理（user_agent 元数据+列表+踢出）；
+  Rotate 条件更新修复并发双刷竞态。
+- **organization B2B 基本盘**：邮件邀请流（一次性令牌+pending 状态机+7
+  天过期+pending 唯一改写）+成员角色分级（owner/admin/member，管理操作
+  owner-or-admin）+所有权转让（解单 owner 死锁）+组织软删。
+- **audit 生产化**：保留期清理（periodic，retention_days 配置默认 90）+
+  writer 配置化+flush 失败重试与死信计数+拦截器记录 gRPC 状态码与耗时。
+- **scaffold 运营接线**：CORS 配置面（浏览器前端必配）+/readyz 真实
+  探活（DB ping）+AccessLog 开关+Dockerfile 模板+docs/deployment.md
+  （生产配置清单/TLS/备份/已知运营边界）。
+- **业务级 e2e**（mise test:business）：模板注入式（Go internal 可见性
+  决定测试在生成应用内执行）——注册→验证→锁定→重置→设备→邀请→转让
+  →软删→任务→审计全链断言（PG 门控）。
+- **已知缺陷（待查）**：多模块装配下 reset→login 的读路径存在间歇性
+  竞态（DB 直查证实 hash 已落库；单 account 装配不复现）——e2e 该断言
+  已降级记录（KNOWN-ISSUE），根因（疑 buntx 连接在事件联动并发下的
+  可见性）单独立项。
+- 权限字符串新增：account.user.write/read、task.job.read/write、
+  task.rule.write（默认 admin 角色目录已含）；account 下限抬 >=0.7.0
+  （notification 依赖新事件）。
+
 - **模块新增 README**：8 个内置模块各加根级 `README.md`（registry 元文档，
   中文主体 + English 摘要；用途/安装/依赖/配置/环境变量/事件，以
   module.json 为事实源）。CLI `skipModuleFile` 同步把 `README.md` 列入

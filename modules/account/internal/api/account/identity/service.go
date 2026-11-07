@@ -121,12 +121,13 @@ func toStatus(err error) error {
 
 func toAPI(u *identity.User) *identityv1.User {
 	return &identityv1.User{
-		Id:          u.ID,
-		Email:       u.Email,
-		DisplayName: u.DisplayName,
-		Status:      u.Status,
-		CreatedAt:   timestamppb.New(u.CreatedAt),
-		UpdatedAt:   timestamppb.New(u.UpdatedAt),
+		Id:            u.ID,
+		Email:         u.Email,
+		DisplayName:   u.DisplayName,
+		Status:        u.Status,
+		EmailVerified: u.EmailVerified,
+		CreatedAt:     timestamppb.New(u.CreatedAt),
+		UpdatedAt:     timestamppb.New(u.UpdatedAt),
 	}
 }
 

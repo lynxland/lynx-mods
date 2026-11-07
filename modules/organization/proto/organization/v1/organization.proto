@@ -190,6 +190,9 @@ message Invitation {
   string status = 5;           // pending / accepted / revoked / expired
   google.protobuf.Timestamp expires_at = 6;
   google.protobuf.Timestamp created_at = 7;
+  // 一次性邀请令牌——**仅 CreateInvitation 响应填充**（调用方据此构造
+  // 邀请链接）；List 面恒空（令牌不出管理面）。
+  string token = 8;
 }
 
 message CreateInvitationRequest {

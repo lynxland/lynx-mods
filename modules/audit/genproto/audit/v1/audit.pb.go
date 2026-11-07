@@ -26,16 +26,19 @@ const (
 
 // AuditRecord 是审计记录（append-only；payload 是业务自定义 JSON 文本）。
 type AuditRecord struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	ActorId       string                 `protobuf:"bytes,2,opt,name=actor_id,json=actorId,proto3" json:"actor_id,omitempty"`
-	ActorEmail    string                 `protobuf:"bytes,3,opt,name=actor_email,json=actorEmail,proto3" json:"actor_email,omitempty"`
-	Action        string                 `protobuf:"bytes,4,opt,name=action,proto3" json:"action,omitempty"`
-	ResourceType  string                 `protobuf:"bytes,5,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
-	ResourceId    string                 `protobuf:"bytes,6,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
-	Payload       string                 `protobuf:"bytes,7,opt,name=payload,proto3" json:"payload,omitempty"`
-	Source        string                 `protobuf:"bytes,8,opt,name=source,proto3" json:"source,omitempty"`
-	OccurredAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Id           string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ActorId      string                 `protobuf:"bytes,2,opt,name=actor_id,json=actorId,proto3" json:"actor_id,omitempty"`
+	ActorEmail   string                 `protobuf:"bytes,3,opt,name=actor_email,json=actorEmail,proto3" json:"actor_email,omitempty"`
+	Action       string                 `protobuf:"bytes,4,opt,name=action,proto3" json:"action,omitempty"`
+	ResourceType string                 `protobuf:"bytes,5,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
+	ResourceId   string                 `protobuf:"bytes,6,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	Payload      string                 `protobuf:"bytes,7,opt,name=payload,proto3" json:"payload,omitempty"`
+	Source       string                 `protobuf:"bytes,8,opt,name=source,proto3" json:"source,omitempty"`
+	OccurredAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	// v0.7.0：拦截器记录面补全（显式 Record 路径不填）。
+	StatusCode    string `protobuf:"bytes,10,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`           // gRPC 状态码（OK/NotFound/…）
+	LatencyMillis int64  `protobuf:"varint,11,opt,name=latency_millis,json=latencyMillis,proto3" json:"latency_millis,omitempty"` // 调用耗时
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -131,6 +134,20 @@ func (x *AuditRecord) GetOccurredAt() *timestamppb.Timestamp {
 		return x.OccurredAt
 	}
 	return nil
+}
+
+func (x *AuditRecord) GetStatusCode() string {
+	if x != nil {
+		return x.StatusCode
+	}
+	return ""
+}
+
+func (x *AuditRecord) GetLatencyMillis() int64 {
+	if x != nil {
+		return x.LatencyMillis
+	}
+	return 0
 }
 
 type RecordRequest struct {
@@ -349,7 +366,7 @@ var File_audit_v1_audit_proto protoreflect.FileDescriptor
 
 const file_audit_v1_audit_proto_rawDesc = "" +
 	"\n" +
-	"\x14audit/v1/audit.proto\x12\baudit.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17grpcapi/v1/policy.proto\"\xa6\x02\n" +
+	"\x14audit/v1/audit.proto\x12\baudit.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17grpcapi/v1/policy.proto\"\xee\x02\n" +
 	"\vAuditRecord\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bactor_id\x18\x02 \x01(\tR\aactorId\x12\x1f\n" +
@@ -362,7 +379,11 @@ const file_audit_v1_audit_proto_rawDesc = "" +
 	"\apayload\x18\a \x01(\tR\apayload\x12\x16\n" +
 	"\x06source\x18\b \x01(\tR\x06source\x12;\n" +
 	"\voccurred_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"occurredAt\"\x87\x01\n" +
+	"occurredAt\x12\x1f\n" +
+	"\vstatus_code\x18\n" +
+	" \x01(\tR\n" +
+	"statusCode\x12%\n" +
+	"\x0elatency_millis\x18\v \x01(\x03R\rlatencyMillis\"\x87\x01\n" +
 	"\rRecordRequest\x12\x16\n" +
 	"\x06action\x18\x01 \x01(\tR\x06action\x12#\n" +
 	"\rresource_type\x18\x02 \x01(\tR\fresourceType\x12\x1f\n" +

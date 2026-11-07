@@ -703,8 +703,11 @@ type Invitation struct {
 	Status         string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"` // pending / accepted / revoked / expired
 	ExpiresAt      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 一次性邀请令牌——**仅 CreateInvitation 响应填充**（调用方据此构造
+	// 邀请链接）；List 面恒空（令牌不出管理面）。
+	Token         string `protobuf:"bytes,8,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Invitation) Reset() {
@@ -784,6 +787,13 @@ func (x *Invitation) GetCreatedAt() *timestamppb.Timestamp {
 		return x.CreatedAt
 	}
 	return nil
+}
+
+func (x *Invitation) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
 }
 
 type CreateInvitationRequest struct {
@@ -1269,7 +1279,7 @@ const file_organization_v1_organization_proto_rawDesc = "" +
 	"\n" +
 	"total_size\x18\x03 \x01(\x05R\ttotalSize\"7\n" +
 	"\fLeaveRequest\x12'\n" +
-	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\"\xfd\x01\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\"\x93\x02\n" +
 	"\n" +
 	"Invitation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
@@ -1280,7 +1290,8 @@ const file_organization_v1_organization_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"l\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x14\n" +
+	"\x05token\x18\b \x01(\tR\x05token\"l\n" +
 	"\x17CreateInvitationRequest\x12'\n" +
 	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +

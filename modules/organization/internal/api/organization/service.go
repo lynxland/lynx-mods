@@ -209,7 +209,9 @@ func (s *Service) CreateInvitation(ctx context.Context, req *organizationv1.Crea
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return toAPIInvitation(inv), nil
+	out := toAPIInvitation(inv)
+	out.Token = inv.Token // 一次性令牌只在创建响应出现（List 面恒空）
+	return out, nil
 }
 
 // ListInvitations 列邀请。

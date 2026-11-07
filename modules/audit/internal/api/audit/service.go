@@ -73,15 +73,17 @@ func actorEmail(ctx context.Context) string {
 
 func toAPI(rec *domainaudit.Record) *auditv1.AuditRecord {
 	return &auditv1.AuditRecord{
-		Id:           rec.ID,
-		ActorId:      rec.ActorID,
-		ActorEmail:   rec.ActorEmail,
-		Action:       rec.Action,
-		ResourceType: rec.ResourceType,
-		ResourceId:   rec.ResourceID,
-		Payload:      string(rec.Payload),
-		Source:       rec.Source,
-		OccurredAt:   timestamppb.New(rec.OccurredAt),
+		Id:            rec.ID,
+		ActorId:       rec.ActorID,
+		ActorEmail:    rec.ActorEmail,
+		Action:        rec.Action,
+		ResourceType:  rec.ResourceType,
+		ResourceId:    rec.ResourceID,
+		Payload:       string(rec.Payload),
+		Source:        rec.Source,
+		StatusCode:    rec.StatusCode,
+		LatencyMillis: rec.LatencyMillis,
+		OccurredAt:    timestamppb.New(rec.OccurredAt),
 	}
 }
 

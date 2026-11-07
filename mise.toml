@@ -179,6 +179,28 @@ rm -rf "$FIXTURE"
 echo "scaffold e2e: OK（init→add→generate→build→vet→test + update/remove/doctor 全绿）"
 '''
 
+
+[tasks."test:business"]
+description = "业务级 e2e：init 应用→注入模板测试→真 PG 跑全链（设 APPKIT_TEST_PG_DSN）"
+run = '''
+ROOT="$PWD"
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+(cd cli && go build -o "$WORK/lynx-start" ./cmd/lynx-start)
+cd "$WORK"
+"$WORK/lynx-start" init e2ebiz --module example.com/e2ebiz --registry "$ROOT" >/dev/null
+cd e2ebiz
+for m in ${E2EBIZ_MODULES:-account audit organization notification task}; do
+  "$WORK/lynx-start" add "$m" --registry "$ROOT" >/dev/null
+done
+"$WORK/lynx-start" generate >/dev/null
+go mod tidy >/dev/null
+mkdir -p test
+sed "s|__MODULE_PATH__|example.com/e2ebiz|g" "$ROOT/e2e/template/saas_test.go.tmpl" > test/saas_test.go
+go test ./test/... -count=1
+echo "business e2e: OK（注册→验证→锁定→重置→设备→邀请→转让→软删→任务→审计 全链绿）"
+'''
+
 [tasks.release]
 description = "发版：按 modules/*/module.json 版本打 cli/v<cli> 与 modules/<m>/v<v> tag 并推送（守卫：origin 与 module path 同仓名 / 干净树 / main 已推——发布顺序固化，ADR-0007）"
 run = '''

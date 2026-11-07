@@ -39,6 +39,9 @@ message AuditRecord {
   string payload = 7;
   string source = 8;
   google.protobuf.Timestamp occurred_at = 9;
+  // v0.7.0：拦截器记录面补全（显式 Record 路径不填）。
+  string status_code = 10;    // gRPC 状态码（OK/NotFound/…）
+  int64 latency_millis = 11;  // 调用耗时
 }
 
 message RecordRequest {
